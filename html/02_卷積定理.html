@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>卷積定理</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;
+  --acc:#2f6fd6;--acc2:#e07a1f;--acc3:#8b5cf6;--soft:#f1efe8;--code:#1b1f29;--codeink:#e6e9f0;--hl:rgba(224,122,31,.18);}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+  --acc:#6ea2ff;--acc2:#ffa255;--acc3:#b69bff;--soft:#252a36;--code:#11141b;--codeink:#e6e9f0;--hl:rgba(255,162,85,.18);}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+  --acc:#6ea2ff;--acc2:#ffa255;--acc3:#b69bff;--soft:#252a36;--code:#11141b;--codeink:#e6e9f0;--hl:rgba(255,162,85,.18);}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:1.9rem;line-height:1.3}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-top:20px;min-width:0}
+.card h2{margin:0 0 12px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--acc);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.formula{background:var(--soft);border-radius:12px;padding:12px 16px;margin:10px 0;font-size:1.12rem;text-align:center;overflow-x:auto}
+.formula i{font-family:"Times New Roman",serif;font-size:1.15em}
+.big{font-size:1.6em;vertical-align:-.15em}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chip{padding:5px 12px;border-radius:999px;background:var(--soft);border:1px solid var(--line);font-weight:600}
+.chip b{color:var(--acc2)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.grid2>*{min-width:0}
+.ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:10px 0}
+.ctrl label{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button,select,input[type=text]{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px 12px}
+button{cursor:pointer}
+button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+input[type=range]{accent-color:var(--acc);width:200px;max-width:100%}
+input[type=text]{width:150px}
+.note{background:var(--soft);border-left:4px solid var(--acc2);border-radius:8px;padding:9px 13px;margin:10px 0}
+.stat{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
+.stat div{background:var(--soft);border-radius:10px;padding:6px 12px}
+.stat b{color:var(--acc)}
+canvas{display:block;width:100%;border-radius:10px}
+.scroll{overflow-x:auto;max-width:100%}
+/* flow */
+.flow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;margin:12px 0;overflow-x:auto}
+.fcol{display:flex;flex-direction:column;align-items:center;gap:4px}
+.fcol.mid{gap:44px}
+.fbox{background:var(--soft);border:2px solid var(--acc);border-radius:10px;padding:6px 12px;font-weight:700;white-space:nowrap;font-family:"Times New Roman",serif;font-size:1.05rem}
+.fbox.alt{border-color:var(--acc2)}
+.fdown{color:var(--mute);font-size:.85rem}
+.farr{font-size:.88rem;font-weight:600;text-align:center;white-space:nowrap}
+.farr.slow{color:var(--bad)}.farr.fast{color:var(--ok)}
+/* verify table */
+.vt{border-collapse:separate;border-spacing:3px;font-variant-numeric:tabular-nums}
+.vt th{color:var(--mute);font-weight:600;white-space:nowrap;text-align:right;padding-right:8px;font-size:.9rem}
+.vt td{min-width:66px;height:40px;text-align:center;border:1px solid var(--line);border-radius:6px;font-size:.86rem;line-height:1.2;padding:2px 4px}
+.vt td.e{border-color:transparent;color:var(--mute)}
+.vt td.x{background:rgba(47,111,214,.12)}
+.vt td.h{background:rgba(224,122,31,.18)}
+.vt td.pz{color:var(--mute);border-style:dashed}
+.vt td.f{background:var(--soft)}
+.vt td.yf{background:var(--hl);font-weight:600}
+.vt td.yt{font-weight:700}
+.vt td.good{background:rgba(31,157,107,.16);border-color:var(--ok)}
+.vt td.badc{background:rgba(214,51,79,.12);border-color:var(--bad)}
+.vt td.lin{color:var(--mute)}
+.vt .wrap{color:var(--bad);font-size:.78rem}
+.vt tr.hid td,.vt tr.hid th{visibility:hidden}
+.vt td.pulse{animation:pulse .8s ease}
+@keyframes pulse{50%{transform:scale(1.1)}}
+.chip.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
+.chip.on b{color:#fff}
+.prog{height:8px;background:var(--soft);border-radius:99px;overflow:hidden;margin:8px 0}
+.prog div{height:100%;background:var(--acc2);width:0;transition:width .3s}
+.explain{background:var(--soft);border-radius:10px;padding:10px 14px;min-height:3.2em}
+.code{background:var(--code);color:var(--codeink);border-radius:12px;padding:10px 0;font-family:Consolas,"Courier New",monospace;font-size:.86rem;overflow-x:auto}
+.code .ln{padding:0 14px;white-space:pre;border-left:4px solid transparent}
+.code .ln.on{background:rgba(255,162,85,.22);border-left-color:#ffa255}
+.code .cm{color:#8fa1b3}
+.out{background:var(--code);color:#b8f5c9;border-radius:12px;padding:10px 14px;font-family:Consolas,"Courier New",monospace;font-size:.86rem;white-space:pre;overflow-x:auto;margin-top:8px;min-height:3em}
+.kern{display:inline-grid;grid-template-columns:repeat(3,48px);gap:3px;font-variant-numeric:tabular-nums}
+.kern div{background:var(--soft);border:1px solid var(--line);border-radius:6px;text-align:center;padding:4px 0;font-size:.9rem}
+.imgs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.imgs>*{min-width:0}
+.imgs canvas{image-rendering:pixelated;cursor:crosshair;aspect-ratio:1/1}
+.cap{text-align:center;color:var(--mute);font-size:.9rem;margin-top:4px}
+.patch{border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.85rem}
+.patch td{border:1px solid var(--line);padding:3px 6px;text-align:center;min-width:44px}
+/* quiz */
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.q .qt{font-weight:700;margin-bottom:8px}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;padding:8px 12px;border-radius:10px}
+.opt.right{border-color:var(--ok);background:rgba(31,157,107,.14)}
+.opt.wrong{border-color:var(--bad);background:rgba(214,51,79,.12)}
+.opt:disabled{cursor:default;color:var(--ink)}
+.fb{margin-top:6px}
+.fb.good{color:var(--ok)}.fb.bad{color:var(--bad)}
+.score{font-size:1.15rem;font-weight:700;margin-top:10px}
+footer{text-align:center;color:var(--mute);margin-top:30px;font-size:.9rem}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.9rem;color:var(--mute);margin:4px 0}
+.legend span::before{content:"";display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+/* avatar */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:top center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:top center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+@media (max-width:700px){.grid2,.imgs{grid-template-columns:minmax(0,1fr)}header h1{font-size:1.5rem}.card{padding:16px 14px}}
+</style>
+<style id="pu-badge-style">
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line,#e3e1da);border-radius:12px;background:var(--card,var(--surface,#fff));color:var(--ink,#1d2330);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif}
+.pu-badge img{width:58px;height:58px;display:block}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute,var(--muted,#667085))}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main">
+  <h1>卷積定理（Convolution Theorem）的公式與涵義</h1>
+  <p>智慧醫療 ・ 互動教學：時間域的卷積 = 頻率域的相乘——從頻譜、濾波到 FFT 加速</p>
+</div>
+  <div class="pu-badge"><img alt="靜宜大學校徽" src="data:image/webp;base64,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"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+  <h2><span class="num">0</span>卷積定理：一句話直覺</h2>
+  <div class="intro">
+    <div>
+      <p><b>時間域裡費工的「卷積」，換到頻率域就變成簡單的「逐點相乘」。</b></p>
+      <div class="formula">連續：&nbsp;𝓕{ <i>x</i> ∗ <i>h</i> }(<i>f</i>) = <i>X</i>(<i>f</i>) · <i>H</i>(<i>f</i>)</div>
+      <div class="formula">離散（<i>N</i> 點 DFT）：&nbsp;DFT{ <i>x</i> ⊛ <i>h</i> }[<i>k</i>] = <i>X</i>[<i>k</i>] · <i>H</i>[<i>k</i>]</div>
+      <div class="formula">反過來也成立（對偶）：&nbsp;𝓕{ <i>x</i> · <i>h</i> }(<i>f</i>) = <i>X</i>(<i>f</i>) ∗ <i>H</i>(<i>f</i>)</div>
+      <div class="flow">
+        <div class="fcol"><div class="fbox">x[n], h[n]</div><div class="fdown">FFT ↓</div><div class="fbox alt">X[k], H[k]</div></div>
+        <div class="fcol mid"><div class="farr slow">── 卷積 x ∗ h（N·M 次乘法）──▶</div><div class="farr fast">── 逐點相乘 X·H（N 次乘法）──▶</div></div>
+        <div class="fcol"><div class="fbox">y[n]</div><div class="fdown">↑ 逆 FFT</div><div class="fbox alt">Y[k]</div></div>
+      </div>
+      <p class="mute" style="margin:0">𝓕 代表傅立葉轉換，<i>f</i> 為頻率（Hz）；⊛ 代表 N 點的環狀卷積。本頁依序看：頻率域與低通濾波（第 1 節）、用數字驗證定理（第 2 節）、醫療訊號濾波（第 3 節）、為什麼 FFT 卷積更快（第 4 節），最後小測驗（第 5 節）。</p>
+    </div>
+    <div class="avwrap"><div class="bubble" id="bub1">Bonjour！我是傅立葉老師。點我聽故事！</div><div class="av" id="av1" title="點我聽故事"></div></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+  <h2><span class="num">1</span>先認識頻率域：10 Hz + 20 Hz + 5 kHz，低通濾波後只剩低頻</h2>
+  <p>訊號由三個正弦波合成：10 Hz、20 Hz 是想保留的低頻訊號，5 kHz（5000 Hz）是高頻雜訊。傅立葉轉換把它們拆開成頻譜上的三根柱子；低通濾波器在頻率域把截止頻率以上的成分乘上 0，逆轉換回時間域後，就只剩 10 Hz 與 20 Hz 兩個正弦波。（取樣頻率 20480 Hz，顯示 0.2 秒。）</p>
+  <div class="ctrl">
+    <label>10 Hz 振幅 <input type="range" id="a1" min="0" max="1.5" step="0.1" value="1"><b id="a1v"></b></label>
+    <label>20 Hz 振幅 <input type="range" id="a2" min="0" max="1.5" step="0.1" value="0.6"><b id="a2v"></b></label>
+    <label>5 kHz 振幅 <input type="range" id="a3" min="0" max="1.5" step="0.1" value="0.5"><b id="a3v"></b></label>
+  </div>
+  <div class="ctrl">
+    <label>低通截止頻率 <input type="range" id="lc" min="0.7" max="4" step="0.01" value="2"><b id="lcv"></b></label>
+    <label><input type="checkbox" id="lon" checked> 套用低通濾波</label>
+  </div>
+  <div class="legend"><span style="--c:var(--mute)">x(t)：10 + 20 Hz + 5 kHz</span><span style="--c:var(--acc)">y(t)：低通濾波後</span><span style="--c:var(--ok)">10 Hz + 20 Hz（理論值，虛線）</span></div>
+  <canvas id="scv0"></canvas>
+  <div class="cap">時間域：5 kHz 振動太快，畫出來像一條粗帶包在低頻波形外面</div>
+  <div class="legend" style="margin-top:10px"><span style="--c:var(--mute)">|X(f)| 濾波前</span><span style="--c:var(--acc2)">|H(f)| 低通濾波器</span><span style="--c:var(--acc)">|Y(f)| = |X(f)|·|H(f)| 濾波後</span></div>
+  <canvas id="scv1"></canvas>
+  <div class="cap">頻率域（橫軸為對數刻度）：三個成分各自分開</div>
+  <div class="note" id="snote"></div>
+</section>
+
+<!-- 2 -->
+<section class="card">
+  <h2><span class="num">2</span>用數字驗證：FFT → 相乘 → 逆 FFT</h2>
+  <p>用第一頁的同一組例子，走「另一條路」：先做 FFT，在頻率域逐點相乘，再做逆 FFT，看看是不是和直接卷積一樣。也可以切換「不補零」，觀察會出什麼錯。</p>
+  <div class="ctrl">
+    <label>x = <input type="text" id="vx" value="1, 2, 3, 1"></label>
+    <label>h = <input type="text" id="vh" value="1, 0.5, 0.25"></label>
+    <button id="vset">套用</button>
+    <label>DFT 長度 <select id="vN"><option value="pad">N = len(x) + len(h) − 1（補零）</option><option value="nopad">N = max(len(x), len(h))（不補零）</option></select></label>
+  </div>
+  <div class="chips"><span class="chip" id="vc0"><b>①</b> 補零</span><span class="chip" id="vc1"><b>②</b> FFT</span><span class="chip" id="vc2"><b>③</b> 逐點相乘</span><span class="chip" id="vc3"><b>④</b> 逆 FFT</span><span class="chip" id="vc4"><b>⑤</b> 與直接卷積比對</span></div>
+  <div class="scroll"><table class="vt" id="vtab"></table></div>
+  <div class="ctrl">
+    <button id="v0">⟲ 重來</button><button id="vp">◀ 上一步</button><button id="vn" class="pri">下一步 ▶</button><button id="va">▶ 自動播放</button>
+  </div>
+  <div class="prog"><div id="vprog"></div></div>
+  <div class="explain" id="vexp"></div>
+  <div class="grid2" style="margin-top:12px">
+    <div><div class="code" id="vcode"></div></div>
+    <div><div class="out" id="vout" style="margin-top:0"></div></div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="card">
+  <h2><span class="num">3</span>涵義一：濾波 = 頻率域裡乘上 H(f)——去除 60 Hz 電源干擾</h2>
+  <p>生理訊號量測時，常混入市電的 60 Hz 干擾（台灣市電 60 Hz）。下面的訊號是 2 Hz 的慢波加上 60 Hz 干擾，取樣頻率 240 Hz。兩種濾波器分別從時間域、頻率域設計，但由卷積定理，它們都是「X(f) 乘上 H(f)」。</p>
+  <div class="ctrl">
+    <label>濾波器 <select id="fm"><option value="ma">移動平均（在時間域設計核 h）</option><option value="lp">理想低通（在頻率域設計 H）</option></select></label>
+    <label id="fwl">移動平均寬度 w = <input type="range" id="fw" min="1" max="15" step="1" value="3"><b id="fwv"></b> 點</label>
+    <label id="fcl" style="display:none">截止頻率 = <input type="range" id="fc" min="1" max="100" step="1" value="20"><b id="fcv"></b> Hz</label>
+  </div>
+  <div class="legend"><span style="--c:var(--mute)">x：含干擾的原始訊號</span><span style="--c:var(--acc)">y = x ∗ h</span></div>
+  <canvas id="fcv0"></canvas>
+  <div class="grid2" style="margin-top:10px">
+    <div><div class="legend"><span style="--c:var(--mute)">|X(f)|</span><span style="--c:var(--acc2)">|H(f)| 保留比例</span><span style="--c:var(--acc)">|Y(f)| = |X(f)|·|H(f)|</span></div><canvas id="fcv1"></canvas></div>
+    <div><div class="legend"><span style="--c:var(--acc3)">時間域的核 h[n]</span></div><canvas id="fcv2"></canvas><div class="cap" id="fkcap"></div></div>
+  </div>
+  <div class="stat"><div>60 Hz 干擾保留 |H(60)| = <b id="f60"></b></div><div>2 Hz 訊號保留 |H(2)| = <b id="f2"></b></div><div>兩條路的差 max|x⊛h − IFFT(X·H)| = <b id="fchk"></b></div></div>
+  <div class="note" id="fnote"></div>
+</section>
+
+<!-- 4 -->
+<section class="card">
+  <h2><span class="num">4</span>涵義二：長訊號、長核用 FFT 做卷積，快很多</h2>
+  <p>直接卷積每個輸出點都要乘 M 次，總共約 N·M 次乘法；改走「FFT → 相乘 → 逆 FFT」只需約 N log₂N 等級。訊號越長、核越長，差距越驚人——24 小時的 Holter 心電圖就有兩千多萬個取樣點。</p>
+  <div class="ctrl">
+    <label>訊號長度 N = 2^<input type="range" id="bn" min="8" max="25" step="1" value="15"><b id="bnv"></b></label>
+    <label>核長度 M = 2^<input type="range" id="bm" min="2" max="16" step="1" value="12"><b id="bmv"></b></label>
+  </div>
+  <div class="ctrl"><button data-n="2500" data-m="101">10 秒 ECG（250 Hz）</button><button data-n="21600000" data-m="1001">24 小時 Holter ECG</button><button data-n="3686400" data-m="513">1 小時 EEG（4 通道 × 256 Hz）</button></div>
+  <canvas id="bcv"></canvas>
+  <div class="stat"><div>直接卷積 ≈ <b id="bd"></b> 次乘法</div><div>FFT 卷積 ≈ <b id="bf"></b> 次乘法</div><div>快了約 <b id="bx"></b> 倍</div></div>
+  <div class="ctrl"><button id="brun" class="pri">⏱ 在你的瀏覽器實測（N = 32768、M = 2048）</button><span id="bres" class="mute"></span></div>
+  <div class="note">乘法次數為估計值：FFT 卷積以 3 次長度 L（≥ N+M−1 的 2 的冪次）FFT 加上 L 次複數相乘計算，每次複數乘法算 4 次實數乘法。核很短（例如只有幾十到一兩百點）時，直接卷積反而比較划算；核越長，FFT 越划算。實務上很長的訊號會切成小段用 FFT 處理（overlap-add），會比這裡的估計更快。</div>
+</section>
+
+<!-- 5 -->
+<section class="card">
+  <h2><span class="num">5</span>觀念小測驗</h2>
+  <div class="qgrid">
+    <div><div id="quiz"></div><div class="score" id="qscore"></div><button id="qagain" style="display:none">再做一次</button></div>
+    <div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+  </div>
+</section>
+
+<footer>卷積定理互動教學 ・ 單一 HTML 檔，可離線開啟</footer>
+</div>
+
+<script>
+var $=function(id){return document.getElementById(id);};
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+var DRAW=[];
+function fit(cv,ratio,minH,maxH){cv.style.width='0px';var pe=cv.parentElement,ps=getComputedStyle(pe),w=Math.floor(pe.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight));cv.style.width=w+'px';
+  var h=Math.round(w*ratio);if(minH)h=Math.max(minH,h);if(maxH)h=Math.min(maxH,h);cv.style.height=h+'px';
+  var d=window.devicePixelRatio||1;cv.width=Math.round(w*d);cv.height=Math.round(h*d);var c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);return {c:c,w:w,h:h};}
+function axes(c,w,h,o){var L=o.l==null?42:o.l,R=o.r==null?12:o.r,T=o.t==null?12:o.t,B=o.b==null?26:o.b;
+  var X=function(x){return L+(x-o.x0)/(o.x1-o.x0)*(w-L-R);},Y=function(y){return h-B-(y-o.y0)/(o.y1-o.y0)*(h-T-B);};
+  c.clearRect(0,0,w,h);c.font='11px system-ui,sans-serif';c.lineWidth=1;
+  c.strokeStyle=css('--line');c.fillStyle=css('--mute');
+  (o.yt||[]).forEach(function(v){c.beginPath();c.moveTo(L,Y(v));c.lineTo(w-R,Y(v));c.stroke();c.textAlign='right';c.textBaseline='middle';c.fillText(o.yf?o.yf(v):v,L-5,Y(v));});
+  (o.xt||[]).forEach(function(v){c.textAlign='center';c.textBaseline='top';c.fillText(o.xf?o.xf(v):v,X(v),h-B+5);});
+  c.strokeStyle=css('--mute');c.beginPath();var y0=Y(Math.max(o.y0,Math.min(o.y1,0)));c.moveTo(L,y0);c.lineTo(w-R,y0);c.stroke();
+  if(o.xl){c.textAlign='right';c.textBaseline='bottom';c.fillText(o.xl,w-R,h-B-3);}
+  if(o.yl){c.textAlign='left';c.textBaseline='top';c.fillText(o.yl,L+4,T);}
+  return {X:X,Y:Y,L:L,R:R,T:T,B:B};}
+function path(c,xs,ys,A,col,lw,dash){c.strokeStyle=col;c.lineWidth=lw||2;c.setLineDash(dash||[]);c.beginPath();
+  for(var i=0;i<xs.length;i++){var px=A.X(xs[i]),py=A.Y(ys[i]);if(i)c.lineTo(px,py);else c.moveTo(px,py);}c.stroke();c.setLineDash([]);}
+function fmt(v,d){return (Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toString();}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gauss(r){var u=r()||1e-9,v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+
+/* ---------- 傅立葉老師 ---------- */
+var FOURIER_SVG='<svg viewBox="0 0 200 230" aria-label="傅立葉老師動畫"><g class="bodyg">'+
+ '<g fill="#4b3627"><circle cx="70" cy="82" r="21"/><circle cx="84" cy="62" r="21"/><circle cx="103" cy="56" r="22"/><circle cx="122" cy="62" r="21"/><circle cx="135" cy="82" r="20"/><circle cx="64" cy="104" r="15"/><circle cx="138" cy="104" r="15"/></g>'+
+ '<path d="M10 232 Q14 178 68 166 L132 166 Q186 178 190 232 Z" fill="#5d574d"/>'+
+ '<path d="M56 186 Q56 154 72 136 L88 168 Z" fill="#4a453d" stroke="#2f2b26" stroke-width="1"/>'+
+ '<path d="M144 186 Q144 154 128 136 L112 168 Z" fill="#4a453d" stroke="#2f2b26" stroke-width="1"/>'+
+ '<path d="M80 172 L100 232 L120 172 Z" fill="#ece5d6"/>'+
+ '<path d="M76 134 Q100 148 124 134 L128 170 Q100 182 72 170 Z" fill="#f7f3eb" stroke="#d6cdbd" stroke-width="1.2"/>'+
+ '<path d="M77 148 Q100 160 123 148 M76 160 Q100 172 124 160" stroke="#d6cdbd" stroke-width="1.2" fill="none"/>'+
+ '<path d="M93 176 q-7 5 0 10 q-7 6 0 11 q-7 6 0 11 q-6 6 1 10 L107 218 q6 -5 0 -10 q6 -6 0 -11 q7 -6 0 -11 q6 -5 -1 -10 Z" fill="#fbf9f4" stroke="#d6cdbd" stroke-width="1"/>'+
+ '<path d="M70 170 L86 172 L98 232 L78 232 Z" fill="#4f4a42"/><path d="M130 170 L114 172 L102 232 L122 232 Z" fill="#4f4a42"/>'+
+ '<g fill="#b39d5e"><ellipse cx="76" cy="180" rx="2.4" ry="5" transform="rotate(-30 76 180)"/><ellipse cx="82" cy="186" rx="2.4" ry="5" transform="rotate(35 82 186)"/><ellipse cx="80" cy="196" rx="2.4" ry="5" transform="rotate(-30 80 196)"/><ellipse cx="87" cy="202" rx="2.4" ry="5" transform="rotate(35 87 202)"/><ellipse cx="84" cy="213" rx="2.4" ry="5" transform="rotate(-30 84 213)"/><ellipse cx="91" cy="220" rx="2.4" ry="5" transform="rotate(35 91 220)"/><ellipse cx="64" cy="168" rx="2.2" ry="4.6" transform="rotate(-20 64 168)"/><ellipse cx="68" cy="156" rx="2.2" ry="4.6" transform="rotate(25 68 156)"/></g>'+
+ '<g fill="#8d826f" stroke="#5c5446" stroke-width="1"><circle cx="116" cy="186" r="3.6"/><circle cx="112.5" cy="203" r="3.6"/><circle cx="109" cy="220" r="3.6"/></g>'+
+ '<ellipse cx="64" cy="106" rx="6" ry="10" fill="#e6b896"/><ellipse cx="136" cy="106" rx="6" ry="10" fill="#e6b896"/>'+
+ '<ellipse cx="100" cy="104" rx="36" ry="39" fill="#f2caa8"/>'+
+ '<path d="M88 140 Q100 145 112 140" stroke="#dba886" stroke-width="1.5" fill="none" stroke-linecap="round"/>'+
+ '<ellipse class="blush" cx="80" cy="119" rx="7" ry="4.5" fill="#f08080"/><ellipse class="blush" cx="120" cy="119" rx="7" ry="4.5" fill="#f08080"/>'+
+ '<g fill="#4b3627"><circle cx="74" cy="74" r="12"/><circle cx="88" cy="67" r="12"/><circle cx="103" cy="65" r="12.5"/><circle cx="117" cy="68" r="12"/><circle cx="129" cy="77" r="11"/><circle cx="84" cy="77" r="7.5"/><circle cx="97" cy="75" r="7"/><circle cx="111" cy="76" r="7"/></g>'+
+ '<g stroke="#2c1e14" stroke-width="1.6" fill="none" stroke-linecap="round"><path d="M78 62 q6 -5 9 1 q1 5 -4 5"/><path d="M98 52 q7 -4 9 2 q1 5 -5 4"/><path d="M118 58 q6 -3 8 3 q0 5 -5 4"/><path d="M60 84 q-3 -7 3 -9 q5 0 4 5"/><path d="M138 86 q4 -6 -2 -9 q-5 0 -4 5"/><path d="M90 78 q4 -4 7 0"/><path d="M106 79 q4 -4 7 0"/><path d="M66 98 q-4 -4 0 -8"/><path d="M134 98 q4 -4 0 -8"/></g>'+
+ '<g class="hairL" fill="#4b3627"><circle cx="64" cy="94" r="11"/><circle cx="61" cy="110" r="9"/><path d="M58 106 q-3 5 2 8" stroke="#2c1e14" stroke-width="1.4" fill="none"/></g>'+
+ '<g class="hairR" fill="#4b3627"><circle cx="136" cy="94" r="11"/><circle cx="139" cy="110" r="9"/><path d="M142 106 q3 5 -2 8" stroke="#2c1e14" stroke-width="1.4" fill="none"/></g>'+
+ '<path class="brow browL" d="M76 87 Q84 82 93 86" stroke="#3a2a1e" stroke-width="3.2" fill="none" stroke-linecap="round"/>'+
+ '<path class="brow browR" d="M107 86 Q116 82 124 87" stroke="#3a2a1e" stroke-width="3.2" fill="none" stroke-linecap="round"/>'+
+ '<g class="eyes"><ellipse cx="85" cy="98" rx="5.6" ry="3.7" fill="#fff"/><ellipse cx="115" cy="98" rx="5.6" ry="3.7" fill="#fff"/>'+
+ '<circle cx="85.6" cy="98.2" r="2.9" fill="#4a2f1f"/><circle cx="115.6" cy="98.2" r="2.9" fill="#4a2f1f"/>'+
+ '<circle cx="86.6" cy="97.1" r="1" fill="#fff"/><circle cx="116.6" cy="97.1" r="1" fill="#fff"/>'+
+ '<path d="M79 96 Q85 92.5 91 96 M109 96 Q115 92.5 121 96" stroke="#3a2a1e" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>'+
+ '<path d="M100 101 Q97 115 100 120 Q104 122 108 119" stroke="#c9967a" stroke-width="2.2" fill="none" stroke-linecap="round"/>'+
+ '<path class="mo n" d="M89 129 Q100 134 112 128" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/>'+
+ '<path class="mo s" d="M87 126 Q100 141 113 126 Q100 131 87 126 Z" fill="#9b3a2c" stroke="#8a4a3a" stroke-width="1.5" stroke-linejoin="round"/>'+
+ '<path class="mo f" d="M89 133 Q100 125 111 133" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/>'+
+ '<path class="sweat" d="M138 72 Q143 82 138 86 Q133 82 138 72 Z" fill="#7cc3f0"/>'+
+ '<text class="spark" x="30" y="44" font-size="18" fill="#f0b400">✦</text><text class="spark" x="160" y="40" font-size="14" fill="#f0b400">✦</text><text class="spark" x="170" y="96" font-size="11" fill="#f0b400">✦</text>'+
+ '</g></svg>';
+function makeAvatar(el,bubble){
+  el.innerHTML=FOURIER_SVG; var tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood:function(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold) tm=setTimeout(function(){el.classList.remove('smile','frown');bubble.className='bubble';},3200);}};
+}
+var AV1=makeAvatar($('av1'),$('bub1')), AV2=makeAvatar($('av2'),$('bub2'));
+
+var QUOTES=[
+ '我 1768 年生於法國歐塞爾，很小就成了孤兒，是學校的老師們發現並栽培了我的數學天分。',
+ '1822 年我出版《熱的解析理論》，主張任何函數都能拆成三角函數的和——這就是第 1 節「把訊號拆成正弦波」的源頭。',
+ '當年拉格朗日等大師質疑我的三角級數不夠嚴謹，後來的數學家花了很多年才把它的理論補完整。',
+ '我研究的其實是熱，不是卷積定理；但「拆成各種頻率來看」這個想法，正是今天卷積定理與濾波器的基礎。',
+ '1965 年庫利（Cooley）與圖基（Tukey）發表 FFT 演算法，讓我的轉換能在電腦上飛快計算。據考證，高斯在 1805 年左右就寫下過類似的方法，只是沒有正式發表！',
+ '我也曾隨拿破崙遠征埃及，回國後在格勒諾布爾當省長。艾菲爾鐵塔上刻的 72 位科學家名字裡也有我。'];
+var qi=0;$('av1').addEventListener('click',function(){AV1.mood('smile',QUOTES[qi++%QUOTES.length]);});
+
+/* ---------- 共用：DFT 與 FFT ---------- */
+function dft(re,im,inv){var N=re.length,R=new Array(N),I=new Array(N),sg=inv?1:-1;
+  for(var k=0;k<N;k++){var a=0,b=0;for(var n=0;n<N;n++){var t=sg*2*Math.PI*k*n/N,c=Math.cos(t),s=Math.sin(t),xr=re[n],xi=im?im[n]:0;a+=xr*c-xi*s;b+=xr*s+xi*c;}
+    R[k]=inv?a/N:a;I[k]=inv?b/N:b;}return {re:R,im:I};}
+function fft(re,im,inv){var n=re.length,i,j,k,len;for(i=1,j=0;i<n;i++){var bit=n>>1;for(;j&bit;bit>>=1)j^=bit;j^=bit;if(i<j){var t=re[i];re[i]=re[j];re[j]=t;t=im[i];im[i]=im[j];im[j]=t;}}
+  for(len=2;len<=n;len<<=1){var ang=2*Math.PI/len*(inv?1:-1),wr=Math.cos(ang),wi=Math.sin(ang);
+    for(i=0;i<n;i+=len){var cr=1,ci=0;for(k=0;k<len/2;k++){var a=i+k,b=a+len/2,tr=re[b]*cr-im[b]*ci,ti=re[b]*ci+im[b]*cr;
+      re[b]=re[a]-tr;im[b]=im[a]-ti;re[a]+=tr;im[a]+=ti;var nr=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=nr;}}}
+  if(inv)for(i=0;i<n;i++){re[i]/=n;im[i]/=n;}}
+function zeros(n){var a=new Array(n);for(var i=0;i<n;i++)a[i]=0;return a;}
+
+/* ---------- 1 頻譜直覺 ---------- */
+var S1=(function(){var fs=20480,N=4096,t=[];for(var n=0;n<N;n++)t.push(n/fs);return {fs:fs,N:N,t:t,f:[10,20,5000]};})();
+function sdraw(){var a=[+$('a1').value,+$('a2').value,+$('a3').value],fc=Math.pow(10,+$('lc').value),on=$('lon').checked,N=S1.N,fs=S1.fs,n,k;
+  $('a1v').textContent=' '+a[0].toFixed(1);$('a2v').textContent=' '+a[1].toFixed(1);$('a3v').textContent=' '+a[2].toFixed(1);
+  $('lcv').textContent=' '+(fc>=1000?(fc/1000).toFixed(2)+' kHz':Math.round(fc)+' Hz');
+  var re=zeros(N),im=zeros(N),low=[];
+  for(n=0;n<N;n++){var tt=S1.t[n],v=0;for(var i=0;i<3;i++)v+=a[i]*Math.sin(2*Math.PI*S1.f[i]*tt);re[n]=v;low.push(a[0]*Math.sin(2*Math.PI*10*tt)+a[1]*Math.sin(2*Math.PI*20*tt));}
+  var x=re.slice();fft(re,im,false);var Xr=re.slice(),Xi=im.slice(),H=zeros(N);
+  for(k=0;k<N;k++){var f=Math.min(k,N-k)*fs/N;H[k]=(!on||f<=fc)?1:0;re[k]*=H[k];im[k]*=H[k];}
+  var Yr=re.slice(),Yi=im.slice();fft(re,im,true);var y=re;
+  var ym=Math.max(1.2,(a[0]+a[1]+a[2])*1.1);
+  var F=fit($('scv0'),0.3,190,290),c=F.c,A=axes(c,F.w,F.h,{x0:0,x1:0.2,y0:-ym,y1:ym,xt:[0,0.05,0.1,0.15,0.2],xf:function(v){return v+' s';},yt:[-1,0,1]});
+  path(c,S1.t,x,A,css('--mute'),0.8);c.globalAlpha=1;
+  path(c,S1.t,y,A,css('--acc'),2.6);path(c,S1.t,low,A,css('--ok'),1.6,[6,5]);
+  var lx=function(f){return Math.log10(f);};
+  var F2=fit($('scv1'),0.3,190,280),c2=F2.c,B=axes(c2,F2.w,F2.h,{x0:lx(4),x1:lx(10240),y0:0,y1:1.7,xt:[1,2,3],xf:function(v){return Math.pow(10,v)>=1000?Math.pow(10,v)/1000+' kHz':Math.pow(10,v)+' Hz';},yt:[0,0.5,1,1.5],xl:'頻率 f'});
+  var hx=[],hy=[];for(var e=lx(4);e<=lx(10240);e+=0.005){hx.push(e);hy.push((!on||Math.pow(10,e)<=fc)?1:0);}
+  for(k=1;k<N/2;k++){var f2=k*fs/N,mx=2*Math.hypot(Xr[k],Xi[k])/N,my=2*Math.hypot(Yr[k],Yi[k])/N;if(mx<1e-6)continue;
+    var X0=B.X(lx(f2));c2.fillStyle=css('--mute');c2.globalAlpha=0.45;c2.fillRect(X0-7,B.Y(mx),14,B.Y(0)-B.Y(mx));c2.globalAlpha=1;
+    if(my>1e-6){c2.fillStyle=css('--acc');c2.fillRect(X0-4,B.Y(my),8,B.Y(0)-B.Y(my));}
+    c2.fillStyle=css('--ink');c2.font='12px system-ui';c2.textAlign='center';c2.textBaseline='bottom';c2.fillText((f2>=1000?f2/1000+'k':f2)+'Hz',X0,B.Y(mx)-3);}
+  path(c2,hx,hy,B,css('--acc2'),2.2);
+  if(on){c2.strokeStyle=css('--acc2');c2.setLineDash([4,4]);c2.beginPath();c2.moveTo(B.X(lx(fc)),B.Y(0));c2.lineTo(B.X(lx(fc)),B.Y(1.6));c2.stroke();c2.setLineDash([]);
+    c2.fillStyle=css('--acc2');c2.textAlign='left';c2.textBaseline='top';c2.fillText('截止 '+$('lcv').textContent.trim(),B.X(lx(fc))+4,B.Y(1.6));}
+  var err=0;for(n=0;n<N;n++)err=Math.max(err,Math.abs(y[n]-low[n]));
+  var note;
+  if(!on)note='目前沒有濾波：H(f) = 1 全部通過，y(t) 就是 x(t)。勾選「套用低通濾波」看看。';
+  else if(fc<10)note='截止頻率低於 10 Hz：連 10 Hz、20 Hz 都被乘上 0，訊號幾乎全被濾掉了。';
+  else if(fc<20)note='截止頻率介於 10 與 20 Hz 之間：只剩 10 Hz，連想保留的 20 Hz 也被濾掉了。';
+  else if(fc<5000)note='✔ 截止頻率在 20 Hz 與 5 kHz 之間：Y(f) = X(f)·H(f) 只留下 10 Hz 與 20 Hz，5 kHz 被乘上 0。藍線 y(t) 和 10 Hz + 20 Hz 的理論值（綠色虛線）重合，最大差 '+err.toExponential(1)+'。';
+  else note='截止頻率高於 5 kHz：H(5 kHz) = 1，高頻雜訊也通過了，粗帶還在。把截止頻率調低一點。';
+  $('snote').innerHTML=note;}
+DRAW.push(sdraw);['a1','a2','a3','lc','lon'].forEach(function(id){$(id).addEventListener('input',sdraw);});
+
+/* ---------- 2 數字驗證 ---------- */
+var V={x:[1,2,3,1],h:[1,0.5,0.25],s:0,timer:null};
+function cnum(v){var r=Math.round(v*1000)/1000;if(Object.is(r,-0)||Math.abs(r)<5e-4)r=0;return String(r).replace('-','−');}
+function cfmt(re,im){var a=cnum(re),b=cnum(Math.abs(im));if(b==='0')return a;return a+'<br>'+(im<0?'−':'+')+b+'j';}
+function pyList(a){return '['+a.map(function(v){return String(v);}).join(', ')+']';}
+function npfmt(a){var parts=a.map(function(v){var s=(Math.abs(v)<1e-12?0:v).toFixed(8).replace(/0+$/,'');var i=s.indexOf('.');return [s.slice(0,i),s.slice(i+1)];});
+  var di=Math.max.apply(null,parts.map(function(p){return p[0].length;})),df=Math.max.apply(null,parts.map(function(p){return p[1].length;}));
+  return '['+parts.map(function(p){var s=p[0];while(s.length<di)s=' '+s;var f=p[1];while(f.length<df)f+=' ';return s+'.'+f;}).join(' ')+']';}
+function vcalc(){var x=V.x,h=V.h,L=x.length+h.length-1,N=$('vN').value==='pad'?L:Math.max(x.length,h.length);
+  var xp=zeros(N),hp=zeros(N),i,k;for(i=0;i<x.length&&i<N;i++)xp[i]=x[i];for(i=0;i<h.length&&i<N;i++)hp[i]=h[i];
+  var X=dft(xp,null,false),H=dft(hp,null,false),Yr=[],Yi=[];for(k=0;k<N;k++){Yr.push(X.re[k]*H.re[k]-X.im[k]*H.im[k]);Yi.push(X.re[k]*H.im[k]+X.im[k]*H.re[k]);}
+  var y=dft(Yr,Yi,true).re,lin=zeros(L);for(i=0;i<x.length;i++)for(k=0;k<h.length;k++)lin[i+k]+=x[i]*h[k];
+  return {N:N,L:L,xp:xp,hp:hp,X:X,H:H,Yr:Yr,Yi:Yi,y:y,lin:lin};}
+var VCODE=['import numpy as np','x = np.array(XL); h = np.array(HL)','N = NEXPR','X = np.fft.fft(x, N)        <span class="cm"># ② FFT（長度不足 N 會自動補零）</span>','H = np.fft.fft(h, N)','Y = X * H                    <span class="cm"># ③ 頻率域逐點相乘</span>','y = np.fft.ifft(Y).real      <span class="cm"># ④ 逆 FFT 回到時間域</span>','print(np.round(y, 4))','print(np.convolve(x, h))     <span class="cm"># ⑤ 直接卷積，對照</span>'];
+function r4(v){var r=Math.round(v*1e4)/1e4;return Math.abs(r)<1e-12?0:r;}
+function vrender(){var R=vcalc(),N=R.N,L=R.L,s=V.s,k,h='';
+  var row=function(lab,cells,cls,show){return '<tr class="'+(show?'':'hid')+'"><th>'+lab+'</th>'+cells.map(function(c,i){return '<td class="'+(typeof cls==='function'?cls(i):cls)+'">'+c+'</td>';}).join('')+'</tr>';};
+  h+='<tr><th>k</th>'+R.xp.map(function(_,i){return '<td class="e">'+i+'</td>';}).join('')+'</tr>';
+  h+=row('x[k]（補零後）',R.xp.map(cnum),function(i){return i<V.x.length?'x':'pz';},true);
+  h+=row('h[k]（補零後）',R.hp.map(cnum),function(i){return i<V.h.length?'h':'pz';},true);
+  h+=row('X[k] = FFT(x)',R.X.re.map(function(r,i){return cfmt(r,R.X.im[i]);}),'f',s>=1);
+  h+=row('H[k] = FFT(h)',R.H.re.map(function(r,i){return cfmt(r,R.H.im[i]);}),'f',s>=1);
+  h+=row('Y[k] = X[k]·H[k]',R.Yr.map(function(r,i){return cfmt(r,R.Yi[i]);}),'yf'+(s===2?' pulse':''),s>=2);
+  var ok=R.y.map(function(v,i){return Math.abs(v-(R.lin[i]||0))<1e-9;});
+  h+=row('y[k] = IFFT(Y)',R.y.map(cnum),function(i){return 'yt'+(s>=4?(ok[i]&&N>=L?' good':(ok[i]?' good':' badc')):'')+(s===3?' pulse':'');},s>=3);
+  var linCells=[];for(k=0;k<N;k++){var v=cnum(R.lin[k]);if(N<L){var extra=[];for(var m=k+N;m<L;m+=N)extra.push(cnum(R.lin[m]));if(extra.length)v+='<br><span class="wrap">+'+extra.join('+')+' ↩</span>';}linCells.push(v);}
+  h+=row(N<L?'np.convolve（繞回後）':'np.convolve(x, h)',linCells,'lin',s>=4);
+  $('vtab').innerHTML=h;
+  for(k=0;k<5;k++)$('vc'+k).classList.toggle('on',k===s);
+  $('vprog').style.width=(s/4*100)+'%';
+  var allOk=N>=L,ex;
+  if(s===0)ex='<b>① 補零：</b>DFT 會把訊號當成「週期重複」來處理。為了讓結果等於一般的（線性）卷積，要把 x、h 都補零到長度 N = '+(N>=L?'len(x)+len(h)−1 = '+L:N+'（目前選了不補零，只有 '+N+'，比需要的 '+L+' 少）')+'。灰色的 0 就是補上去的。';
+  else if(s===1)ex='<b>② FFT：</b>分別把 x、h 轉到頻率域，得到 X[k]、H[k]。它們一般是複數（j 是虛數單位）：大小代表該頻率的含量，角度代表相位。k = 0 是直流成分，正好等於全部加總（X[0] = '+cnum(R.X.re[0])+'）。';
+  else if(s===2)ex='<b>③ 逐點相乘：</b>同一個 k 的 X[k] 和 H[k] 相乘，只要 N = '+N+' 次複數乘法，不用滑來滑去！例如 Y[0] = '+cnum(R.X.re[0])+' × '+cnum(R.H.re[0])+' = '+cnum(R.Yr[0])+'。';
+  else if(s===3)ex='<b>④ 逆 FFT：</b>把 Y[k] 轉回時間域。虛部只剩極小的計算誤差，取實部就是 y[k]。';
+  else ex=allOk?'<b>⑤ 比對：</b>✔ 和 np.convolve 直接卷積的結果完全一樣！這就是卷積定理：<b>時間域卷積 = 頻率域相乘</b>。':'<b>⑤ 比對：</b>✘ 不一樣！N = '+N+' 不夠長，DFT 算出來的是<b>環狀卷積</b>：超出 N 的尾巴（↩）繞回前面加到開頭。要得到正確的線性卷積，N 至少要 len(x)+len(h)−1 = '+L+'。';
+  $('vexp').innerHTML=ex;
+  var on=[[0,1,2],[3,4],[5],[6,7],[8]][s];
+  var nexpr=$('vN').value==='pad'?'len(x) + len(h) - 1        <span class="cm"># ① 補零後長度 = '+N+'</span>':'max(len(x), len(h))        <span class="cm"># ① 沒有補夠，只有 '+N+'</span>';
+  $('vcode').innerHTML=VCODE.map(function(t,i){t=t.replace('XL',pyList(V.x)).replace('HL',pyList(V.h)).replace('NEXPR',nexpr);return '<div class="ln'+(on.indexOf(i)>=0?' on':'')+'">'+t+'</div>';}).join('');
+  var out=[];if(s>=3)out.push(npfmt(R.y.map(r4)));if(s>=4)out.push(npfmt(R.lin));
+  $('vout').textContent=out.length?out.join('\n'):'# 執行到 ④ 才會有輸出';}
+function vstop(){clearInterval(V.timer);V.timer=null;$('va').textContent='▶ 自動播放';}
+$('vn').onclick=function(){vstop();V.s=Math.min(4,V.s+1);vrender();};$('vp').onclick=function(){vstop();V.s=Math.max(0,V.s-1);vrender();};
+$('v0').onclick=function(){vstop();V.s=0;vrender();};
+$('va').onclick=function(){if(V.timer){vstop();return;}if(V.s>=4)V.s=0;vrender();$('va').textContent='⏸ 暫停';V.timer=setInterval(function(){if(V.s>=4){vstop();return;}V.s++;vrender();},1600);};
+function parseSeq(s){var a=s.split(/[,，\s]+/).filter(function(t){return t!=='';}).map(Number);if(!a.length||a.length>6||a.some(isNaN))return null;return a;}
+$('vset').onclick=function(){var x=parseSeq($('vx').value),h=parseSeq($('vh').value);if(!x||!h){$('vexp').innerHTML='<span style="color:var(--bad)">請輸入 1–6 個數字，以逗號分隔。</span>';return;}vstop();V.x=x;V.h=h;V.s=0;vrender();};
+$('vN').onchange=function(){vrender();};
+
+/* ---------- 3 濾波 ---------- */
+var FL=(function(){var fs=240,N=240,x=[],t=[];for(var n=0;n<N;n++){var tt=n/fs;t.push(tt);x.push(Math.sin(2*Math.PI*2*tt)+0.5*Math.sin(2*Math.PI*60*tt));}var X=dft(x,null,false);return {fs:fs,N:N,x:x,t:t,X:X};})();
+function fdraw(){var N=FL.N,mode=$('fm').value,hk=zeros(N),Hr=zeros(N),Hi=zeros(N),k,n;
+  $('fwl').style.display=mode==='ma'?'':'none';$('fcl').style.display=mode==='lp'?'':'none';
+  var w=+$('fw').value,fc=+$('fc').value;$('fwv').textContent=' '+w;$('fcv').textContent=' '+fc;
+  if(mode==='ma'){for(n=0;n<w;n++)hk[n]=1/w;var H=dft(hk,null,false);Hr=H.re;Hi=H.im;}
+  else{for(k=0;k<N;k++){var f=Math.min(k,N-k);Hr[k]=f<=fc?1:0;}hk=dft(Hr,Hi,true).re;}
+  var Yr=[],Yi=[];for(k=0;k<N;k++){Yr.push(FL.X.re[k]*Hr[k]-FL.X.im[k]*Hi[k]);Yi.push(FL.X.re[k]*Hi[k]+FL.X.im[k]*Hr[k]);}
+  var y=dft(Yr,Yi,true).re,yt=[],err=0;
+  for(n=0;n<N;n++){var s=0;for(var m=0;m<N;m++){if(hk[m]!==0)s+=hk[m]*FL.x[(n-m+N)%N];}yt.push(s);err=Math.max(err,Math.abs(s-y[n]));}
+  var F=fit($('fcv0'),0.26,170,250),c=F.c,A=axes(c,F.w,F.h,{x0:0,x1:1,y0:-1.7,y1:1.7,xt:[0,0.25,0.5,0.75,1],xf:function(v){return v+' s';},yt:[-1,0,1]});
+  path(c,FL.t,FL.x,A,css('--mute'),1.2);path(c,FL.t,yt,A,css('--acc'),2.4);
+  var F2=fit($('fcv1'),0.6,190,300),c2=F2.c,B=axes(c2,F2.w,F2.h,{x0:-2,x1:122,y0:0,y1:1.15,xt:[0,20,40,60,80,100,120],xf:function(v){return v+'Hz';},yt:[0,0.5,1]});
+  var bw=Math.max(2,(B.X(1)-B.X(0))*1.6),mH=[],ks=[];
+  for(k=0;k<=120;k++){var mx=2*Math.hypot(FL.X.re[k],FL.X.im[k])/N,my=2*Math.hypot(Yr[k],Yi[k])/N;ks.push(k);mH.push(Math.hypot(Hr[k],Hi[k]));
+    if(mx>1e-6){c2.fillStyle=css('--mute');c2.globalAlpha=0.45;c2.fillRect(B.X(k)-bw/2,B.Y(mx),bw,B.Y(0)-B.Y(mx));c2.globalAlpha=1;}
+    if(my>1e-6){c2.fillStyle=css('--acc');c2.fillRect(B.X(k)-bw/2,B.Y(my),bw,B.Y(0)-B.Y(my));}}
+  path(c2,ks,mH,B,css('--acc2'),2.2);
+  var F3=fit($('fcv2'),0.6,190,300),c3=F3.c,hs=[],is=[],hmx=0,hmn=0;for(n=-30;n<=30;n++){var v=hk[(n+N)%N];is.push(n);hs.push(v);hmx=Math.max(hmx,v);hmn=Math.min(hmn,v);}
+  var C=axes(c3,F3.w,F3.h,{x0:-31,x1:31,y0:Math.min(0,hmn*1.2),y1:hmx*1.2,xt:[-30,-20,-10,0,10,20,30],yt:[0]});
+  c3.strokeStyle=css('--acc3');c3.fillStyle=css('--acc3');c3.lineWidth=2;
+  for(n=0;n<is.length;n++){if(Math.abs(hs[n])<1e-9)continue;c3.beginPath();c3.moveTo(C.X(is[n]),C.Y(0));c3.lineTo(C.X(is[n]),C.Y(hs[n]));c3.stroke();c3.beginPath();c3.arc(C.X(is[n]),C.Y(hs[n]),2.8,0,7);c3.fill();}
+  $('fkcap').textContent=mode==='ma'?'移動平均的核：w 個 1/w（矩形）':'理想低通的核 = IFFT(H)：類似 sinc 的波紋形狀，往兩側延伸';
+  var h60=Math.hypot(Hr[60],Hi[60]),h2=Math.hypot(Hr[2],Hi[2]);$('f60').textContent=h60.toFixed(3);$('f2').textContent=h2.toFixed(3);$('fchk').textContent=err.toExponential(1);
+  var note;
+  if(mode==='ma')note=(w%4===0)?'✔ w = '+w+' 時 H(60 Hz) = 0：240 Hz ÷ '+w+' = '+(240/w)+' Hz，60 Hz 正好落在 H(f) 的零點，干擾<b>完全消失</b>'+(w>4?'，但 w 越大，2 Hz 慢波也開始被壓低。':'，2 Hz 慢波幾乎不受影響。'):'試試 w = 4：移動平均的 H(f) 在 240 ÷ w 的整數倍頻率為 0，w = 4 時零點正好落在 60 Hz。目前 |H(60)| = '+h60.toFixed(3)+'，干擾只被壓低一部分。';
+  else note=fc>=60?'截止頻率 ≥ 60 Hz：H(60) = 1，干擾原封不動通過。把截止頻率拉到 60 以下看看！':(fc<2?'截止頻率比 2 Hz 還低：連要保留的慢波也被濾掉了。':'✔ 在頻率域直接把 60 Hz 以上設成 0，干擾消失。注意右邊：這個「頻率域的乘法」在時間域就等於和右邊這個 sinc 狀的核做卷積——同一個卷積定理，從頻率域這一端來設計。');
+  $('fnote').innerHTML=note;}
+DRAW.push(fdraw);['fm','fw','fc'].forEach(function(id){$(id).addEventListener('input',fdraw);});
+
+/* ---------- 4 FFT 加速 ---------- */
+var BN={N:32768,M:4096};
+function nextPow2(n){var p=1;while(p<n)p*=2;return p;}
+function cost(N,M){var L=nextPow2(N+M-1);return {d:N*M,f:3*(L/2)*Math.log2(L)*4+4*L};}
+function big(v){if(v>=1e12)return (v/1e12).toFixed(1)+' 兆';if(v>=1e8)return (v/1e8).toFixed(1)+' 億';if(v>=1e4)return (v/1e4).toFixed(1)+' 萬';return Math.round(v).toString();}
+function bdraw(){var N=BN.N,M=BN.M;$('bnv').textContent=' → N = '+N.toLocaleString();$('bmv').textContent=' → M = '+M.toLocaleString();
+  var C=cost(N,M);$('bd').textContent=big(C.d);$('bf').textContent=big(C.f);var r=C.d/C.f;$('bx').textContent=r>=1?r.toFixed(r<10?1:0):'不到 1（直接卷積較快）';
+  var F=fit($('bcv'),0.36,210,320),c=F.c,ns=[],ds=[],fs=[];for(var e=8;e<=25;e+=0.25){var n=Math.pow(2,e);ns.push(e);ds.push(Math.log10(n*M));fs.push(Math.log10(cost(n,M).f));}
+  var A=axes(c,F.w,F.h,{x0:8,x1:25,y0:3,y1:14,xt:[8,10,12,14,16,18,20,22,24],xf:function(v){return '2^'+v;},yt:[4,6,8,10,12,14],yf:function(v){return '10^'+v;},l:46,xl:'訊號長度 N',yl:'乘法次數（對數刻度），M = '+M.toLocaleString()});
+  path(c,ns,ds,A,css('--bad'),2.4);path(c,ns,fs,A,css('--ok'),2.4);
+  var lx=Math.log2(N);c.fillStyle=css('--bad');c.beginPath();c.arc(A.X(lx),A.Y(Math.log10(C.d)),5,0,7);c.fill();c.fillStyle=css('--ok');c.beginPath();c.arc(A.X(lx),A.Y(Math.log10(C.f)),5,0,7);c.fill();
+  c.font='12px system-ui';c.textAlign='left';c.fillStyle=css('--bad');c.fillText('直接卷積 N·M',A.X(20.5),A.Y(Math.log10(Math.pow(2,20.5)*M))-10);c.fillStyle=css('--ok');c.fillText('FFT 卷積',A.X(21.5),A.Y(Math.log10(cost(Math.pow(2,21.5),M).f))+16);}
+DRAW.push(bdraw);
+$('bn').oninput=function(){BN.N=Math.pow(2,+this.value);bdraw();};$('bm').oninput=function(){BN.M=Math.pow(2,+this.value);bdraw();};
+document.querySelectorAll('[data-n]').forEach(function(b){b.onclick=function(){BN.N=+b.dataset.n;BN.M=+b.dataset.m;$('bn').value=Math.round(Math.log2(BN.N));$('bm').value=Math.round(Math.log2(BN.M));bdraw();};});
+$('brun').onclick=function(){var b=this;b.disabled=true;$('bres').textContent='計算中…';setTimeout(function(){
+  var N=32768,M=2048,r=rng(3),x=new Float64Array(N),h=new Float64Array(M),i,k;for(i=0;i<N;i++)x[i]=gauss(r);for(i=0;i<M;i++)h[i]=gauss(r);
+  var t0=performance.now(),L=N+M-1,yd=new Float64Array(L);for(i=0;i<N;i++){var xi=x[i];for(k=0;k<M;k++)yd[i+k]+=xi*h[k];}var td=performance.now()-t0;
+  t0=performance.now();var P=nextPow2(L),ar=zeros(P),ai=zeros(P),br=zeros(P),bi=zeros(P);for(i=0;i<N;i++)ar[i]=x[i];for(i=0;i<M;i++)br[i]=h[i];
+  fft(ar,ai,false);fft(br,bi,false);for(i=0;i<P;i++){var re=ar[i]*br[i]-ai[i]*bi[i],im=ar[i]*bi[i]+ai[i]*br[i];ar[i]=re;ai[i]=im;}fft(ar,ai,true);var tf=performance.now()-t0;
+  var err=0;for(i=0;i<L;i++)err=Math.max(err,Math.abs(ar[i]-yd[i]));
+  $('bres').innerHTML='直接卷積 <b>'+td.toFixed(1)+' ms</b>，FFT 卷積 <b>'+tf.toFixed(1)+' ms</b>（快 '+(td/tf).toFixed(1)+' 倍），兩者最大差 '+err.toExponential(1);b.disabled=false;},30);};
+
+/* ---------- 5 小測驗 ---------- */
+var QZ=[
+ {q:'卷積定理說：x ∗ h 的傅立葉轉換等於什麼？',a:'X(f) · H(f)',o:['X(f) + H(f)','X(f) · H(f)','X(f) ∗ H(f)','X(f) ÷ H(f)'],e:'時間域的卷積，到了頻率域就是逐點相乘。',h:'回到第 0 節看第一個公式。'},
+ {q:'反過來，兩個訊號在時間域「相乘」x(t)·h(t)，在頻率域對應的是？',a:'X(f) ∗ H(f)（頻譜的卷積）',o:['X(f) · H(f)','X(f) ∗ H(f)（頻譜的卷積）','X(f) − H(f)','沒有對應關係'],e:'卷積定理是雙向的（對偶）：一邊的卷積對應另一邊的相乘。',h:'第 0 節第三個公式：對偶。'},
+ {q:'用 DFT／FFT 計算 x 與 h 的一般（線性）卷積時，長度 N 至少要多少？',a:'len(x) + len(h) − 1，不夠要補零',o:['len(x) 就夠了','len(x) + len(h) − 1，不夠要補零','len(h) 就夠了','任何長度都一樣'],e:'N 不夠時 DFT 算出的是環狀卷積，尾巴會繞回前面，結果就錯了。',h:'在第 2 節切換成「不補零」，看第 ⑤ 步發生什麼事。'},
+ {q:'某個濾波器在 60 Hz 的 |H(60)| = 0，訊號裡的 60 Hz 干擾經過濾波後會怎樣？',a:'完全消失',o:['完全消失','變成兩倍','移到 0 Hz','保持不變'],e:'Y(60) = X(60) · H(60) = 0，那個頻率的成分被乘上 0。',h:'第 3 節把移動平均寬度設成 w = 4 試試。'},
+ {q:'某頻率的 |H(f)| ≈ 1，代表那個頻率的成分？',a:'幾乎原封不動通過',o:['被完全濾掉','幾乎原封不動通過','被放大十倍','頻率被改變'],e:'|H(f)| 就是「保留比例」：1 代表全留，0 代表全濾掉。',h:'把 |H(f)| 想成每根頻譜柱子要乘上的比例。'},
+ {q:'處理 24 小時 Holter 心電圖這種很長的訊號時，為什麼常用 FFT 做卷積？',a:'運算量從約 N·M 降到約 N log N 等級',o:['FFT 的結果比較精確','運算量從約 N·M 降到約 N log N 等級','FFT 不需要任何乘法','只有 FFT 能處理心電圖'],e:'結果相同（差異只在極小的捨入誤差），但訊號和核都長時，FFT 卷積快非常多。',h:'第 4 節按「24 小時 Holter ECG」看看快幾倍。'},
+ {q:'在頻率域設計的「理想低通」濾波器，回到時間域，它的核 h[n] 長什麼樣？',a:'中間高、兩側有波紋延伸的 sinc 狀',o:['只有一個點','中間高、兩側有波紋延伸的 sinc 狀','w 個相同的值','完全是 0'],e:'頻率域的矩形，經過逆傅立葉轉換就是 sinc：卷積定理把兩邊連起來。',h:'第 3 節切到「理想低通」，看右邊的核。'}];
+var PRAISE=['Très bien！完全正確！','Magnifique！觀念很清楚！','Bravo！你抓到重點了！','Parfait！就是這樣！'];
+var QS={ans:0,ok:0,streak:0};
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function qbuild(){QS={ans:0,ok:0,streak:0};$('qscore').textContent='';$('qagain').style.display='none';
+  $('quiz').innerHTML=QZ.map(function(z,i){return '<div class="q" data-i="'+i+'"><div class="qt">'+(i+1)+'. '+z.q+'</div>'+shuffle(z.o).map(function(o){return '<button class="opt">'+o+'</button>';}).join('')+'<div class="fb"></div></div>';}).join('');}
+$('quiz').addEventListener('click',function(e){var b=e.target.closest('.opt');if(!b||b.disabled)return;var box=b.closest('.q'),z=QZ[+box.dataset.i],ok=b.textContent===z.a;
+  box.querySelectorAll('.opt').forEach(function(o){o.disabled=true;if(o.textContent===z.a)o.classList.add('right');});
+  var fb=box.querySelector('.fb');QS.ans++;
+  if(ok){QS.ok++;QS.streak++;fb.className='fb good';fb.textContent='✔ 正確！'+z.e;
+    AV2.mood('smile',QS.streak>=3?'連續答對 '+QS.streak+' 題！你已經能在時間域和頻率域之間自由穿梭了！':PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+  else{QS.streak=0;b.classList.add('wrong');fb.className='fb bad';fb.textContent='✘ 正確答案是「'+z.a+'」。'+z.e;AV2.mood('frown',z.h);}
+  if(QS.ans===QZ.length){$('qscore').textContent='得分：'+QS.ok+' / '+QZ.length;$('qagain').style.display='inline-block';
+    setTimeout(function(){var r=QS.ok/QZ.length;
+      if(r===1)AV2.mood('smile','全對！Félicitations！卷積在時間域，相乘在頻率域，你都掌握了！',true);
+      else if(r>=0.7)AV2.mood('smile','很不錯！再回頭玩玩答錯題目的那一節，觀念就完整了。',true);
+      else AV2.mood('frown','別灰心！建議先從第 2 節一步一步走一次，再玩第 3 節的濾波。',true);},3300);}});
+$('qagain').onclick=function(){qbuild();AV2.mood('','新的一輪！選項順序已經打亂囉。');window.scrollTo({top:$('quiz').getBoundingClientRect().top+window.scrollY-80,behavior:'smooth'});};
+qbuild();
+
+/* ---------- 啟動與重畫 ---------- */
+function redrawAll(){DRAW.forEach(function(f){f();});}
+vrender();redrawAll();
+var rt=null;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(redrawAll,120);});
+if(window.matchMedia)window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawAll);
+new MutationObserver(redrawAll).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+</script>
+</body>
+</html>

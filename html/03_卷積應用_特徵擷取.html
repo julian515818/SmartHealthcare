@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>卷積特徵擷取</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;
+  --acc:#2f6fd6;--acc2:#e07a1f;--acc3:#8b5cf6;--soft:#f1efe8;--code:#1b1f29;--codeink:#e6e9f0;--hl:rgba(224,122,31,.18);}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+  --acc:#6ea2ff;--acc2:#ffa255;--acc3:#b69bff;--soft:#252a36;--code:#11141b;--codeink:#e6e9f0;--hl:rgba(255,162,85,.18);}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+  --acc:#6ea2ff;--acc2:#ffa255;--acc3:#b69bff;--soft:#252a36;--code:#11141b;--codeink:#e6e9f0;--hl:rgba(255,162,85,.18);}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:1.9rem;line-height:1.3}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-top:20px;min-width:0}
+.card h2{margin:0 0 12px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--acc);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.formula{background:var(--soft);border-radius:12px;padding:12px 16px;margin:10px 0;font-size:1.12rem;text-align:center;overflow-x:auto}
+.formula i{font-family:"Times New Roman",serif;font-size:1.15em}
+.big{font-size:1.6em;vertical-align:-.15em}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chip{padding:5px 12px;border-radius:999px;background:var(--soft);border:1px solid var(--line);font-weight:600}
+.chip b{color:var(--acc2)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.grid2>*{min-width:0}
+.ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:10px 0}
+.ctrl label{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button,select,input[type=text]{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px 12px}
+button{cursor:pointer}
+button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+input[type=range]{accent-color:var(--acc);width:200px;max-width:100%}
+input[type=text]{width:150px}
+.note{background:var(--soft);border-left:4px solid var(--acc2);border-radius:8px;padding:9px 13px;margin:10px 0}
+.stat{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
+.stat div{background:var(--soft);border-radius:10px;padding:6px 12px}
+.stat b{color:var(--acc)}
+canvas{display:block;width:100%;border-radius:10px}
+.scroll{overflow-x:auto;max-width:100%}
+/* feature */
+canvas.pix{image-rendering:pixelated}
+.kcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.kc{display:flex;gap:12px;align-items:center;border:2px solid var(--kc);border-radius:12px;padding:8px 12px;min-width:0}
+.kimg{width:84px;flex:none}
+.kpick{display:inline-flex;gap:6px;flex-wrap:wrap}
+.kpick button{border:2px solid var(--kc)}
+.kpick button.on{background:var(--kc);color:#fff}
+.pair{display:flex;align-items:center;gap:10px;justify-content:center}
+.pair>div:not(.op){width:120px}
+.op{font-size:1.6rem;color:var(--mute)}
+.hm3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.hm3>*{min-width:0}
+.dt{border-collapse:collapse;margin-top:8px;font-size:.9rem}
+.dt th,.dt td{padding:4px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+@media (max-width:700px){.kcards{grid-template-columns:minmax(0,1fr)}}
+.prog{height:8px;background:var(--soft);border-radius:99px;overflow:hidden;margin:8px 0}
+.prog div{height:100%;background:var(--acc2);width:0;transition:width .3s}
+.explain{background:var(--soft);border-radius:10px;padding:10px 14px;min-height:3.2em}
+.code{background:var(--code);color:var(--codeink);border-radius:12px;padding:10px 0;font-family:Consolas,"Courier New",monospace;font-size:.86rem;overflow-x:auto}
+.code .ln{padding:0 14px;white-space:pre;border-left:4px solid transparent}
+.code .ln.on{background:rgba(255,162,85,.22);border-left-color:#ffa255}
+.code .cm{color:#8fa1b3}
+.out{background:var(--code);color:#b8f5c9;border-radius:12px;padding:10px 14px;font-family:Consolas,"Courier New",monospace;font-size:.86rem;white-space:pre;overflow-x:auto;margin-top:8px;min-height:3em}
+.kern{display:inline-grid;grid-template-columns:repeat(3,48px);gap:3px;font-variant-numeric:tabular-nums}
+.kern div{background:var(--soft);border:1px solid var(--line);border-radius:6px;text-align:center;padding:4px 0;font-size:.9rem}
+.imgs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.imgs>*{min-width:0}
+.imgs canvas{image-rendering:pixelated;cursor:crosshair;aspect-ratio:1/1}
+.cap{text-align:center;color:var(--mute);font-size:.9rem;margin-top:4px}
+.patch{border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.85rem}
+.patch td{border:1px solid var(--line);padding:3px 6px;text-align:center;min-width:44px}
+/* quiz */
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.q .qt{font-weight:700;margin-bottom:8px}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;padding:8px 12px;border-radius:10px}
+.opt.right{border-color:var(--ok);background:rgba(31,157,107,.14)}
+.opt.wrong{border-color:var(--bad);background:rgba(214,51,79,.12)}
+.opt:disabled{cursor:default;color:var(--ink)}
+.fb{margin-top:6px}
+.fb.good{color:var(--ok)}.fb.bad{color:var(--bad)}
+.score{font-size:1.15rem;font-weight:700;margin-top:10px}
+footer{text-align:center;color:var(--mute);margin-top:30px;font-size:.9rem}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.9rem;color:var(--mute);margin:4px 0}
+.legend span::before{content:"";display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+/* avatar */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:top center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:top center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+@media (max-width:700px){.grid2,.imgs{grid-template-columns:minmax(0,1fr)}header h1{font-size:1.5rem}.card{padding:16px 14px}}
+</style>
+<style id="pu-badge-style">
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line,#e3e1da);border-radius:12px;background:var(--card,var(--surface,#fff));color:var(--ink,#1d2330);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif}
+.pu-badge img{width:58px;height:58px;display:block}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute,var(--muted,#667085))}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main">
+  <h1>卷積應用：特徵擷取（Feature Extraction）</h1>
+  <p>智慧醫療 ・ 互動教學：用耳朵、眼睛、鼻子三個卷積核，在熊貓影像上找出特徵位置</p>
+</div>
+  <div class="pu-badge"><img alt="靜宜大學校徽" src="data:image/webp;base64,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"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+  <h2><span class="num">0</span>卷積怎麼「看見」特徵？</h2>
+  <div class="intro">
+    <div>
+      <p><b>把一小塊「特徵的樣子」當成卷積核，在影像上滑動；哪裡的圖案和核越像，那裡的卷積輸出就越大。</b>輸出最大的位置，就是找到特徵的地方。</p>
+      <div class="formula">特徵圖（feature map）：&nbsp;<i>S</i>(<i>i</i>, <i>j</i>) = <span class="big">Σ</span><sub><i>u</i>,<i>v</i></sub> <i>I</i>(<i>i</i>+<i>u</i>, <i>j</i>+<i>v</i>) · <i>K</i>(<i>u</i>, <i>v</i>)</div>
+      <div class="chips"><span class="chip"><b>①</b> 影像 I 是數字矩陣</span><span class="chip"><b>②</b> 核 K = 特徵的小圖塊</span><span class="chip"><b>③</b> 滑動、相乘、加總</span><span class="chip"><b>④</b> 分數最高處 = 特徵位置</span></div>
+      <p class="mute" style="margin:0">本頁用一張熊貓 icon 當輸入，以「耳朵、眼睛、鼻子」三個核去找它們的位置。這正是卷積神經網路（CNN）擷取特徵的原理，也用在醫學影像中尋找病灶、器官位置等任務。（CNN 中的「卷積」實作上不翻轉核，也就是上面這個式子。）</p>
+    </div>
+    <div class="avwrap"><div class="bubble" id="bub1">Bonjour！我是楊立昆（Yann LeCun）。點我聽故事！</div><div class="av" id="av1" title="點我聽故事"></div></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+  <h2><span class="num">1</span>輸入影像與三個卷積核</h2>
+  <p>電腦看到的熊貓，其實是一個 <span id="dims"></span> 的灰階數字矩陣（0 = 黑、1 = 白）。把滑鼠移到右圖上可以看每個像素的數值。三個卷積核就是從影像中擷取的小圖塊（虛線框）。</p>
+  <div class="imgs">
+    <div><canvas id="g0" class="pix"></canvas><div class="cap">原始 icon（彩色）</div></div>
+    <div><canvas id="g1" class="pix"></canvas><div class="cap" id="g1cap">灰階數字矩陣（移動滑鼠看數值）</div></div>
+  </div>
+  <div class="kcards" id="kcards"></div>
+  <div class="ctrl"><label><input type="checkbox" id="ksym" checked> 核做左右對稱（擷取的圖塊與它的鏡像平均）</label></div>
+  <div class="note">為什麼要對稱？熊貓左右兩邊的耳朵、眼睛互為鏡像。只用左邊的圖塊當核，對右邊的分數會偏低；把圖塊和它的左右鏡像平均，核就左右對稱，兩邊都能找到。取消勾選後，到第 3 節看看差別。</div>
+</section>
+
+<!-- 2 -->
+<section class="card">
+  <h2><span class="num">2</span>核在影像上滑動：一格一格算分數</h2>
+  <p>選一個核，按「▶ 掃描」。左圖上移動的方框就是卷積核本身（半透明疊在影像上）；它每移動一格，就把框內的像素和核對應相乘再加總（這裡用正規化的版本，分數介於 −1 到 1，1 代表一模一樣）。右邊的特徵圖會一列一列長出來：越亮代表越像。也可以直接點左圖，看任一位置的分數。</p>
+  <div class="ctrl">
+    <span class="mute">卷積核：</span><span class="kpick" id="kpick"></span>
+    <button id="sscan" class="pri">▶ 掃描</button><button id="sreset">⟲ 重來</button>
+    <label>速度 <select id="sspd"><option value="1">慢</option><option value="4" selected>中</option><option value="16">快</option></select></label>
+  </div>
+  <div class="imgs">
+    <div><canvas id="s0" class="pix" style="cursor:crosshair"></canvas><div class="cap">輸入影像與目前的核位置</div></div>
+    <div><canvas id="s1" class="pix"></canvas><div class="cap">特徵圖 S(i, j)：越亮分數越高</div></div>
+  </div>
+  <div class="grid2" style="margin-top:12px;align-items:center">
+    <div class="pair"><div><canvas id="sp" class="pix zoom"></canvas><div class="cap">框內的影像</div></div><div class="op">⊙</div><div><canvas id="sk" class="pix zoom"></canvas><div class="cap">卷積核</div></div></div>
+    <div class="stat" style="flex-direction:column"><div id="spos">位置：—</div><div>這個位置的分數 <b id="sval">—</b></div><div>目前最高分 <b id="sbest">—</b></div><div class="mute" id="shint"></div></div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="card">
+  <h2><span class="num">3</span>三個核一起找：耳朵、眼睛、鼻子在哪裡？</h2>
+  <p>對每個核的特徵圖找出「區域最高點」，分數超過門檻的就標成偵測到的特徵。試著調門檻，或把計算方式換成「直接相乘加總」，看看會發生什麼事。</p>
+  <div class="ctrl">
+    <label>門檻 <input type="range" id="dth" min="0.5" max="0.98" step="0.01" value="0.75"><b id="dthv"></b></label>
+    <label>計算方式 <select id="dmode"><option value="ncc">正規化相關（去平均、除以標準差）</option><option value="raw">直接相乘加總（未正規化）</option></select></label>
+  </div>
+  <div class="grid2">
+    <div><canvas id="d0" class="pix"></canvas><div class="cap">偵測結果</div></div>
+    <div><div class="hm3"><div><canvas id="h_ear" class="pix"></canvas><div class="cap">耳朵核的特徵圖</div></div><div><canvas id="h_eye" class="pix"></canvas><div class="cap">眼睛核的特徵圖</div></div><div><canvas id="h_nose" class="pix"></canvas><div class="cap">鼻子核的特徵圖</div></div></div>
+      <div class="scroll"><table class="dt" id="dlist"></table></div></div>
+  </div>
+  <div class="note" id="dnote"></div>
+  <div class="note">在 CNN 裡，核不是人工剪下來的，而是從大量標註資料中<b>學出來</b>的；第一層學到邊緣、角落，越深的層組合出眼睛、耳朵這類較複雜的特徵。醫學影像 AI 也用同樣方式學出病灶、細胞或器官的特徵。</div>
+</section>
+
+<!-- 4 -->
+<section class="card">
+  <h2><span class="num">4</span>觀念小測驗</h2>
+  <div class="qgrid">
+    <div><div id="quiz"></div><div class="score" id="qscore"></div><button id="qagain" style="display:none">再做一次</button></div>
+    <div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+  </div>
+</section>
+
+<footer>卷積特徵擷取互動教學 ・ 單一 HTML 檔，可離線開啟</footer>
+</div>
+
+<script>
+var $=function(id){return document.getElementById(id);};
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+var DRAW=[];
+function fit(cv,ratio,minH,maxH){cv.style.width='0px';var pe=cv.parentElement,ps=getComputedStyle(pe),w=Math.floor(pe.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight));cv.style.width=w+'px';
+  var h=Math.round(w*ratio);if(minH)h=Math.max(minH,h);if(maxH)h=Math.min(maxH,h);cv.style.height=h+'px';
+  var d=window.devicePixelRatio||1;cv.width=Math.round(w*d);cv.height=Math.round(h*d);var c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);return {c:c,w:w,h:h};}
+function axes(c,w,h,o){var L=o.l==null?42:o.l,R=o.r==null?12:o.r,T=o.t==null?12:o.t,B=o.b==null?26:o.b;
+  var X=function(x){return L+(x-o.x0)/(o.x1-o.x0)*(w-L-R);},Y=function(y){return h-B-(y-o.y0)/(o.y1-o.y0)*(h-T-B);};
+  c.clearRect(0,0,w,h);c.font='11px system-ui,sans-serif';c.lineWidth=1;
+  c.strokeStyle=css('--line');c.fillStyle=css('--mute');
+  (o.yt||[]).forEach(function(v){c.beginPath();c.moveTo(L,Y(v));c.lineTo(w-R,Y(v));c.stroke();c.textAlign='right';c.textBaseline='middle';c.fillText(o.yf?o.yf(v):v,L-5,Y(v));});
+  (o.xt||[]).forEach(function(v){c.textAlign='center';c.textBaseline='top';c.fillText(o.xf?o.xf(v):v,X(v),h-B+5);});
+  c.strokeStyle=css('--mute');c.beginPath();var y0=Y(Math.max(o.y0,Math.min(o.y1,0)));c.moveTo(L,y0);c.lineTo(w-R,y0);c.stroke();
+  if(o.xl){c.textAlign='right';c.textBaseline='bottom';c.fillText(o.xl,w-R,h-B-3);}
+  if(o.yl){c.textAlign='left';c.textBaseline='top';c.fillText(o.yl,L+4,T);}
+  return {X:X,Y:Y,L:L,R:R,T:T,B:B};}
+function path(c,xs,ys,A,col,lw,dash){c.strokeStyle=col;c.lineWidth=lw||2;c.setLineDash(dash||[]);c.beginPath();
+  for(var i=0;i<xs.length;i++){var px=A.X(xs[i]),py=A.Y(ys[i]);if(i)c.lineTo(px,py);else c.moveTo(px,py);}c.stroke();c.setLineDash([]);}
+function fmt(v,d){return (Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toString();}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gauss(r){var u=r()||1e-9,v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+
+
+/* ---------- 楊立昆老師 ---------- */
+var LECUN_SVG='<svg viewBox="0 0 200 230" aria-label="楊立昆老師動畫"><g class="bodyg"> <path d="M8 232 Q14 168 66 154 L134 154 Q186 168 192 232 Z" fill="#2f4567"/> <path d="M66 154 Q100 168 134 154 L128 186 Q100 176 72 186 Z" fill="#283b59"/> <path d="M84 142 L100 172 L116 142 Z" fill="#e0b096"/> <path d="M68 154 L86 140 L98 176 L78 174 Z" fill="#3b5680"/><path d="M132 154 L114 140 L102 176 L122 174 Z" fill="#3b5680"/> <path d="M100 176 L100 232" stroke="#24364f" stroke-width="1.5"/><circle cx="100" cy="192" r="2" fill="#1d2b40"/><circle cx="100" cy="212" r="2" fill="#1d2b40"/> <rect x="84" y="128" width="32" height="22" rx="10" fill="#e0b096"/> <path d="M63 104 Q56 58 98 46 Q146 40 142 100 L136 104 Q134 80 120 72 Q100 64 80 72 Q68 82 68 104 Z" fill="#54473d"/> <ellipse cx="66" cy="106" rx="6" ry="10" fill="#e0b096"/><ellipse cx="134" cy="106" rx="6" ry="10" fill="#e0b096"/> <ellipse cx="100" cy="103" rx="35" ry="39" fill="#efc3a6"/><path d="M70 118 Q76 140 100 143 Q124 140 130 118" fill="#e9b99c"/> <path d="M86 78 Q100 75 114 78 M88 83 Q100 81 112 83" stroke="#dba98c" stroke-width="1.2" fill="none" stroke-linecap="round"/> <ellipse class="blush" cx="80" cy="118" rx="7" ry="4.5" fill="#f08080"/><ellipse class="blush" cx="120" cy="118" rx="7" ry="4.5" fill="#f08080"/> <path d="M66 84 Q60 54 96 46 Q120 40 134 56 Q144 68 138 84 Q132 72 120 68 Q126 74 126 78 Q110 66 92 68 Q96 64 102 63 Q84 64 74 72 Q68 76 66 84 Z" fill="#6b5b4d"/> <path d="M72 66 Q92 52 120 56 M84 58 Q106 50 130 64 M78 74 Q90 66 104 64" stroke="#9c8f82" stroke-width="2" fill="none" stroke-linecap="round"/>  <g class="hairL" fill="#5f5044"><path d="M62 84 Q56 98 62 112 Q64 102 69 96 Q66 92 68 84 Z"/></g> <g class="hairR" fill="#5f5044"><path d="M138 84 Q144 98 138 112 Q136 102 131 96 Q134 92 132 84 Z"/></g> <path class="brow browL" d="M75 86 Q84 81 93 85" stroke="#5a4b40" stroke-width="3.2" fill="none" stroke-linecap="round"/> <path class="brow browR" d="M107 85 Q116 81 125 86" stroke="#5a4b40" stroke-width="3.2" fill="none" stroke-linecap="round"/> <g class="eyes"><ellipse cx="85" cy="98" rx="4.4" ry="3.2" fill="#fff"/><ellipse cx="115" cy="98" rx="4.4" ry="3.2" fill="#fff"/>  <circle cx="85.5" cy="98.2" r="2.5" fill="#3d3a36"/><circle cx="115.5" cy="98.2" r="2.5" fill="#3d3a36"/>  <circle cx="86.4" cy="97.2" r=".9" fill="#fff"/><circle cx="116.4" cy="97.2" r=".9" fill="#fff"/></g> <rect x="71" y="88" width="26" height="19" rx="3.5" fill="rgba(255,255,255,.12)" stroke="#141414" stroke-width="4"/> <rect x="103" y="88" width="26" height="19" rx="3.5" fill="rgba(255,255,255,.12)" stroke="#141414" stroke-width="4"/> <path d="M97 95 Q100 92.5 103 95" stroke="#141414" stroke-width="3.2" fill="none"/> <path d="M71 92 L64 90 M129 92 L136 90" stroke="#141414" stroke-width="3.2" stroke-linecap="round"/> <path d="M100 106 Q96 117 99 121 Q103 123 107 120" stroke="#c8957a" stroke-width="2.2" fill="none" stroke-linecap="round"/> <path d="M82 118 Q84 126 88 130 M118 118 Q116 126 112 130" stroke="#d6a487" stroke-width="1.4" fill="none" stroke-linecap="round"/> <path d="M92 140 Q100 143 108 140" stroke="#d6a487" stroke-width="1.3" fill="none" stroke-linecap="round"/> <path class="mo n" d="M89 129 Q100 133 112 128" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/> <path class="mo s" d="M87 126 Q100 141 113 126 Q100 131 87 126 Z" fill="#9b3a2c" stroke="#8a4a3a" stroke-width="1.5" stroke-linejoin="round"/> <path class="mo f" d="M89 133 Q100 125 111 133" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/> <path class="sweat" d="M140 70 Q145 80 140 84 Q135 80 140 70 Z" fill="#7cc3f0"/> <text class="spark" x="30" y="44" font-size="18" fill="#f0b400">✦</text><text class="spark" x="160" y="40" font-size="14" fill="#f0b400">✦</text><text class="spark" x="170" y="96" font-size="11" fill="#f0b400">✦</text></g></svg>';
+function makeAvatar(el,bubble){
+  el.innerHTML=LECUN_SVG; var tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood:function(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold) tm=setTimeout(function(){el.classList.remove('smile','frown');bubble.className='bubble';},3200);}};
+}
+var AV1=makeAvatar($('av1'),$('bub1')), AV2=makeAvatar($('av2'),$('bub2'));
+var QUOTES=[
+ '我是法國人，1960 年出生在巴黎近郊。大家都叫我 Yann，中文名字是楊立昆。',
+ '1980 年代末我在貝爾實驗室，用反向傳播訓練卷積神經網路，讓電腦辨識手寫的郵遞區號。',
+ '1998 年我們發表 LeNet-5。這類系統後來被用來自動讀取銀行支票上的手寫數字。',
+ 'CNN 的想法受到兩個前人啟發：Hubel 與 Wiesel 發現視覺皮質中的神經元只對局部特定圖樣有反應，以及福島邦彥的 Neocognitron。',
+ '卷積的妙處在於「權重共享」：同一個核滑過整張影像，不管耳朵出現在哪裡都找得到，參數也少很多。',
+ '2018 年我和 Geoffrey Hinton、Yoshua Bengio 一起獲得圖靈獎，表彰深度學習的貢獻。'];
+var qi=0;$('av1').addEventListener('click',function(){AV1.mood('smile',QUOTES[qi++%QUOTES.length]);});
+
+/* ---------- 資料：熊貓影像 ---------- */
+var IMG=(function(){var W=140,H=110,s=atob('6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6enp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uno6Orr7Ovq6Ojp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uno6Onq6uno6Onq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6ujo7/Xy6+Xi5uzz9O7o6Orq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6ujp8PTz7uvq7vP17+no6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6unn8fPSon5mWldda4Wu3PTv6Orq6urq6urq6urq6urq6urq6urq6urq6urq6+nq6uno6Ojp6uro6evq6urq6urq6urq6urq6urq6urq6urq6urq6ujp8/DNo4RwZ2VvhKXR8PLp6erq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uro7PHEekM1Njg6OTk5NTZLidLz6unq6urq6urq6urq6urq6urq6urp6enp6uvt7e/u7u/v7+/u7u7t6+rq6enp6erq6urq6urq6urq6urq6urq6urn8OuybEA2NTg4NzY1NUNzu+/v5+rq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6PHjhD82PkFBQUBAQEFBQTw0Rpjs7unq6urq6urq6urq6urq6unq6u3x9Pb5+/3+//////////////78+vn39fLu6uno6Onq6urq6urq6urq6urq6PPMajg2PkFBQUFBQUFBPTY7c9bz6Orq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6ujx1V8yQEI/Pz8/Pz8/Pz8/QEI+M3De7+jq6urq6urq6unp6ezw9Pj8/v/////////////////////////////////8+PPw7Ojo6erq6urq6urq6ujxq0Q3QkE/Pz8/Pz8/Pz9AQUAzTL3z6Orq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uro8dFPN0M/Pz8/Pz8/Pz8/Pz8/P0BCM2Lh7unq6urq6urp6/L4/P/////////+/v///////////////////////v7////////9+fPt6enq6erq6uro9KA4PkI/Pz8/Pz8/Pz8/Pz8/P0I7PbP05+rq6urq6urq6urq6urq6urq6urq6urq6urq6urq6e7eVzdDPz8/Pz8/Pz8/Pz8/Pz8/Pz9DNG3r6+nq6ejr8fj9//////////////////////////////////////////////////////348uvo6evr5/SvOT9BPz8/Pz8/Pz8/Pz8/Pz8/P0E8QMLy6Orq6urq6urq6urq6urq6urq6urq6urq6urq6urp8Hc0RD8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz9DNJf45+ns9Pz////+//////////////////////////////////////////////////7//////Pbv6efx1Uc8QT8/Pz8/Pz8/Pz8/Pz8/Pz8/P0E5Ut7t6erq6urq6urq6urq6urq6urq6urq6urq6urq6PS1OEI/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/P0BBPMTz9P3//v////////////////////////////////////////////////////////////////747ulqNkM/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/P0I0h/To6urq6urq6urq6urq6urq6urq6urq6urq6urr6mE4Qj8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz9BPjZRxP/+//7+//////////////////////////////////////////////////////////////////7/6mg2O0I/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/QD5CzvDo6urq6urq6urq6urq6urq6urq6urq6urq6PO7OUE/Pz8/Pz8/Pz8/Pz8/Pz8/Pz9AQTVDmfH//v////////////////////////////////////////////////////////////////////////7/+7FRM0BAPz8/Pz8/Pz8/Pz8/Pz8/Pz8/QjOK9efq6urq6urq6urq6urq6urq6urq6urq6uro84Y2QT8/Pz8/Pz8/Pz8/Pz8/Pz8/QT41bNn///3+//////////////////////////////////////////////////////////////////////////79/+uEOTtBPz8/Pz8/Pz8/Pz8/Pz8/Pz9BOljj6+nq6urq6urq6urq6urq6urq6urq6urq6uroYDdBPz8/Pz8/Pz8/Pz8/Pz8/P0M4QKP8//3+//////////////////////////////////////////////////////////////////////////////78//+/TzVCQD8/Pz8/Pz8/Pz8/Pz8/Pz8+Qcjx6Orq6urq6urq6urq6urq6urq6urq6urp7thMPEA/Pz8/Pz8/Pz8/Pz8/Pz9CNVjQ//z9///////////////////////////////////////////////////////////////////////////////////9/P/mcTNBQD8/Pz8/Pz8/Pz8/Pz8/P0E3rPTo6urq6urq6urq6urq6urq6urq6urq6unwzkM+QD8/Pz8/Pz8/Pz8/Pz9AQTR07P/7/v///////////////////////////////////////////////////////////////////////////////////////P/8kzU/QT8/Pz8/Pz8/Pz8/Pz8/QTSb9Ojq6urq6urq6urq6urq6urq6urq6urq6PHIPz8/Pz8/Pz8/Pz8/Pz8/QEA0ivz/+v///////////////////////////////////////////////////////////////////////////////////////////f7/rDw8QT8/Pz8/Pz8/Pz8/Pz9BNJP15+rq6urq6urq6urq6urq6urq6urq6urp8ctBPj8/Pz8/Pz8/Pz8/Pz9ANpv//vz+/////////////////////////////////////////////////////////////////////////////////////////////fr/vT89QD8/Pz8/Pz8/Pz8/P0E0lfXo6urq6urq6urq6urq6urq6urq6urq6unv10o8QD8/Pz8/Pz8/Pz8/QDaf//39//////////////////////////////////////////////////////////////////////////////////////////////////z/wT88QT8/Pz8/Pz8/Pz8/QTWj9efq6urq6urq6urq6urq6urq6urq6urq6evkWzpAPz8/Pz8/Pz8/P0E1m//7/f////////////////////////////////////////////////////////////////////////////////////////////////////n/wT4/QD8/Pz8/Pz8/Pz9AO7vy6Orq6urq6urq6urq6urq6urq6urq6urq6fF6NUE/Pz8/Pz8/Pz9BNIz//f7///////////////////////////////////////////////////////////////////////////////////////////////////////z/sjhAQD8/Pz8/Pz8/QD1L1+/p6urq6urq6urq6urq6urq6urq6urq6uro9Kg2QT8/Pz8/Pz8/QjR2/fz9//////////////////////////////////////////////////////////////////////////////////////////////////////////r/nTRBPz8/Pz8/Pz9BN27t6erq6urq6urq6urq6urq6urq6urq6urq6unt3lA7QD8/Pz8/P0E4Wu/+/f///////////////////////////////////////////////////////////////////////////////////////////////////////////v3+gDJCPz8/Pz8/P0E2rPXo6urq6urq6urq6urq6urq6urq6urq6urq6uf2mjNBPz8/Pz9APkTW//r//////////////////////////////////////////////////////////////////////////////////////////////////////////////v3xXTdCPz8/Pz9BOVzn6+nq6urq6urq6urq6urq6urq6urq6urq6urq6ezkWjlBPz8/P0E2r//7/v///////////////////////////////////////////////////////////////////////////////////////////////////////////////P/XQj5APz8/QEE5s/Po6urq6urq6urq6urq6urq6urq6urq6urq6urq6PLAPj1BPz9BNHf9+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////f+hM0E/Pz9CNIDx6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6PSqOT5BQDxL5v/8/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////fprNkI/QjNr6Ovp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp6fSoQDlENaz//f/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8/9RAQkEzbOHt6Orq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6fTDWSxk+P3////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////6/44sPInq7ujq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6PLjjMv/+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////7/6HS69Ozp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6Ov6//3+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+fDp6erq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6ff+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////776+nq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6unw/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////v/16erq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urr6vf///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////zs6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urv/v/+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////Hp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6fT///////////////////////////////79/v7////////////////////////////////////////////////////////////+/v7+////////////////////////////////+unq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urr/P///////////////////////////v3+//////79/v/////////////////////////////////////////////////////9/f/////9/f7////////////////////////////+7enq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6PH+//////////////////////////z////15+Pv/////P/////////////////////////////////////////////////+/v//++7t+f////z+/////////////////////////v/26erq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp9v7///////////////////////78//GzeVZGQ09xsfb/+////////////////////////////////////////////////P//yYVcTExae7Ls//39//////////////////////////rq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uv7///////////////////////9//6uUzU0OT0/OzU0XM7//f////////////////////////////////////////////3/6ng6NDk7PDo0NU+l+v/9/////////////////////////u7p6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uro7v7//////////////////////f/oczQ6QkJAQD9AQUI4P7j/+//////////////////////////////////////////8/9lVM0FBQEBAQUJBOzJq3//8////////////////////////8unq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6ujz//////////////////////3/21U1QkA/Pz8/Pz8/P0E9O8L//v///////////////////////////////////////v/mUjdDQD8/Pz8/Pz9AQjdLzf/9///////////////////////36urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6vf////////////////////9/99RN0M/Pz8/Pz8/Pz8/PkI7T+v+/f////////////////////////////////////3++nA0RD8/Pz8/Pz8/Pz8/QzpFzv/7//////////////////////vr6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq+////////////////////v7wXTdCPz8/Pz8/Pz8/Pz8/P0Mzjf/7/v//////////////////////////////////+/+3NUE/Pz8/Pz8/Pz8/Pz8/QjpM4f/+/////////////////////u7p6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6ez+//////////////////78/4QzQz8/Pz8/Pz8/Pz8/Pz8/QD5G5P/9///////////////////////////////////9+mU3QT8/Pz8/Pz8/Pz8/Pz8/QjVt+v3+////////////////////8Onq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp7///////////////////+//GOUBAPz8/Pz8/Pz8/Pz8/Pz8/QTWu//z//////////////////////////////////f/UPD8/Pz8/Pz8/Pz8/Pz8/Pz8/QjKp//v//////////////////v/z6erq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uny///////////////////+92E2QT8/Pz8/Pz8/Pz8/Pz8/Pz9BNIT//f/////////////////////////////////8/6YzQj8/Pz8/Pz8/Pz8/Pz8/Pz9AO1Ls/v7////////////////+//fp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6fT//////////////////f++N0E/Pz8/Pz8/Pz8/P0BAQEA/P0E3b/////////////////////////////////////z/jDNCPz9AQEFAPz8/Pz8/Pz8/Pz9CM6X//f//////////////////+enq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp9v/////////////////+/3k1QT8/Pz8/Pz8/Pz9AOzg7OkA/QThl+//+/////////////////////////////////f+ANEE/QDw4ODlAPz8/Pz8/Pz8/P0A6Xfj////////////////////76+rq6urq6urq6urq6urq6urq6urq6urq6urq6urq6un4/////////////////v/rSz1APz8/Pz8/Pz8/QDlSutJnOUFBN2f9///////////////////////////////////9/4I0QkA8Ub2/XzpBPz8/Pz8/Pz8/P0A7zf/9//////////////////3r6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6fj////////////////9/742QT8/Pz8/Pz8/P0A9Sdr//8Q3QkE2dP/+//////////////////////////////////z/jzNCQTWi///qVzpAPz8/Pz8/Pz8/QjWf//z//////////////////evq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp+P////////////////v/ljJCPz8/Pz8/Pz8/QTSX//b8xjhAQjSM//3//////////////////////////////////P+pM0JBNKr89v+wNEE/Pz8/Pz8/Pz9BNnz//v/////////////////96+rq6urq6urq6urq6urq6urq6urq6urq6urq6urq6un4/////////////////P57NUE/Pz8/Pz8/Pz9AOsf79/+PM0FBNbH//P/////////////////////////////////9/9E6QEE2dv/6+99DPkA/Pz8/Pz8/P0E4Zfz//v////////////////3r6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6fj//////////////v7+/3E2Qj8/Pz8/Pz8/P0A4vf//yEQ9QD5B3f/9///////////////////////////////////+9Vg6QD87tP//4EI+QD8/Pz8/Pz8/QDha+P///v7+/v///////////erp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp9v////////////7//fXxazZBPz8/Pz8/Pz8/QDpesZFCPEBCN2z9/f///////////////v7+/v7+//////////////v/jDVCQD0+jLx2OEA/Pz8/Pz8/Pz9AOlbl8vX9//79///////////76unq6urq6urq6urq6urq6urq6urq6urq6urq6urq6un1//////////7//+7c09htNkA/Pz8/Pz8/Pz8/QDo0ND1AP0I3u//7///////////+/P///////////P7//////////P/TPT8/QD40NTlAPz8/Pz8/Pz8/P0E6WdDT1Nzr/P/+//////////rq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6fP///////7+//ng0dHS3n81QT8/Pz8/Pz8/Pz8/QEJBQD9BOV/2/v7//////////f7//fDn4uLm7vr///7//////////v5zNEI/P0JBQD8/Pz8/Pz8/Pz8/QThn2NTU0tLb9P/+////////9+nq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp8f///////v/42dDU1dLdnzdBPz8/Pz8/Pz8/Pz8/Pz8/P0E2vf/9///////////8+KJmU0pHRklRYo7r/v7////////9/9dAPkA/Pz8/Pz8/Pz8/Pz8/Pz9BN4Ld0tTU1dLU7////////v/16erq6urq6urq6urq6urq6urq6urq6urq6urq6urq6unu/v//////+trR1dTU09jFST0/Pz8/Pz8/Pz8/Pz8/Pz9DMoT++////////////P+xKzk7PDw9PTs6KIf//f/////////7/5wxQT8/Pz8/Pz8/Pz8/Pz8/P0A6qtzS1NTU1dPU9P/+//////Lp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uz8//////7j0dXU1NTU0tt5NkI/Pz8/Pz8/Pz8/Pz8/QzNi8v38///////////8/8E4REBAQEBAQEU0mP/9//////////78+XYyQz8/Pz8/Pz8/Pz8/Pz9AOlvT1NTU1NTU1dLa+//+////7unq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6vj///7/9tTU1NTU1NTT2L1DPEA/Pz8/Pz8/Pz8/QUIyYuj//f/////////////+/HMxREA/Pz9DOFHo//7///////////3+828yQkE/Pz8/Pz8/Pz8/QEI4pdzS1NTU1NTU1dHp//7///3s6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uro9P///v/l0tTU1NTU1NTS3Js3PkJAPz8/Pz9AQUI6NHrw//3///////////////7/6FwxPj8/PzVFzP/9//////////////3/9YY3OkFBQD8/Pz8/P0FCM3vX09TU1NTU1NTU09r7////+enq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6unv//7++9nS1NTU1NTU1NTT2plCNTw/QUFBPzw1NVm0///8/v////////////////7/7oVHPkBBcNf//P////////////////z//7pbNTU8QEBBQEA+Nzh71NTT1NTU1NTU1NTV0vL//v/z6Orq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uv7///41tTU1NTU1NTU1NTT3L13TT45ODs/TnO39f/+/v////////////39//////7//7w8Npb///3//////fz///////////79//W3cUo7Nzc3OkNiptjU09TU1NTU1NTU1NXS7P///u7q6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6fb///TU1NTU1NTU1NTU1NTT2d3JsqKeo7To/////f/////////////+///+/v////z9xjo1of75//////3////+///////////8////6MylkpelvNfb0tPU1NTU1NTU1NTU1NHm///76erq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp7v//9NTU1NTU1NTU1NTU1NTT0tbb3dzb3f7+/f7////////////////Duv78/v//+/+gNTh7//n+//36/828+v3////////////+/f7//+va3dzZ09LU1NTU1NTU1NTU1NTU0ub///Pp6+rq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uvq+P/21dTU1NTU1NTU1NTU1NTU09PS0tHX+v////////////////3/zzkwo////f7/6lA9QkDO//79/P/JPi6s//z///////////////7948/S0tPU1NTU1NTU1NTU1NTU1NTR6f/97Onq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6+rw//vX09TU1NTU1NTU1NTU1NTU1NTU0d7+/f///////////////f/VP0BAq/j//dJiOjw5PlDB+//+xUw/NK///P/////////////////s0dTU1NTU1NTU1NTU1NTU1NTU1NLu//Xp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6ur5/+LR1NTU1NTU1NTU1NTU1NTU1NTR6//+/////////////////v+mMz88X3xpQjwzYHIzPj9jfmpAPTF+/Pz+//////////////////bV09TU1NTU1NTU1NTU1NTU1NTU1vn+7Onq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6e//8tPU1NTU1NTU1NTU1NTU1NTU09b4/////////////////////f+dOzU0NDU1NmPj+Hs3NTU0Njc1e/X//f/////////////////+/uDT1dTU1NTU1NTU1NTU1NTU1NHh//To6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6ff/4dHV1NTU1NTU1NTU1NTU1NXQ5//////////////////////9/P/PelFJTmyw+P/+/8F2UUdMarj+//7///////////////////7/89LT1NTU1NTU1NTU1NTU1NXT1Pb86erp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp7Pz319PW1NTU1NTU1NTU1NTV0tr7/v////////////////////79/P//8OTt/////P39///w4+v///z8//////////////////////7/5tDU1dTU1NTU1NTU1NPU1NDp/+7p6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp7//01dLU1NTU1NTU1NTU1dLa+P/+/////////////////////////f3////+/f7////9/v////79//////////////////////////7+4c/T1dTU1NTU1NTU1NTQ5P/06erq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uro8v/129LT1NTU1dTV1NLS4Pn//v////////////////////////////7+/v///////////v7+/////////////////////////////v795NHR1NTU1NXU1NTS0+j/+Orp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq9f/86djT0NHS0dHT2u7///7/////////////////////////////////////////////////////////////////////////////////8NvT0dHR0tHQ093y//nr6erq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq9f//+vDo4+Lj6/L9///+//////////////////////////////////////////////////////////////////////////////////7//fPo4t3e4un0/f/56+nq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp8/7////////////+//////////////////////////////////////////////////////////////////////////////////////7/////////////+evp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6+vp8P3//v////7//////////////////////////////////////////////////////////////////////////////////////////////v////7+/vbr6+rq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urr6urp7fn///7///////////////////////////////////////////////////////////////////////////////////////////////////7///zx6erq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp6vH8//////////////////////////////////////////////////////////////////////////////////////////////////////717Orq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uz1/v/////////////////////////////////////////////////////////////////////////////////////////////+///57+nq6+rq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urt9f3///////////////////////////////////////////////////////////////////////////////////////7+///57+rp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urr6urp7PT7/////////v////////////////////////////////////////////////////////////////////////////337+rq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp6ezv+P7////+/////////////////////////////////////////////////////////////////////////vrx7enp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6enp7PL3/P/////////////////////////////////////////////////////////////////////++PTu6ujp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urp6ens8PX6/f/////+/v/+/////////////////////////////////////////v////////z38e3q6Onq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6unp6ers8PT3+v3+/////////////////////////////////////////////vv59fHu6unp6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6uvq6urq6enq7O7x8/b4+vv8/f3+/v7//////////////v79/fz7+ff18u/t6+rp6enq6+vq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6enn6erp6uvs7O3t7+/v7+/v7+/v7u7t7Ozq6uvp6ejo6enq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6+rp6erq6enp6enp6enp6enq6unp6enq6erq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6g=='),a=new Float32Array(W*H);for(var i=0;i<W*H;i++)a[i]=s.charCodeAt(i)/255;
+  var col=new Image();col.src='data:image/webp;base64,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';return {W:W,H:H,a:a,col:col};})();
+var KB={"ear": [9, 42, 8, 41], "eye": [45, 77, 25, 54], "nose": [64, 76, 58, 76]}; // [列起, 列止, 行起, 行止]
+var KN={ear:'耳朵',eye:'眼睛',nose:'鼻子'},KC={ear:'--acc2',eye:'--acc',nose:'--ok'},KEYS=['ear','eye','nose'];
+function kernel(name){var b=KB[name],kh=b[1]-b[0],kw=b[3]-b[2],k=new Float32Array(kh*kw),sym=$('ksym').checked;
+  for(var i=0;i<kh;i++)for(var j=0;j<kw;j++){var v=IMG.a[(b[0]+i)*IMG.W+b[2]+j];if(sym)v=0.5*(v+IMG.a[(b[0]+i)*IMG.W+b[3]-1-j]);k[i*kw+j]=v;}
+  return {kh:kh,kw:kw,k:k};}
+var CACHE={};
+function response(name,mode){var key=name+mode+$('ksym').checked;if(CACHE[key])return CACHE[key];
+  var K=kernel(name),kh=K.kh,kw=K.kw,W=IMG.W,H=IMG.H,oh=H-kh+1,ow=W-kw+1,v=new Float32Array(oh*ow),n=kh*kw,km=0,i,j,u;
+  for(i=0;i<n;i++)km+=K.k[i];km/=n;var kz=new Float32Array(n),kn=0;for(i=0;i<n;i++){kz[i]=K.k[i]-km;kn+=kz[i]*kz[i];}kn=Math.sqrt(kn);
+  for(i=0;i<oh;i++)for(j=0;j<ow;j++){var s=0,sp=0,sq=0;
+    for(u=0;u<kh;u++){var row=(i+u)*W+j,kr=u*kw;for(var w=0;w<kw;w++){var p=IMG.a[row+w];
+      if(mode==='raw')s+=p*K.k[kr+w];else{s+=p*kz[kr+w];sp+=p;sq+=p*p;}}}
+    if(mode==='raw')v[i*ow+j]=s/n;else{var vr=sq-sp*sp/n;v[i*ow+j]=vr>1e-9?s/(Math.sqrt(vr)*kn):0;}}
+  CACHE[key]={oh:oh,ow:ow,kh:kh,kw:kw,v:v};return CACHE[key];}
+function peaks(R,th,maxn){var v=Array.from(R.v),out=[];
+  for(var t=0;t<maxn;t++){var bi=-1,bv=-1e9;for(var q=0;q<v.length;q++)if(v[q]>bv){bv=v[q];bi=q;}
+    if(bv<th)break;var i=Math.floor(bi/R.ow),j=bi%R.ow;out.push({i:i,j:j,s:bv});
+    for(var a=Math.max(0,i-Math.floor(R.kh*0.6));a<=Math.min(R.oh-1,i+Math.floor(R.kh*0.6));a++)for(var b=Math.max(0,j-Math.floor(R.kw*0.6));b<=Math.min(R.ow-1,j+Math.floor(R.kw*0.6));b++)v[a*R.ow+b]=-1e9;}
+  return out;}
+/* 繪圖工具：把陣列畫成像素圖 */
+function grayCanvas(){var c=document.createElement('canvas');c.width=IMG.W;c.height=IMG.H;var x=c.getContext('2d'),im=x.createImageData(IMG.W,IMG.H);
+  for(var p=0;p<IMG.W*IMG.H;p++){var g=Math.round(IMG.a[p]*255);im.data[p*4]=im.data[p*4+1]=im.data[p*4+2]=g;im.data[p*4+3]=255;}x.putImageData(im,0,0);return c;}
+var GRAY=grayCanvas();
+function heatColor(t){t=Math.max(0,Math.min(1,t));var r=Math.round(255*Math.min(1,Math.max(0,1.6*t-0.55))),g=Math.round(255*Math.min(1,Math.max(0,1.5*t-0.15)))*0.95,b=Math.round(255*Math.max(0,Math.min(1,0.55+0.9*t-1.6*t*t)));return [r,Math.round(g),b];}
+function heatCanvas(R,mode,rows){var c=document.createElement('canvas');c.width=IMG.W;c.height=IMG.H;var x=c.getContext('2d'),im=x.createImageData(IMG.W,IMG.H),oi=Math.floor(R.kh/2),oj=Math.floor(R.kw/2);
+  var lo=mode==='raw'?Math.min.apply(null,Array.from(R.v)):0,hi=mode==='raw'?Math.max.apply(null,Array.from(R.v)):1;
+  for(var y=0;y<IMG.H;y++)for(var xx=0;xx<IMG.W;xx++){var p=(y*IMG.W+xx)*4,i=y-oi,j=xx-oj;
+    if(i>=0&&i<R.oh&&j>=0&&j<R.ow&&(rows==null||i<rows)){var t=(R.v[i*R.ow+j]-lo)/(hi-lo),cc=heatColor(t);im.data[p]=cc[0];im.data[p+1]=cc[1];im.data[p+2]=cc[2];im.data[p+3]=255;}
+    else{im.data[p]=im.data[p+1]=im.data[p+2]=30;im.data[p+3]=255;}}
+  x.putImageData(im,0,0);return c;}
+function paint(cv,src,ratio){var F=fit(cv,ratio||IMG.H/IMG.W,0,0),c=F.c;c.imageSmoothingEnabled=false;c.clearRect(0,0,F.w,F.h);if(src)c.drawImage(src,0,0,F.w,F.h);return {c:c,w:F.w,h:F.h,u:F.w/IMG.W};}
+function box(P,i,j,kh,kw,col,lw,dash){var c=P.c;c.strokeStyle=col;c.lineWidth=lw||2;c.setLineDash(dash||[]);c.strokeRect(j*P.u,i*P.u,kw*P.u,kh*P.u);c.setLineDash([]);}
+function label(P,i,j,txt,col){var c=P.c;c.font='bold 12px system-ui';var w=c.measureText(txt).width+8;c.fillStyle=col;c.fillRect(j*P.u,Math.max(0,i*P.u-17),w,17);c.fillStyle='#fff';c.textAlign='left';c.textBaseline='middle';c.fillText(txt,j*P.u+4,Math.max(0,i*P.u-17)+9);}
+
+/* ---------- 1 影像與核 ---------- */
+$('dims').textContent=IMG.H+' 列 × '+IMG.W+' 行';
+function draw1(){var P0=paint($('g0'),IMG.col.complete?IMG.col:null),P1=paint($('g1'),GRAY);
+  KEYS.forEach(function(n){var b=KB[n];[P0,P1].forEach(function(P){box(P,b[0],b[2],b[1]-b[0],b[3]-b[2],css(KC[n]),2,[5,3]);label(P,b[0],b[2],KN[n],css(KC[n]));});});
+  $('kcards').innerHTML=KEYS.map(function(n){var K=kernel(n);return '<div class="kc" style="--kc:var('+KC[n]+')"><div class="kimg"><canvas id="kc_'+n+'" class="pix"></canvas></div><div><b>'+KN[n]+'核</b><br><span class="mute">'+K.kh+' × '+K.kw+' = '+(K.kh*K.kw)+' 個權重</span></div></div>';}).join('');
+  KEYS.forEach(function(n){drawKernel($('kc_'+n),n);});}
+function kernelCanvas(n){var K=kernel(n),c=document.createElement('canvas');c.width=K.kw;c.height=K.kh;var x=c.getContext('2d'),im=x.createImageData(K.kw,K.kh);
+  for(var p=0;p<K.kh*K.kw;p++){var g=Math.round(K.k[p]*255);im.data[p*4]=im.data[p*4+1]=im.data[p*4+2]=g;im.data[p*4+3]=255;}x.putImageData(im,0,0);return c;}
+function drawKernel(cv,n){var K=kernel(n),c=document.createElement('canvas');c.width=K.kw;c.height=K.kh;var x=c.getContext('2d'),im=x.createImageData(K.kw,K.kh);
+  for(var p=0;p<K.kh*K.kw;p++){var g=Math.round(K.k[p]*255);im.data[p*4]=im.data[p*4+1]=im.data[p*4+2]=g;im.data[p*4+3]=255;}x.putImageData(im,0,0);
+  var F=fit(cv,K.kh/K.kw,0,0),cc=F.c;cc.imageSmoothingEnabled=false;cc.drawImage(c,0,0,F.w,F.h);}
+DRAW.push(draw1);IMG.col.onload=function(){draw1();draw3();};
+$('g1').addEventListener('mousemove',function(e){var r=this.getBoundingClientRect(),j=Math.floor((e.clientX-r.left)/r.width*IMG.W),i=Math.floor((e.clientY-r.top)/r.height*IMG.H);
+  if(i>=0&&i<IMG.H&&j>=0&&j<IMG.W)$('g1cap').textContent='像素 (列 '+i+', 行 '+j+') 的灰階值 = '+IMG.a[i*IMG.W+j].toFixed(2);});
+$('ksym').addEventListener('input',function(){CACHE={};draw1();sreset();draw3();});
+
+/* ---------- 2 滑動掃描 ---------- */
+var SC={k:'eye',pos:-1,timer:null,best:-2,bestPos:-1,sel:null};
+$('kpick').innerHTML=KEYS.map(function(n){return '<button data-k="'+n+'" style="--kc:var('+KC[n]+')">'+KN[n]+'核</button>';}).join('');
+$('kpick').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;SC.k=b.dataset.k;sreset();});
+function sreset(){clearInterval(SC.timer);SC.timer=null;$('sscan').textContent='▶ 掃描';SC.pos=-1;SC.best=-2;SC.bestPos=-1;SC.sel=null;
+  document.querySelectorAll('#kpick button').forEach(function(b){b.classList.toggle('on',b.dataset.k===SC.k);});draw2();}
+function draw2(){var R=response(SC.k,'ncc'),col=css(KC[SC.k]),total=R.oh*R.ow,done=SC.pos<0?0:SC.pos+1,finished=SC.pos>=total-1;
+  var P0=paint($('s0'),GRAY),rows=SC.pos<0?0:Math.floor(SC.pos/R.ow)+1;
+  var hc=heatCanvas(R,'ncc',SC.pos<0?0:rows),P1=paint($('s1'),null),c1=P1.c;c1.imageSmoothingEnabled=false;c1.drawImage(hc,0,0,P1.w,P1.h);
+  // 只露出已經算過的那一列中的格子
+  if(SC.pos>=0&&!finished){var ci=Math.floor(SC.pos/R.ow),cj=SC.pos%R.ow,oi=Math.floor(R.kh/2),oj=Math.floor(R.kw/2);c1.fillStyle='rgb(30,30,30)';c1.fillRect((cj+1+oj)*P1.u,(ci+oi)*P1.u,P1.w-(cj+1+oj)*P1.u,P1.u);}
+  var cur=SC.sel!=null?SC.sel:(SC.pos>=0?SC.pos:-1);
+  if(finished&&SC.sel==null){peaks(R,0.75,4).forEach(function(p){box(P0,p.i,p.j,R.kh,R.kw,col,2.5);label(P0,p.i,p.j,KN[SC.k]+' '+p.s.toFixed(2),col);
+    var oi=Math.floor(R.kh/2),oj=Math.floor(R.kw/2);c1.strokeStyle='#fff';c1.lineWidth=2;c1.beginPath();c1.arc((p.j+oj+0.5)*P1.u,(p.i+oi+0.5)*P1.u,7,0,7);c1.stroke();});}
+  if(cur>=0){var i=Math.floor(cur/R.ow),j=cur%R.ow;P0.c.imageSmoothingEnabled=false;P0.c.globalAlpha=0.85;P0.c.drawImage(kernelCanvas(SC.k),j*P0.u,i*P0.u,R.kw*P0.u,R.kh*P0.u);P0.c.globalAlpha=1;box(P0,i,j,R.kh,R.kw,col,3);
+    var oi2=Math.floor(R.kh/2),oj2=Math.floor(R.kw/2);c1.strokeStyle=col;c1.lineWidth=2;c1.strokeRect((j+oj2)*P1.u,(i+oi2)*P1.u,P1.u,P1.u);
+    $('spos').textContent='位置：左上角在 (列 '+i+', 行 '+j+')';$('sval').textContent=R.v[cur].toFixed(3);drawPatch(i,j,R);}
+  else{$('spos').textContent='位置：—';$('sval').textContent='—';drawPatch(-1,-1,R);}
+  $('sbest').textContent=SC.best>-2?SC.best.toFixed(3)+'（列 '+Math.floor(SC.bestPos/R.ow)+', 行 '+SC.bestPos%R.ow+'）':'—';
+  $('shint').textContent=finished?'✔ 掃描完成！框出的是分數 ≥ 0.75 的區域最高點：'+peaks(R,0.75,4).length+' 個'+KN[SC.k]+'。':(SC.pos<0?'共 '+total+' 個位置要計算；同一個核在每個位置都一樣，這就是「權重共享」。':'已計算 '+done+' / '+total+' 個位置');}
+function drawPatch(i,j,R){var K=kernel(SC.k);var pc=document.createElement('canvas');pc.width=K.kw;pc.height=K.kh;var x=pc.getContext('2d');
+  if(i>=0)x.drawImage(GRAY,j,i,K.kw,K.kh,0,0,K.kw,K.kh);else{x.fillStyle='#888';x.fillRect(0,0,K.kw,K.kh);}
+  var F=fit($('sp'),K.kh/K.kw,0,0);F.c.imageSmoothingEnabled=false;F.c.drawImage(pc,0,0,F.w,F.h);drawKernel($('sk'),SC.k);}
+DRAW.push(draw2);
+$('sscan').onclick=function(){var b=this;if(SC.timer){clearInterval(SC.timer);SC.timer=null;b.textContent='▶ 繼續';return;}
+  var R=response(SC.k,'ncc'),total=R.oh*R.ow;if(SC.pos>=total-1){SC.pos=-1;SC.best=-2;}SC.sel=null;b.textContent='⏸ 暫停';
+  SC.timer=setInterval(function(){var spd=+$('sspd').value*R.ow/8;for(var t=0;t<spd&&SC.pos<total-1;t++){SC.pos++;if(R.v[SC.pos]>SC.best){SC.best=R.v[SC.pos];SC.bestPos=SC.pos;}}
+    draw2();if(SC.pos>=total-1){clearInterval(SC.timer);SC.timer=null;b.textContent='▶ 掃描';AV1.mood('smile','找到了！分數最高的地方就是'+KN[SC.k]+'。換別的核試試看？');}},60);};
+$('sreset').onclick=sreset;
+$('s0').addEventListener('click',function(e){var R=response(SC.k,'ncc'),r=this.getBoundingClientRect(),j=Math.floor((e.clientX-r.left)/r.width*IMG.W-R.kw/2),i=Math.floor((e.clientY-r.top)/r.height*IMG.H-R.kh/2);
+  i=Math.max(0,Math.min(R.oh-1,i));j=Math.max(0,Math.min(R.ow-1,j));if(SC.timer){clearInterval(SC.timer);SC.timer=null;$('sscan').textContent='▶ 繼續';}SC.sel=i*R.ow+j;draw2();});
+
+/* ---------- 3 偵測 ---------- */
+function draw3(){var th=+$('dth').value,mode=$('dmode').value;$('dthv').textContent=' '+th.toFixed(2);
+  var P=paint($('d0'),IMG.col.complete?IMG.col:GRAY),rows=[],all={};
+  KEYS.forEach(function(n){var R=response(n,mode),col=css(KC[n]),th2=th;
+    if(mode==='raw'){var arr=Array.from(R.v),hi=Math.max.apply(null,arr);th2=th*hi;}
+    var pk=peaks(R,th2,4);all[n]=pk;
+    pk.forEach(function(p){box(P,p.i,p.j,R.kh,R.kw,col,2.5);label(P,p.i,p.j,KN[n]+' '+p.s.toFixed(2),col);rows.push('<tr><td><span class="dot" style="background:var('+KC[n]+')"></span>'+KN[n]+'</td><td>列 '+(p.i+Math.floor(R.kh/2))+', 行 '+(p.j+Math.floor(R.kw/2))+'</td><td>'+p.s.toFixed(3)+'</td></tr>');});
+    var H=paint($('h_'+n),heatCanvas(R,mode,null));pk.forEach(function(p){H.c.strokeStyle='#fff';H.c.lineWidth=2;H.c.beginPath();H.c.arc((p.j+Math.floor(R.kw/2)+0.5)*H.u,(p.i+Math.floor(R.kh/2)+0.5)*H.u,6,0,7);H.c.stroke();});});
+  $('dlist').innerHTML='<tr><th>特徵</th><th>中心位置</th><th>分數</th></tr>'+(rows.join('')||'<tr><td colspan="3" class="mute">沒有超過門檻的位置</td></tr>');
+  var ok=all.ear.length===2&&all.eye.length===2&&all.nose.length===1,note;
+  if(mode==='raw')note='✘ <b>直接相乘加總</b>時，分數最高的地方都跑到額頭附近的白色大片區域：因為白色像素值大（≈1），不管核長什麼樣，乘起來加總都大。所以實務上要先<b>去平均、除以標準差</b>（正規化），或像 CNN 一樣加上偏置、經過激活函數並透過學習調整權重。（此模式的門檻以「最高分 × 門檻」計算。）';
+  else if(ok)note='✔ 找到 2 個耳朵、2 個眼睛、1 個鼻子，位置都正確！左右兩邊的分數幾乎一樣（耳朵約 0.82、眼睛約 0.91）；不到 1 是因為對稱化後的核和任何一邊都不完全相同。鼻子本身左右對稱，所以接近 1。';
+  else if(th<0.72)note='門檻太低：除了真正的特徵，長得「有點像」的地方也被標出來了（例如耳朵核也覺得眼睛有點像——都是深色的橢圓）。把門檻調高一點。';
+  else if(!$('ksym').checked)note='核沒有左右對稱：右邊的耳朵、眼睛和左邊互為鏡像，分數掉到門檻以下就找不到了。回第 1 節勾回「左右對稱」，或把門檻調低。';
+  else note='門檻太高：只有和核幾乎一模一樣的地方才過關，鏡像那一邊可能被漏掉。把門檻調低一點。';
+  $('dnote').innerHTML=note;}
+DRAW.push(draw3);$('dth').addEventListener('input',draw3);$('dmode').addEventListener('input',draw3);
+
+/* ---------- 4 小測驗 ---------- */
+var QZ=[
+ {q:'用影像的一小塊當卷積核在影像上滑動，特徵圖分數最高的地方代表什麼？',a:'影像中和核最相像的位置',o:['影像最亮的位置','影像中和核最相像的位置','影像的正中央','核的大小'],e:'分數衡量「框內圖案和核有多像」，最高處就是最可能的特徵位置。',h:'回第 2 節，看掃描完被框起來的地方。'},
+ {q:'同一個核滑過整張影像的每個位置，這個性質叫做？',a:'權重共享',o:['權重共享','梯度消失','過度擬合','資料增強'],e:'不論特徵出現在哪裡，用的都是同一組權重，所以參數少，而且在哪裡都找得到。',h:'第 2 節開始掃描前的提示有寫。'},
+ {q:'不做正規化、直接相乘加總時，為什麼偵測會失敗？',a:'大片白色區域像素值大，乘起來加總就大',o:['核太小了','大片白色區域像素值大，乘起來加總就大','影像太清楚','卷積不能用在影像'],e:'未正規化的分數會被亮度主導，所以要去平均、除以標準差，或在 CNN 中加偏置並學習權重。',h:'第 3 節把計算方式換成「直接相乘加總」，看框跑到哪裡。'},
+ {q:'只用左眼的圖塊當核（不對稱），右眼的分數會？',a:'比較低，因為右眼是左眼的鏡像',o:['一樣是 1','比較低，因為右眼是左眼的鏡像','變成負無限大','比左眼更高'],e:'右眼形狀左右相反，和左眼核不完全相同；把核做左右對稱可以兩邊都找到。',h:'第 1 節取消「左右對稱」，再看第 3 節。'},
+ {q:'門檻調得太低，會發生什麼事？',a:'把有點像但不是的地方也誤判成特徵',o:['什麼都找不到','把有點像但不是的地方也誤判成特徵','影像變模糊','核的大小改變'],e:'門檻太低會誤報（false positive），太高會漏報（false negative），要取捨。',h:'第 3 節把門檻拉到最低看看。'},
+ {q:'在卷積神經網路（CNN）裡，卷積核是怎麼來的？',a:'從大量資料中訓練學出來的',o:['工程師從影像上手工剪下','從大量資料中訓練學出來的','固定用耳朵、眼睛、鼻子三種','隨機產生、不會改變'],e:'本頁的核是手工擷取的；CNN 則透過反向傳播自動學出最有用的核，第一層多半是邊緣與角落。',h:'第 3 節最後的說明框。'}];
+var PRAISE=['Bravo！完全正確！','Très bien！觀念很清楚！','Excellent！你抓到重點了！','Parfait！就是這樣！'];
+var QS={ans:0,ok:0,streak:0};
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function qbuild(){QS={ans:0,ok:0,streak:0};$('qscore').textContent='';$('qagain').style.display='none';
+  $('quiz').innerHTML=QZ.map(function(z,i){return '<div class="q" data-i="'+i+'"><div class="qt">'+(i+1)+'. '+z.q+'</div>'+shuffle(z.o).map(function(o){return '<button class="opt">'+o+'</button>';}).join('')+'<div class="fb"></div></div>';}).join('');}
+$('quiz').addEventListener('click',function(e){var b=e.target.closest('.opt');if(!b||b.disabled)return;var box=b.closest('.q'),z=QZ[+box.dataset.i],ok=b.textContent===z.a;
+  box.querySelectorAll('.opt').forEach(function(o){o.disabled=true;if(o.textContent===z.a)o.classList.add('right');});
+  var fb=box.querySelector('.fb');QS.ans++;
+  if(ok){QS.ok++;QS.streak++;fb.className='fb good';fb.textContent='✔ 正確！'+z.e;
+    AV2.mood('smile',QS.streak>=3?'連續答對 '+QS.streak+' 題！你的特徵偵測器比我的 LeNet 還準！':PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+  else{QS.streak=0;b.classList.add('wrong');fb.className='fb bad';fb.textContent='✘ 正確答案是「'+z.a+'」。'+z.e;AV2.mood('frown',z.h);}
+  if(QS.ans===QZ.length){$('qscore').textContent='得分：'+QS.ok+' / '+QZ.length;$('qagain').style.display='inline-block';
+    setTimeout(function(){var r=QS.ok/QZ.length;
+      if(r===1)AV2.mood('smile','全對！Félicitations！你已經懂卷積怎麼擷取特徵了！',true);
+      else if(r>=0.7)AV2.mood('smile','很不錯！再回頭玩玩答錯題目的那一節，觀念就完整了。',true);
+      else AV2.mood('frown','別灰心！建議先在第 2 節看一次完整掃描，再到第 3 節調門檻。',true);},3300);}});
+$('qagain').onclick=function(){qbuild();AV2.mood('','新的一輪！選項順序已經打亂囉。');window.scrollTo({top:$('quiz').getBoundingClientRect().top+window.scrollY-80,behavior:'smooth'});};
+qbuild();
+
+/* ---------- 啟動與重畫 ---------- */
+function redrawAll(){DRAW.forEach(function(f){f();});}
+sreset();redrawAll();
+var rt=null;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(redrawAll,120);});
+if(window.matchMedia)window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawAll);
+new MutationObserver(redrawAll).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+</script>
+</body>
+</html>

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>卷積的定義與涵義</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;
+  --acc:#2f6fd6;--acc2:#e07a1f;--acc3:#8b5cf6;--soft:#f1efe8;--code:#1b1f29;--codeink:#e6e9f0;--hl:rgba(224,122,31,.18);}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+  --acc:#6ea2ff;--acc2:#ffa255;--acc3:#b69bff;--soft:#252a36;--code:#11141b;--codeink:#e6e9f0;--hl:rgba(255,162,85,.18);}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+  --acc:#6ea2ff;--acc2:#ffa255;--acc3:#b69bff;--soft:#252a36;--code:#11141b;--codeink:#e6e9f0;--hl:rgba(255,162,85,.18);}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:1.9rem;line-height:1.3}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-top:20px;min-width:0}
+.card h2{margin:0 0 12px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--acc);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.formula{background:var(--soft);border-radius:12px;padding:12px 16px;margin:10px 0;font-size:1.12rem;text-align:center;overflow-x:auto}
+.formula i{font-family:"Times New Roman",serif;font-size:1.15em}
+.big{font-size:1.6em;vertical-align:-.15em}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chip{padding:5px 12px;border-radius:999px;background:var(--soft);border:1px solid var(--line);font-weight:600}
+.chip b{color:var(--acc2)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.grid2>*{min-width:0}
+.ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:10px 0}
+.ctrl label{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button,select,input[type=text]{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px 12px}
+button{cursor:pointer}
+button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+input[type=range]{accent-color:var(--acc);width:200px;max-width:100%}
+input[type=text]{width:150px}
+.note{background:var(--soft);border-left:4px solid var(--acc2);border-radius:8px;padding:9px 13px;margin:10px 0}
+.stat{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
+.stat div{background:var(--soft);border-radius:10px;padding:6px 12px}
+.stat b{color:var(--acc)}
+canvas{display:block;width:100%;border-radius:10px}
+.scroll{overflow-x:auto;max-width:100%}
+/* tape */
+.tape2{position:relative;font-variant-numeric:tabular-nums;padding:2px 0 6px}
+.trow{display:flex;align-items:center;height:44px;position:relative}
+.tl{flex:none;width:158px;text-align:right;padding-right:10px;color:var(--mute);font-weight:600;font-size:.9rem;white-space:nowrap}
+.tc{flex:none;width:50px;height:38px;margin-right:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;border:1px solid var(--line);border-radius:6px;font-size:.92rem;transition:background .3s,box-shadow .3s}
+.tc.e{color:var(--mute);border-color:transparent}
+.tc.x{background:rgba(47,111,214,.12)}
+.tc small{display:block;font-size:.66rem;color:var(--mute);font-weight:400}
+.tc.h0{flex-direction:column;line-height:1.1;background:rgba(224,122,31,.1);border-color:rgba(224,122,31,.45)}
+.tc.y{background:rgba(31,157,107,.16);font-weight:700;border:1.5px solid var(--ok)}
+.tc.y.cur{background:var(--hl);border-color:var(--acc2)}
+.tc.yq{color:var(--mute);border-style:dashed}
+.tc.yq.next{border-color:var(--acc2);color:var(--acc2);font-weight:700}
+.tc.mul,.hcell.mul{box-shadow:0 0 0 3px var(--ok)}
+.tc.pulse{animation:pulse .8s ease}
+@keyframes pulse{50%{transform:scale(1.15)}}
+.hcell{position:absolute;top:3px;width:50px;height:38px;border-radius:6px;background:linear-gradient(rgba(224,122,31,.2),rgba(224,122,31,.2)),var(--card);border:1.5px solid var(--acc2);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;font-size:.92rem;font-weight:600;transition:left .75s cubic-bezier(.4,.1,.2,1),opacity .4s,box-shadow .3s;z-index:2}
+.hcell small{font-size:.66rem;color:var(--mute);font-weight:400}
+.ghost{position:absolute;top:3px;width:50px;height:38px;border:1.5px dashed var(--acc2);border-radius:6px;opacity:0;transition:opacity .3s}
+.fax{position:absolute;top:-2px;bottom:-2px;border-left:2px dashed var(--acc3);transition:opacity .3s;z-index:1}
+.fax span{position:absolute;bottom:-20px;left:4px;font-size:.72rem;color:var(--acc3);white-space:nowrap}
+.dsum{min-height:2.2em;margin-top:4px;padding:6px 12px;border-radius:10px;border:2px solid transparent;font-size:1.02rem;display:inline-block}
+.dsum.on{border-color:var(--acc2);background:var(--hl)}
+.chip.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
+.chip.on b{color:#fff}
+.chip{transition:background .3s}
+.prog{height:8px;background:var(--soft);border-radius:99px;overflow:hidden;margin:8px 0}
+.prog div{height:100%;background:var(--acc2);width:0;transition:width .3s}
+.explain{background:var(--soft);border-radius:10px;padding:10px 14px;min-height:3.2em}
+.code{background:var(--code);color:var(--codeink);border-radius:12px;padding:10px 0;font-family:Consolas,"Courier New",monospace;font-size:.86rem;overflow-x:auto}
+.code .ln{padding:0 14px;white-space:pre;border-left:4px solid transparent}
+.code .ln.on{background:rgba(255,162,85,.22);border-left-color:#ffa255}
+.code .cm{color:#8fa1b3}
+.out{background:var(--code);color:#b8f5c9;border-radius:12px;padding:10px 14px;font-family:Consolas,"Courier New",monospace;font-size:.86rem;white-space:pre;overflow-x:auto;margin-top:8px;min-height:3em}
+.kern{display:inline-grid;grid-template-columns:repeat(3,48px);gap:3px;font-variant-numeric:tabular-nums}
+.kern div{background:var(--soft);border:1px solid var(--line);border-radius:6px;text-align:center;padding:4px 0;font-size:.9rem}
+.imgs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.imgs>*{min-width:0}
+.imgs canvas{image-rendering:pixelated;cursor:crosshair;aspect-ratio:1/1}
+.cap{text-align:center;color:var(--mute);font-size:.9rem;margin-top:4px}
+.patch{border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.85rem}
+.patch td{border:1px solid var(--line);padding:3px 6px;text-align:center;min-width:44px}
+/* quiz */
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.q .qt{font-weight:700;margin-bottom:8px}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;padding:8px 12px;border-radius:10px}
+.opt.right{border-color:var(--ok);background:rgba(31,157,107,.14)}
+.opt.wrong{border-color:var(--bad);background:rgba(214,51,79,.12)}
+.opt:disabled{cursor:default;color:var(--ink)}
+.fb{margin-top:6px}
+.fb.good{color:var(--ok)}.fb.bad{color:var(--bad)}
+.score{font-size:1.15rem;font-weight:700;margin-top:10px}
+footer{text-align:center;color:var(--mute);margin-top:30px;font-size:.9rem}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.9rem;color:var(--mute);margin:4px 0}
+.legend span::before{content:"";display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+/* avatar */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:top center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:top center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+@media (max-width:700px){.grid2,.imgs{grid-template-columns:minmax(0,1fr)}header h1{font-size:1.5rem}.card{padding:16px 14px}}
+</style>
+<style id="pu-badge-style">
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line,#e3e1da);border-radius:12px;background:var(--card,var(--surface,#fff));color:var(--ink,#1d2330);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif}
+.pu-badge img{width:58px;height:58px;display:block}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute,var(--muted,#667085))}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main">
+  <h1>卷積（Convolution）的定義與涵義</h1>
+  <p>智慧醫療 ・ 互動教學：翻轉、平移、相乘、加總——從心電圖到醫學影像</p>
+</div>
+  <div class="pu-badge"><img alt="靜宜大學校徽" src="data:image/webp;base64,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"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+  <h2><span class="num">0</span>卷積是什麼？一句話直覺</h2>
+  <div class="intro">
+    <div>
+      <p>卷積就是：<b>拿一個「權重形狀」<i>g</i>，在訊號 <i>f</i> 上一格一格滑過去，每個位置都做一次「加權加總」。</b></p>
+      <div class="formula">連續：&nbsp;(<i>f</i> ∗ <i>g</i>)(<i>t</i>) = <span class="big">∫</span> <i>f</i>(<i>τ</i>) · <i>g</i>(<i>t</i> − <i>τ</i>) d<i>τ</i></div>
+      <div class="formula">離散：&nbsp;<i>y</i>[<i>n</i>] = (<i>x</i> ∗ <i>h</i>)[<i>n</i>] = <span class="big">Σ</span><sub><i>k</i></sub> <i>x</i>[<i>k</i>] · <i>h</i>[<i>n</i> − <i>k</i>]</div>
+      <div class="chips"><span class="chip"><b>①</b> 翻轉 h[−k]</span><span class="chip"><b>②</b> 平移到 n：h[n−k]</span><span class="chip"><b>③</b> 與 x[k] 逐點相乘</span><span class="chip"><b>④</b> 全部加總 → y[n]</span></div>
+      <p class="mute" style="margin:0">在智慧醫療裡到處都是卷積：心電圖去雜訊（第 3 節）、醫學影像濾波與 CNN（第 4 節）。最後用第 5 節的小測驗檢查觀念！</p>
+    </div>
+    <div class="avwrap"><div class="bubble" id="bub1">Bonjour！我是傅立葉老師。點我聽故事！</div><div class="av" id="av1" title="點我聽故事"></div></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+  <h2><span class="num">1</span>離散卷積：一步一步算</h2>
+  <p>按「下一步」一步一步看：表格 5 列依序是 x[k]、h[k]、翻轉後的 h[−k]、平移後的 h[n−k]、輸出 y[n]。先把 <i>h</i> <b>翻轉</b>一次，接著對每個輸出位置 <i>n</i> 重複「<b>平移</b> → <b>相乘</b> → <b>加總</b>」，算好的 y[n] 填進第 5 列 n 的那一格。也可以改成自己的數列（以逗號分隔，最多 8 個）。</p>
+  <div class="ctrl">
+    <label>x = <input type="text" id="dx" value="1, 2, 3, 1"></label>
+    <label>h = <input type="text" id="dh" value="1, 0.5, 0.25"></label>
+    <button id="dset">套用</button>
+    <select id="dpre"><option value="">範例…</option><option value="1,2,3,1|1,0.5,0.25">遞減權重</option><option value="0,0,4,0,0|0.25,0.5,0.25">單一脈衝 → 複製出 h 的形狀</option><option value="1,1,1,1,1,1|0.3333,0.3333,0.3333">移動平均</option><option value="0,0,1,1,1,0,0|1,-1">差分 → 抓邊緣</option></select>
+  </div>
+  <div class="chips"><span class="chip" id="ch0"><b>①</b> 翻轉</span><span class="chip" id="ch1"><b>②</b> 平移</span><span class="chip" id="ch2"><b>③</b> 相乘</span><span class="chip" id="ch3"><b>④</b> 加總</span></div>
+  <div class="scroll"><div class="tape2" id="tape"></div></div>
+  <div class="ctrl">
+    <button id="d0">⟲ 重來</button><button id="dp">◀ 上一步</button><button id="dn" class="pri">下一步 ▶</button><button id="da">▶ 自動播放</button>
+  </div>
+  <div class="prog"><div id="dprog"></div></div>
+  <div class="explain" id="dexp"></div>
+  <div class="grid2" style="margin-top:12px">
+    <div><canvas id="dcv"></canvas><div class="cap">輸出 y[n] 長條圖（橘色為剛加總出來的值）</div></div>
+    <div><div class="code" id="dcode"></div><div class="out" id="dout"></div></div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="card">
+  <h2><span class="num">2</span>連續卷積：重疊面積</h2>
+  <p>把 <i>g</i> 翻轉成 <i>g</i>(<i>t</i>−<i>τ</i>) 後沿著 τ 軸滑動；每個時刻 <i>t</i> 的卷積值，就是 <i>f</i>(<i>τ</i>)·<i>g</i>(<i>t</i>−<i>τ</i>) 這塊「重疊面積」（綠色）。</p>
+  <div class="ctrl">
+    <label>g 的形狀 <select id="cg"><option value="rect">矩形脈衝</option><option value="tri">三角形</option><option value="exp">指數衰減 e<sup>−2t</sup></option></select></label>
+    <label>t = <input type="range" id="ct" min="-1" max="4" step="0.01" value="0.5"><b id="ctv"></b></label>
+    <button id="cplay">▶ 滑動</button>
+  </div>
+  <div class="legend"><span style="--c:var(--acc)">f(τ)：寬 1 的矩形</span><span style="--c:var(--acc2)">g(t − τ)：翻轉＋平移</span><span style="--c:var(--ok)">乘積面積 = (f∗g)(t)</span></div>
+  <canvas id="ccv1"></canvas>
+  <canvas id="ccv2" style="margin-top:8px"></canvas>
+  <div class="stat"><div>(f ∗ g)(t) = 重疊面積 = <b id="cval"></b></div></div>
+  <div class="note">觀察：矩形∗矩形 變成三角形；卷積後的結果比原本兩者都「更平滑、更寬」——卷積會把形狀抹開。</div>
+</section>
+
+<!-- 3 -->
+<section class="card">
+  <h2><span class="num">3</span>涵義一：平滑濾波——心電圖（ECG）去雜訊</h2>
+  <p>把雜訊很多的 ECG 和一個「平均用的核」做卷積，就是讓每一點變成附近幾點的加權平均：雜訊被抵消，但核太寬時 QRS 的尖峰也會被抹鈍。</p>
+  <div class="ctrl">
+    <label>核的種類 <select id="ek"><option value="box">移動平均（矩形核）</option><option value="gau">高斯核</option></select></label>
+    <label>核寬度 K = <input type="range" id="ew" min="1" max="41" step="2" value="9"><b id="ewv"></b> 點</label>
+    <label><input type="checkbox" id="eclean"> 顯示乾淨訊號</label>
+  </div>
+  <div class="legend"><span style="--c:var(--mute)">含雜訊 ECG</span><span style="--c:var(--acc)">卷積後</span><span style="--c:var(--ok)">乾淨訊號（參考）</span></div>
+  <canvas id="ecv"></canvas>
+  <div class="grid2" style="margin-top:10px;align-items:center">
+    <div><canvas id="ekcv"></canvas><div class="cap">目前的核 h[k]（總和 = 1）</div></div>
+    <div class="stat" style="flex-direction:column">
+      <div>與乾淨訊號的誤差 RMS：原始 <b id="er0"></b> → 卷積後 <b id="er1"></b></div>
+      <div>R 波峰值：乾淨 <b id="ep0"></b>，卷積後 <b id="ep1"></b></div>
+      <div class="mute" id="ehint"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="card">
+  <h2><span class="num">4</span>涵義二：二維卷積——醫學影像濾波與 CNN</h2>
+  <p>影像的卷積是 3×3 的核在像素上滑動。點左圖任一點，看那個像素怎麼算出來；或按「▶ 掃描」看核一列列掃過整張合成的「胸部 X 光」影像。</p>
+  <div class="ctrl">
+    <label>核 <select id="ik"><option value="avg">平均模糊</option><option value="gau">高斯模糊</option><option value="sharp">銳化</option><option value="sobel">邊緣（Sobel 水平梯度）</option><option value="lap">邊緣（拉普拉斯）</option></select></label>
+    <button id="iscan" class="pri">▶ 掃描</button>
+  </div>
+  <div class="imgs">
+    <div><canvas id="icv0"></canvas><div class="cap">原始影像（含雜訊、右肺有一個小結節）</div></div>
+    <div><canvas id="icv1"></canvas><div class="cap" id="icap">卷積後</div></div>
+  </div>
+  <div class="grid2" style="margin-top:12px">
+    <div><div class="mute">卷積核 h</div><div class="kern" id="kgrid"></div><p class="mute" id="kdesc" style="margin:8px 0 0"></p></div>
+    <div><div class="mute" id="ipos">點左圖選一個像素</div><div class="scroll"><table class="patch" id="ipatch"></table></div><div id="isum" style="margin-top:6px"></div></div>
+  </div>
+  <div class="note">CNN（卷積神經網路）的卷積層做的就是同一件事，只是核裡的數字不是人設定的，而是從大量影像<b>學出來</b>的。（實作上 CNN 通常不翻轉核，嚴格說是「互相關」，但核是學出來的，所以翻不翻都一樣，習慣仍稱卷積。）</div>
+</section>
+
+<!-- 5 -->
+<section class="card">
+  <h2><span class="num">5</span>觀念小測驗</h2>
+  <div class="qgrid">
+    <div><div id="quiz"></div><div class="score" id="qscore"></div><button id="qagain" style="display:none">再做一次</button></div>
+    <div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+  </div>
+</section>
+
+<footer>卷積互動教學 ・ 單一 HTML 檔，可離線開啟</footer>
+</div>
+
+<script>
+var $=function(id){return document.getElementById(id);};
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+var DRAW=[];
+function fit(cv,ratio,minH,maxH){cv.style.width='0px';var pe=cv.parentElement,ps=getComputedStyle(pe),w=Math.floor(pe.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight));cv.style.width=w+'px';
+  var h=Math.round(w*ratio);if(minH)h=Math.max(minH,h);if(maxH)h=Math.min(maxH,h);cv.style.height=h+'px';
+  var d=window.devicePixelRatio||1;cv.width=Math.round(w*d);cv.height=Math.round(h*d);var c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);return {c:c,w:w,h:h};}
+function axes(c,w,h,o){var L=o.l==null?42:o.l,R=o.r==null?12:o.r,T=o.t==null?12:o.t,B=o.b==null?26:o.b;
+  var X=function(x){return L+(x-o.x0)/(o.x1-o.x0)*(w-L-R);},Y=function(y){return h-B-(y-o.y0)/(o.y1-o.y0)*(h-T-B);};
+  c.clearRect(0,0,w,h);c.font='11px system-ui,sans-serif';c.lineWidth=1;
+  c.strokeStyle=css('--line');c.fillStyle=css('--mute');
+  (o.yt||[]).forEach(function(v){c.beginPath();c.moveTo(L,Y(v));c.lineTo(w-R,Y(v));c.stroke();c.textAlign='right';c.textBaseline='middle';c.fillText(o.yf?o.yf(v):v,L-5,Y(v));});
+  (o.xt||[]).forEach(function(v){c.textAlign='center';c.textBaseline='top';c.fillText(o.xf?o.xf(v):v,X(v),h-B+5);});
+  c.strokeStyle=css('--mute');c.beginPath();var y0=Y(Math.max(o.y0,Math.min(o.y1,0)));c.moveTo(L,y0);c.lineTo(w-R,y0);c.stroke();
+  if(o.xl){c.textAlign='right';c.textBaseline='bottom';c.fillText(o.xl,w-R,h-B-3);}
+  if(o.yl){c.textAlign='left';c.textBaseline='top';c.fillText(o.yl,L+4,T);}
+  return {X:X,Y:Y,L:L,R:R,T:T,B:B};}
+function path(c,xs,ys,A,col,lw,dash){c.strokeStyle=col;c.lineWidth=lw||2;c.setLineDash(dash||[]);c.beginPath();
+  for(var i=0;i<xs.length;i++){var px=A.X(xs[i]),py=A.Y(ys[i]);if(i)c.lineTo(px,py);else c.moveTo(px,py);}c.stroke();c.setLineDash([]);}
+function fmt(v,d){return (Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toString();}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gauss(r){var u=r()||1e-9,v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+/* ---------- 傅立葉老師 ---------- */
+var FOURIER_SVG='<svg viewBox="0 0 200 230" aria-label="傅立葉老師動畫"><g class="bodyg">'+
+ '<g fill="#4b3627"><circle cx="70" cy="82" r="21"/><circle cx="84" cy="62" r="21"/><circle cx="103" cy="56" r="22"/><circle cx="122" cy="62" r="21"/><circle cx="135" cy="82" r="20"/><circle cx="64" cy="104" r="15"/><circle cx="138" cy="104" r="15"/></g>'+
+ '<path d="M10 232 Q14 178 68 166 L132 166 Q186 178 190 232 Z" fill="#5d574d"/>'+
+ '<path d="M56 186 Q56 154 72 136 L88 168 Z" fill="#4a453d" stroke="#2f2b26" stroke-width="1"/>'+
+ '<path d="M144 186 Q144 154 128 136 L112 168 Z" fill="#4a453d" stroke="#2f2b26" stroke-width="1"/>'+
+ '<path d="M80 172 L100 232 L120 172 Z" fill="#ece5d6"/>'+
+ '<path d="M76 134 Q100 148 124 134 L128 170 Q100 182 72 170 Z" fill="#f7f3eb" stroke="#d6cdbd" stroke-width="1.2"/>'+
+ '<path d="M77 148 Q100 160 123 148 M76 160 Q100 172 124 160" stroke="#d6cdbd" stroke-width="1.2" fill="none"/>'+
+ '<path d="M93 176 q-7 5 0 10 q-7 6 0 11 q-7 6 0 11 q-6 6 1 10 L107 218 q6 -5 0 -10 q6 -6 0 -11 q7 -6 0 -11 q6 -5 -1 -10 Z" fill="#fbf9f4" stroke="#d6cdbd" stroke-width="1"/>'+
+ '<path d="M70 170 L86 172 L98 232 L78 232 Z" fill="#4f4a42"/><path d="M130 170 L114 172 L102 232 L122 232 Z" fill="#4f4a42"/>'+
+ '<g fill="#b39d5e"><ellipse cx="76" cy="180" rx="2.4" ry="5" transform="rotate(-30 76 180)"/><ellipse cx="82" cy="186" rx="2.4" ry="5" transform="rotate(35 82 186)"/><ellipse cx="80" cy="196" rx="2.4" ry="5" transform="rotate(-30 80 196)"/><ellipse cx="87" cy="202" rx="2.4" ry="5" transform="rotate(35 87 202)"/><ellipse cx="84" cy="213" rx="2.4" ry="5" transform="rotate(-30 84 213)"/><ellipse cx="91" cy="220" rx="2.4" ry="5" transform="rotate(35 91 220)"/><ellipse cx="64" cy="168" rx="2.2" ry="4.6" transform="rotate(-20 64 168)"/><ellipse cx="68" cy="156" rx="2.2" ry="4.6" transform="rotate(25 68 156)"/></g>'+
+ '<g fill="#8d826f" stroke="#5c5446" stroke-width="1"><circle cx="116" cy="186" r="3.6"/><circle cx="112.5" cy="203" r="3.6"/><circle cx="109" cy="220" r="3.6"/></g>'+
+ '<ellipse cx="64" cy="106" rx="6" ry="10" fill="#e6b896"/><ellipse cx="136" cy="106" rx="6" ry="10" fill="#e6b896"/>'+
+ '<ellipse cx="100" cy="104" rx="36" ry="39" fill="#f2caa8"/>'+
+ '<path d="M88 140 Q100 145 112 140" stroke="#dba886" stroke-width="1.5" fill="none" stroke-linecap="round"/>'+
+ '<ellipse class="blush" cx="80" cy="119" rx="7" ry="4.5" fill="#f08080"/><ellipse class="blush" cx="120" cy="119" rx="7" ry="4.5" fill="#f08080"/>'+
+ '<g fill="#4b3627"><circle cx="74" cy="74" r="12"/><circle cx="88" cy="67" r="12"/><circle cx="103" cy="65" r="12.5"/><circle cx="117" cy="68" r="12"/><circle cx="129" cy="77" r="11"/><circle cx="84" cy="77" r="7.5"/><circle cx="97" cy="75" r="7"/><circle cx="111" cy="76" r="7"/></g>'+
+ '<g stroke="#2c1e14" stroke-width="1.6" fill="none" stroke-linecap="round"><path d="M78 62 q6 -5 9 1 q1 5 -4 5"/><path d="M98 52 q7 -4 9 2 q1 5 -5 4"/><path d="M118 58 q6 -3 8 3 q0 5 -5 4"/><path d="M60 84 q-3 -7 3 -9 q5 0 4 5"/><path d="M138 86 q4 -6 -2 -9 q-5 0 -4 5"/><path d="M90 78 q4 -4 7 0"/><path d="M106 79 q4 -4 7 0"/><path d="M66 98 q-4 -4 0 -8"/><path d="M134 98 q4 -4 0 -8"/></g>'+
+ '<g class="hairL" fill="#4b3627"><circle cx="64" cy="94" r="11"/><circle cx="61" cy="110" r="9"/><path d="M58 106 q-3 5 2 8" stroke="#2c1e14" stroke-width="1.4" fill="none"/></g>'+
+ '<g class="hairR" fill="#4b3627"><circle cx="136" cy="94" r="11"/><circle cx="139" cy="110" r="9"/><path d="M142 106 q3 5 -2 8" stroke="#2c1e14" stroke-width="1.4" fill="none"/></g>'+
+ '<path class="brow browL" d="M76 87 Q84 82 93 86" stroke="#3a2a1e" stroke-width="3.2" fill="none" stroke-linecap="round"/>'+
+ '<path class="brow browR" d="M107 86 Q116 82 124 87" stroke="#3a2a1e" stroke-width="3.2" fill="none" stroke-linecap="round"/>'+
+ '<g class="eyes"><ellipse cx="85" cy="98" rx="5.6" ry="3.7" fill="#fff"/><ellipse cx="115" cy="98" rx="5.6" ry="3.7" fill="#fff"/>'+
+ '<circle cx="85.6" cy="98.2" r="2.9" fill="#4a2f1f"/><circle cx="115.6" cy="98.2" r="2.9" fill="#4a2f1f"/>'+
+ '<circle cx="86.6" cy="97.1" r="1" fill="#fff"/><circle cx="116.6" cy="97.1" r="1" fill="#fff"/>'+
+ '<path d="M79 96 Q85 92.5 91 96 M109 96 Q115 92.5 121 96" stroke="#3a2a1e" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>'+
+ '<path d="M100 101 Q97 115 100 120 Q104 122 108 119" stroke="#c9967a" stroke-width="2.2" fill="none" stroke-linecap="round"/>'+
+ '<path class="mo n" d="M89 129 Q100 134 112 128" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/>'+
+ '<path class="mo s" d="M87 126 Q100 141 113 126 Q100 131 87 126 Z" fill="#9b3a2c" stroke="#8a4a3a" stroke-width="1.5" stroke-linejoin="round"/>'+
+ '<path class="mo f" d="M89 133 Q100 125 111 133" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/>'+
+ '<path class="sweat" d="M138 72 Q143 82 138 86 Q133 82 138 72 Z" fill="#7cc3f0"/>'+
+ '<text class="spark" x="30" y="44" font-size="18" fill="#f0b400">✦</text><text class="spark" x="160" y="40" font-size="14" fill="#f0b400">✦</text><text class="spark" x="170" y="96" font-size="11" fill="#f0b400">✦</text>'+
+ '</g></svg>';
+function makeAvatar(el,bubble){
+  el.innerHTML=FOURIER_SVG; var tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood:function(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold) tm=setTimeout(function(){el.classList.remove('smile','frown');bubble.className='bubble';},3200);}};
+}
+var AV1=makeAvatar($('av1'),$('bub1')), AV2=makeAvatar($('av2'),$('bub2'));
+var QUOTES=[
+ '我 1768 年生於法國歐塞爾，很小就成了孤兒，是學校的老師們發現並栽培了我的數學天分。',
+ '1798 年我隨拿破崙遠征埃及，還擔任「埃及學院」的秘書——數學家也會出差到金字塔旁喔！',
+ '回國後我在格勒諾布爾當省長，白天辦公，晚上研究「熱怎麼傳導」，1822 年出版了《熱的解析理論》。',
+ '我主張任何函數都能拆成三角函數的和。當年拉格朗日等大師質疑它不夠嚴謹，但這個想法後來改變了整個數學與工程。',
+ '熱方程式的解，就是「初始溫度分布」和「高斯熱核」的卷積——熱會把溫度慢慢抹平，就像第 3 節的平滑濾波！',
+ '我也常被認為是最早提出「溫室效應」概念的人之一；艾菲爾鐵塔上刻的 72 位科學家名字裡也有我。'];
+var qi=0;$('av1').addEventListener('click',function(){AV1.mood('smile',QUOTES[qi++%QUOTES.length]);});
+
+/* ---------- 1 離散逐步 ---------- */
+var D={x:[1,2,3,1],h:[1,0.5,0.25],y:[],s:0,timer:null};
+var CW=50,GAP=2,LW=158;
+var CODE=['import numpy as np','x = np.array(X)','h = np.array(H)','y = np.zeros(len(x) + len(h) - 1)',
+ 'for n in range(len(y)):              <span class="cm"># ② 平移到 n</span>','    for k in range(len(x)):','        if 0 <= n - k < len(h):      <span class="cm"># ③ 對齊的格子相乘</span>','            y[n] += x[k] * h[n - k]  <span class="cm"># ④ 加總</span>',
+ 'print(y)              <span class="cm"># 和 np.convolve(x, h) 相同</span>'];
+function npfmt(a){ // 模擬 numpy 陣列列印格式
+  var parts=a.map(function(v){var s=(Math.abs(v)<1e-12?0:v).toFixed(8).replace(/0+$/,'');var i=s.indexOf('.');return [s.slice(0,i),s.slice(i+1)];});
+  var di=Math.max.apply(null,parts.map(function(p){return p[0].length;})),df=Math.max.apply(null,parts.map(function(p){return p[1].length;}));
+  return '['+parts.map(function(p){var s=p[0];while(s.length<di)s=' '+s;var f=p[1];while(f.length<df)f+=' ';return s+'.'+f;}).join(' ')+']';}
+function pyList(a){return '['+a.map(function(v){return String(v);}).join(', ')+']';}
+function dconv(){var N=D.x.length,M=D.h.length;D.y=[];for(var n=0;n<N+M-1;n++){var s=0;for(var k=0;k<N;k++){var j=n-k;if(j>=0&&j<M)s+=D.x[k]*D.h[j];}D.y.push(s);}}
+function num(v){return fmt(v,4);}
+function kmin(){return -(D.h.length-1);}
+function kx(k){return LW+(k-kmin())*(CW+GAP);}
+function dphase(){var L=D.y.length,s=D.s;if(s<2)return {p:s===0?'orig':'flip',n:0,sub:-1};var r=s-2;return {p:'calc',n:Math.floor(r/3),sub:r%3};}
+function dtotal(){return 2+3*D.y.length;}
+function dbuild(){var N=D.x.length,M=D.h.length,L=N+M-1,km=kmin(),kM=N-1+M-1,ks=[],k,j;for(k=km;k<=kM;k++)ks.push(k);
+  var h='<div class="trow"><div class="tl">k（輸出時當作 n）</div>'+ks.map(function(k){return '<div class="tc e">'+k+'</div>';}).join('')+'</div>';
+  h+='<div class="trow"><div class="tl">x[k]</div>'+ks.map(function(k){return k>=0&&k<N?'<div class="tc x" id="xc'+(k-km)+'">'+num(D.x[k])+'</div>':'<div class="tc e" id="xc'+(k-km)+'">0</div>';}).join('')+'</div>';
+  h+='<div class="trow"><div class="tl">h[k]</div>'+ks.map(function(k){return k>=0&&k<M?'<div class="tc h0">'+num(D.h[k])+'<small>h['+k+']</small></div>':'<div class="tc e"></div>';}).join('')+'</div>';
+  h+='<div class="trow"><div class="tl">h[−k]</div><div class="fax" id="fax" style="left:'+(kx(0)+CW/2)+'px"><span>翻轉軸 k = 0</span></div>';
+  for(j=0;j<M;j++)h+='<div class="hcell" id="fc'+j+'">'+num(D.h[j])+'<small>h['+j+']</small></div>';
+  h+='</div>';
+  h+='<div class="trow"><div class="tl" id="hlab">h[n−k]</div>';
+  for(j=0;j<M;j++)h+='<div class="ghost" id="gh'+j+'"></div>';
+  for(j=0;j<M;j++)h+='<div class="hcell" id="hc'+j+'">'+num(D.h[j])+'<small>h['+j+']</small></div>';
+  h+='</div>';
+  h+='<div class="trow"><div class="tl">y[n] = (x ∗ h)[n]</div>'+ks.map(function(k){return '<div class="tc e" id="yc'+(k-km)+'"></div>';}).join('')+'</div>';
+  h+='<div class="dsum" id="dsum"></div>';
+  var tp=$('tape');tp.innerHTML=h;tp.style.width=(kx(kM)+CW+8)+'px';
+  for(j=0;j<M;j++)['fc','hc'].forEach(function(p){var c=$(p+j);c.style.transition='none';c.style.left=kx(j)+'px';c.style.opacity=0;void c.offsetWidth;c.style.transition='';});
+}
+function drender(){
+  var N=D.x.length,M=D.h.length,L=D.y.length,km=kmin(),kM=N-1+M-1,P=dphase(),n=P.n,j,k;
+  var calc=P.p==='calc';
+  // 第 3 列 h[−k]：翻轉時從 h[k] 的位置滑到對稱位置
+  for(j=0;j<M;j++){var f=$('fc'+j);f.style.left=kx(P.p==='orig'?j:-j)+'px';f.style.opacity=P.p==='orig'?0:1;
+    var c=$('hc'+j);c.style.left=kx(calc?n-j:-j)+'px';c.style.opacity=calc?1:0;
+    var g=$('gh'+j);g.style.left=kx(n-1-j)+'px';g.style.opacity=(calc&&P.sub===0&&n>0)?1:0;}
+  $('fax').style.opacity=P.p==='calc'?0.35:1;
+  $('hlab').innerHTML=calc?'h['+n+'−k]':'h[n−k]';
+  // 相乘：對齊的格子加外框
+  var terms=[],prods=[],mul=calc&&P.sub>=1;
+  for(k=km;k<=kM;k++){var xc=$('xc'+(k-km)),jj=n-k,inH=jj>=0&&jj<M,inX=k>=0&&k<N;xc.classList.toggle('mul',mul&&inH&&inX);
+    if(mul&&inH&&inX){terms.push(num(D.x[k])+'×'+num(D.h[jj])+' = '+num(D.x[k]*D.h[jj]));prods.push(num(D.x[k]*D.h[jj]));}}
+  for(j=0;j<M;j++){var kk=n-j;$('hc'+j).classList.toggle('mul',mul&&kk>=0&&kk<N);}
+  // 第 5 列 y[n]
+  var done=!calc?-1:(P.sub===2?n:n-1);
+  for(k=km;k<=kM;k++){var yc=$('yc'+(k-km));
+    if(k<0){yc.className='tc e';yc.textContent='';continue;}
+    if(k<=done){yc.className='tc y'+(k===n&&P.sub===2?' cur pulse':'');yc.textContent=num(D.y[k]);}
+    else{yc.className='tc yq'+(calc&&k===n?' next':'');yc.textContent='?';}}
+  var ds=$('dsum');ds.className='dsum';ds.style.marginLeft=LW+'px';
+  if(calc&&P.sub===1){ds.className='dsum';ds.innerHTML='對齊的格子相乘：'+(terms.length?terms.join('，'):'沒有對到任何 x');}
+  else if(calc&&P.sub===2){ds.className='dsum on';ds.innerHTML='y['+n+'] = '+(prods.length?prods.join(' + '):'0')+' = <b>'+num(D.y[n])+'</b>　→ 填進第 5 列 n = '+n+' 的格子';}
+  else ds.innerHTML='';
+  ['ch0','ch1','ch2','ch3'].forEach(function(id,i){var on=(P.p==='flip'&&i===0)||(calc&&P.sub+1===i);$(id).classList.toggle('on',on);});
+  $('dprog').style.width=(D.s/(dtotal()-1)*100)+'%';
+  var ex;
+  if(P.p==='orig')ex='<b>準備：</b>第 1 列是訊號 x[k]，第 2 列是原始的核 h[k]（h[0] 到 h['+(M-1)+'] 放在 k = 0 到 '+(M-1)+'）。每一格下方小字標出它是 h 的第幾個元素。';
+  else if(P.p==='flip')ex='<b>① 翻轉：</b>以 k = 0 為軸把 h[k] 左右翻轉，放到第 3 列 h[−k]：h[j] 從 k = j 移到 k = −j，所以 h[0] 留在原地，h['+(M-1)+'] 跑到最左邊 k = '+(-(M-1))+'。';
+  else if(P.sub===0)ex='<b>② 平移（n = '+n+'）：</b>把第 3 列的 h[−k] 整條往右移 '+n+' 格，放到第 4 列 h['+n+'−k]，h[0] 對準 k = '+n+'。'+(n===0?'n = 0 時不用移，第 4 列和第 3 列一樣。':'（虛線框是上一個位置，每次多移 1 格。）');
+  else if(P.sub===1)ex='<b>③ 相乘（n = '+n+'）：</b>第 1 列 x[k] 和第 4 列 h['+n+'−k] 上下對齊的格子（綠框）兩兩相乘：'+(terms.length?terms.join('，'):'沒有對到任何 x')+'。沒對到 x 的地方 x = 0，乘積是 0。';
+  else ex='<b>④ 加總（n = '+n+'）：</b>把乘積全部加起來，就是第 5 列的 y['+n+'] = '+(prods.length?prods.join(' + '):'0')+' = <b>'+num(D.y[n])+'</b>。'+(n<L-1?'接著回到 ② 平移，往右再移一格。':'<br>✔ 完成！h 已經滑過整條 x，輸出長度 = '+N+' + '+M+' − 1 = '+L+'。');
+  $('dexp').innerHTML=ex;
+  var on=!calc?[0,1,2,3]:(P.sub===0?[4]:P.sub===1?[5,6]:(n===L-1?[7,8]:[7]));
+  $('dcode').innerHTML=CODE.map(function(t,i){t=t.replace('X',pyList(D.x)).replace('H',pyList(D.h));return '<div class="ln'+(on.indexOf(i)>=0?' on':'')+'">'+t+'</div>';}).join('');
+  var out=[];for(var i=0;i<=done;i++)out.push('# y['+i+'] = '+num(D.y[i]));
+  if(done===L-1)out.push(npfmt(D.y));
+  $('dout').textContent=out.length?out.join('\n'):'# 尚未開始計算';
+  ddraw();
+}
+function ddraw(){var F=fit($('dcv'),0.55,180,300),c=F.c,L=D.y.length,P=dphase(),done=P.p!=='calc'?-1:(P.sub===2?P.n:P.n-1);
+  var mn=Math.min.apply(null,D.y.concat([0]));
+  var A=axes(c,F.w,F.h,{x0:-0.7,x1:L-0.3,y0:Math.min(0,mn*1.15),y1:Math.max(0.1,Math.max.apply(null,D.y)*1.15),xt:D.y.map(function(_,i){return i;}),xf:function(v){return 'n='+v;},yt:[0]});
+  var bw=Math.min(36,(A.X(1)-A.X(0))*0.6);c.font='12px system-ui';c.textAlign='center';
+  for(var i=0;i<L;i++){
+    if(i>done){c.fillStyle=css('--mute');c.textBaseline='bottom';c.fillText('?',A.X(i),A.Y(0)-4);continue;}
+    var yv=D.y[i];c.fillStyle=(i===done&&P.sub===2)?css('--acc2'):css('--acc');
+    c.fillRect(A.X(i)-bw/2,Math.min(A.Y(0),A.Y(yv)),bw,Math.abs(A.Y(yv)-A.Y(0)));
+    c.fillStyle=css('--ink');c.textBaseline=yv>=0?'bottom':'top';c.fillText(num(yv),A.X(i),A.Y(yv)+(yv>=0?-3:3));}
+}
+DRAW.push(ddraw);
+function dstop(){clearInterval(D.timer);D.timer=null;$('da').textContent='▶ 自動播放';}
+function dstep(d){D.s=Math.max(0,Math.min(dtotal()-1,D.s+d));drender();}
+$('dn').onclick=function(){dstop();dstep(1);};$('dp').onclick=function(){dstop();dstep(-1);};
+$('d0').onclick=function(){dstop();D.s=0;drender();};
+$('da').onclick=function(){if(D.timer){dstop();return;}if(D.s>=dtotal()-1)D.s=0;drender();$('da').textContent='⏸ 暫停';
+  D.timer=setInterval(function(){if(D.s>=dtotal()-1){dstop();return;}dstep(1);},1400);};
+function parseSeq(s){var a=s.split(/[,，\s]+/).filter(function(t){return t!=='';}).map(Number);if(!a.length||a.length>8||a.some(isNaN))return null;return a;}
+$('dset').onclick=function(){var x=parseSeq($('dx').value),h=parseSeq($('dh').value);
+  if(!x||!h){$('dexp').innerHTML='<span style="color:var(--bad)">請輸入 1–8 個數字，以逗號分隔。</span>';return;}
+  dstop();D.x=x;D.h=h;dconv();D.s=0;dbuild();drender();};
+$('dpre').onchange=function(){if(!this.value)return;var p=this.value.split('|');$('dx').value=p[0].split(',').join(', ');$('dh').value=p[1].split(',').join(', ');$('dset').onclick();this.value='';};
+dconv();dbuild();
+
+/* ---------- 2 連續 ---------- */
+var C={t:0.5,timer:null};
+function cf(t){return t>=0&&t<=1?1:0;}
+function cg(t){var k=$('cg').value;if(k==='rect')return t>=0&&t<=1?1:0;if(k==='tri')return t>=0&&t<=1?1-Math.abs(2*t-1):0;return t>=0?Math.exp(-2*t):0;}
+function cconv(t){var s=0,dt=0.002;for(var u=0;u<=1;u+=dt)s+=cf(u)*cg(t-u)*dt;return s;}
+function cdraw(){var t=C.t;$('ctv').textContent=' '+t.toFixed(2);
+  var F=fit($('ccv1'),0.32,170,260),c=F.c,A=axes(c,F.w,F.h,{x0:-2,x1:5,y0:-0.1,y1:1.25,xt:[-2,-1,0,1,2,3,4,5],yt:[0,1],xl:'τ'});
+  var xs=[],yf=[],yg=[],yp=[];for(var u=-2;u<=5.0001;u+=0.005){xs.push(u);yf.push(cf(u));yg.push(cg(t-u));yp.push(cf(u)*cg(t-u));}
+  c.fillStyle=css('--ok');c.globalAlpha=0.35;c.beginPath();c.moveTo(A.X(-2),A.Y(0));for(var i=0;i<xs.length;i++)c.lineTo(A.X(xs[i]),A.Y(yp[i]));c.lineTo(A.X(5),A.Y(0));c.fill();c.globalAlpha=1;
+  path(c,xs,yf,A,css('--acc'),2.5);path(c,xs,yg,A,css('--acc2'),2.5);
+  c.strokeStyle=css('--acc2');c.setLineDash([4,4]);c.beginPath();c.moveTo(A.X(t),A.Y(-0.1));c.lineTo(A.X(t),A.Y(1.25));c.stroke();c.setLineDash([]);
+  c.fillStyle=css('--acc2');c.textAlign='left';c.font='12px system-ui';c.fillText('τ = t',A.X(t)+4,A.Y(1.15));
+  var ys=[],ts=[];for(var s=-1;s<=4.0001;s+=0.02){ts.push(s);ys.push(cconv(s));}
+  var ymax=Math.max(0.6,Math.max.apply(null,ys)*1.2);
+  var F2=fit($('ccv2'),0.24,140,200),c2=F2.c,B=axes(c2,F2.w,F2.h,{x0:-2,x1:5,y0:-0.05,y1:ymax,xt:[-2,-1,0,1,2,3,4,5],yt:[0,0.5,1].filter(function(v){return v<ymax;}),xl:'t',yl:'(f∗g)(t)'});
+  path(c2,ts,ys,B,css('--line'),2);
+  var ts2=[],ys2=[];for(var i=0;i<ts.length&&ts[i]<=t+1e-9;i++){ts2.push(ts[i]);ys2.push(ys[i]);}
+  path(c2,ts2,ys2,B,css('--ok'),3);
+  var v=cconv(t);c2.fillStyle=css('--ok');c2.beginPath();c2.arc(B.X(t),B.Y(v),5,0,7);c2.fill();
+  $('cval').textContent=v.toFixed(3);}
+DRAW.push(cdraw);
+$('ct').oninput=function(){C.t=+this.value;cdraw();};$('cg').onchange=cdraw;
+$('cplay').onclick=function(){if(C.timer){clearInterval(C.timer);C.timer=null;this.textContent='▶ 滑動';return;}
+  if(C.t>=3.99)C.t=-1;this.textContent='⏸ 暫停';var b=this;
+  C.timer=setInterval(function(){C.t=Math.min(4,C.t+0.03);$('ct').value=C.t;cdraw();if(C.t>=4){clearInterval(C.timer);C.timer=null;b.textContent='▶ 滑動';}},40);};
+
+/* ---------- 3 ECG ---------- */
+var E=(function(){var fs=250,N=750,r=rng(7),t=[],clean=[],noisy=[];
+  var W=[[-0.2,0.12,0.025],[-0.03,-0.1,0.01],[0,1,0.012],[0.03,-0.25,0.012],[0.25,0.3,0.045]];
+  for(var i=0;i<N;i++){var tt=i/fs,v=0;for(var b=0.35;b<3.2;b+=0.8)for(var j=0;j<5;j++){var d=tt-b-W[j][0];v+=W[j][1]*Math.exp(-d*d/(2*W[j][2]*W[j][2]));}
+    t.push(tt);clean.push(v);noisy.push(v+0.08*gauss(r));}
+  return {fs:fs,t:t,clean:clean,noisy:noisy};})();
+function ekernel(){var K=+$('ew').value,h=[],c=(K-1)/2,s=0;for(var i=0;i<K;i++){var v=$('ek').value==='box'?1:Math.exp(-Math.pow(i-c,2)/(2*Math.pow(Math.max(K/6,0.5),2)));h.push(v);s+=v;}return h.map(function(v){return v/s;});}
+function convSame(x,h){var N=x.length,M=h.length,c=(M-1)/2,y=[];for(var n=0;n<N;n++){var s=0;for(var j=0;j<M;j++){var k=n-j+c;k=Math.max(0,Math.min(N-1,k));s+=x[k]*h[j];}y.push(s);}return y;}
+function rms(a,b){var s=0;for(var i=0;i<a.length;i++)s+=(a[i]-b[i])*(a[i]-b[i]);return Math.sqrt(s/a.length);}
+function edraw(){var h=ekernel(),y=convSame(E.noisy,h),K=h.length;$('ewv').textContent=' '+K;
+  var F=fit($('ecv'),0.3,190,320),c=F.c,A=axes(c,F.w,F.h,{x0:0,x1:3,y0:-0.5,y1:1.25,xt:[0,0.5,1,1.5,2,2.5,3],xf:function(v){return v+' s';},yt:[-0.5,0,0.5,1],yl:'mV（示意）'});
+  path(c,E.t,E.noisy,A,css('--mute'),1);c.globalAlpha=1;
+  if($('eclean').checked)path(c,E.t,E.clean,A,css('--ok'),2,[5,4]);
+  path(c,E.t,y,A,css('--acc'),2.4);
+  var F2=fit($('ekcv'),0.35,110,160),c2=F2.c,mx=Math.max.apply(null,h),B=axes(c2,F2.w,F2.h,{x0:-21.5,x1:21.5,y0:0,y1:mx*1.2,xt:[-20,-10,0,10,20],yt:[],l:12,b:22});
+  var bw=Math.max(2,(B.X(1)-B.X(0))*0.7),c0=(K-1)/2;c2.fillStyle=css('--acc2');for(var i=0;i<K;i++)c2.fillRect(B.X(i-c0)-bw/2,B.Y(h[i]),bw,B.Y(0)-B.Y(h[i]));
+  var e0=rms(E.noisy,E.clean),e1=rms(y,E.clean);$('er0').textContent=e0.toFixed(3);$('er1').textContent=e1.toFixed(3);
+  var p0=Math.max.apply(null,E.clean),p1=Math.max.apply(null,y);$('ep0').textContent=p0.toFixed(2);$('ep1').textContent=p1.toFixed(2);
+  $('ehint').textContent=K===1?'K = 1：核只有一個 1，卷積後完全不變。':(p1<0.7*p0?'核太寬了！R 波被抹掉 '+Math.round((1-p1/p0)*100)+'%——診斷需要的尖峰資訊也不見了。':(e1<e0?'雜訊變小了，R 波仍大致保留。試著再加寬，看看會發生什麼事。':''));}
+DRAW.push(edraw);['ew','ek','eclean'].forEach(function(id){$(id).addEventListener('input',edraw);});
+
+/* ---------- 4 影像 ---------- */
+var I=(function(){var S=64,r=rng(11),a=[];for(var y=0;y<S;y++)for(var x=0;x<S;x++){
+   var v=0.08,bx=(x-32)/27,by=(y-34)/29;if(bx*bx+by*by<1)v=0.42;
+   var l1=Math.pow((x-20)/9.5,2)+Math.pow((y-32)/19,2),l2=Math.pow((x-44)/9.5,2)+Math.pow((y-32)/19,2);if(l1<1||l2<1)v=0.16;
+   if(Math.abs(x-32)<3&&bx*bx+by*by<1)v=0.62;
+   v+=0.6*Math.exp(-(Math.pow(x-47,2)+Math.pow(y-28,2))/(2*1.6*1.6));
+   v+=0.045*gauss(r);a.push(Math.max(0,Math.min(1,v)));}
+  return {S:S,a:a,sel:[28,47],scan:-1,timer:null};})();
+var KER={avg:{k:[1,1,1,1,1,1,1,1,1].map(function(v){return v/9;}),d:'九格平均：去雜訊，但邊緣與小結節也會變模糊。',lbl:['1/9','1/9','1/9','1/9','1/9','1/9','1/9','1/9','1/9'],abs:false},
+ gau:{k:[1,2,1,2,4,2,1,2,1].map(function(v){return v/16;}),d:'中心權重較大的模糊，比平均模糊更自然。',lbl:['1/16','2/16','1/16','2/16','4/16','2/16','1/16','2/16','1/16'],abs:false},
+ sharp:{k:[0,-1,0,-1,5,-1,0,-1,0],d:'中心放大、減去鄰居：邊界與結節更清楚，但雜訊也被放大。',abs:false},
+ sobel:{k:[-1,0,1,-2,0,2,-1,0,1],d:'左右相減：亮度左右變化大的地方（垂直邊緣）會發亮。顯示的是絕對值。',abs:true},
+ lap:{k:[0,1,0,1,-4,1,0,1,0],d:'上下左右減中心：在亮點與輪廓處反應強烈，常用來找邊緣或小結節。顯示的是絕對值。',abs:true}};
+function iconvAt(y,x){var K=KER[$('ik').value].k,S=I.S,s=0;for(var i=-1;i<=1;i++)for(var j=-1;j<=1;j++){var yy=Math.max(0,Math.min(S-1,y-i)),xx=Math.max(0,Math.min(S-1,x-j));s+=I.a[yy*S+xx]*K[(i+1)*3+(j+1)];}return s;}
+function ishow(cv,vals,rowsDone,sel){var S=I.S,F=fit(cv,1,0,0),c=F.c,off=document.createElement('canvas');off.width=S;off.height=S;var oc=off.getContext('2d'),im=oc.createImageData(S,S);
+  for(var p=0;p<S*S;p++){var row=Math.floor(p/S),g=row<rowsDone?Math.round(Math.max(0,Math.min(1,vals[p]))*255):0,a=row<rowsDone?255:30;im.data[p*4]=im.data[p*4+1]=im.data[p*4+2]=g;im.data[p*4+3]=a;}
+  oc.putImageData(im,0,0);c.clearRect(0,0,F.w,F.h);c.fillStyle='#000';c.fillRect(0,0,F.w,F.h);c.imageSmoothingEnabled=false;c.drawImage(off,0,0,F.w,F.h);
+  if(sel){var u=F.w/S;c.strokeStyle='#ffa255';c.lineWidth=2;c.strokeRect((sel[1]-1)*u,(sel[0]-1)*u,3*u,3*u);}}
+function idraw(){var key=$('ik').value,ke=KER[key],S=I.S,out=[];for(var y=0;y<S;y++)for(var x=0;x<S;x++){var v=iconvAt(y,x);out.push(ke.abs?Math.abs(v)*1.6:v);}
+  var rows=I.scan>=0?I.scan:S,sel=I.scan>=0?[Math.min(S-1,I.scan),Math.floor(S/2)]:I.sel;
+  ishow($('icv0'),I.a,S,sel);ishow($('icv1'),out,rows,sel);
+  $('icap').textContent='卷積後'+(ke.abs?'（取絕對值顯示）':'');
+  $('kgrid').innerHTML=ke.k.map(function(v,i){return '<div>'+(ke.lbl?ke.lbl[i]:v)+'</div>';}).join('');$('kdesc').textContent=ke.d;
+  var y0=I.sel[0],x0=I.sel[1],K=ke.k,html='',terms=[];
+  for(var i=-1;i<=1;i++){html+='<tr>';for(var j=-1;j<=1;j++){var yy=Math.max(0,Math.min(S-1,y0+i)),xx=Math.max(0,Math.min(S-1,x0+j)),w=K[(1-i)*3+(1-j)];
+    html+='<td>'+I.a[yy*S+xx].toFixed(2)+'<br><span style="color:var(--acc2)">×'+(ke.lbl?ke.lbl[(1-i)*3+(1-j)]:w)+'</span></td>';}html+='</tr>';}
+  $('ipatch').innerHTML=html;$('ipos').textContent='像素 (列 '+y0+', 行 '+x0+') 的 3×3 鄰域 × 翻轉後的核：';
+  var v=iconvAt(y0,x0);$('isum').innerHTML='九個乘積加總 → 輸出像素 = <b>'+v.toFixed(3)+'</b>';}
+DRAW.push(idraw);$('ik').onchange=idraw;
+$('icv0').addEventListener('click',function(e){var r=this.getBoundingClientRect(),S=I.S;I.sel=[Math.max(0,Math.min(S-1,Math.floor((e.clientY-r.top)/r.height*S))),Math.max(0,Math.min(S-1,Math.floor((e.clientX-r.left)/r.width*S)))];if(I.timer){clearInterval(I.timer);I.timer=null;I.scan=-1;$('iscan').textContent='▶ 掃描';}idraw();});
+$('iscan').onclick=function(){var b=this;if(I.timer){clearInterval(I.timer);I.timer=null;I.scan=-1;b.textContent='▶ 掃描';idraw();return;}
+  I.scan=0;b.textContent='⏸ 停止';I.timer=setInterval(function(){I.scan+=1;if(I.scan>=I.S){clearInterval(I.timer);I.timer=null;I.scan=-1;b.textContent='▶ 掃描';}idraw();},70);};
+
+/* ---------- 5 小測驗 ---------- */
+var QZ=[
+ {q:'離散卷積 y[n] = Σ x[k]·h[n−k] 裡，h[n−k] 代表對 h 做了什麼？',a:'先左右翻轉，再平移到位置 n',o:['只平移、不翻轉','先左右翻轉，再平移到位置 n','上下顛倒（取負號）','把 h 放大 n 倍'],e:'n−k 中的「−k」就是翻轉，「+n」就是平移。',h:'把 k 想成橫軸，h[−k] 的圖形會長什麼樣？'},
+ {q:'長度 5 的訊號和長度 3 的核做完整卷積，輸出長度是多少？',a:'7',o:['5','3','7','15'],e:'N + M − 1 = 5 + 3 − 1 = 7：核從剛碰到訊號左端一直滑到離開右端。',h:'回到第 1 節，數數看輸出有幾格。'},
+ {q:'訊號只有一個脈衝（例如 0, 0, 4, 0, 0），和核 h 卷積後會得到什麼？',a:'h 的形狀被複製到脈衝的位置，並乘上 4',o:['全部變成 0','h 的形狀被複製到脈衝的位置，並乘上 4','還是原本的脈衝','h 被上下顛倒'],e:'脈衝只在一點有值，所以輸出就是「平移並放大的 h」——這也是 h 被稱為脈衝響應的原因。',h:'在第 1 節選「單一脈衝」範例跑一次看看。'},
+ {q:'連續卷積 (f∗g)(t) 在某個時刻 t 的值，在圖上代表什麼？',a:'f(τ) 和翻轉平移後 g(t−τ) 乘積的面積',o:['f 和 g 的最大值相加','f(τ) 和翻轉平移後 g(t−τ) 乘積的面積','g 的斜率','f 和 g 交點的高度'],e:'積分 ∫f(τ)g(t−τ)dτ 就是乘積曲線下的面積，也就是第 2 節的綠色區域。',h:'第 2 節的綠色區域是什麼？'},
+ {q:'用移動平均核平滑 ECG 時，核寬度一直加大會怎樣？',a:'雜訊更少，但 R 波尖峰也被抹鈍',o:['雜訊更少，而且 R 波越來越尖','雜訊更少，但 R 波尖峰也被抹鈍','完全沒有變化','雜訊反而變大'],e:'平均的範圍越大越平滑，但快速變化的重要波形（QRS）也會被平均掉，要取捨。',h:'第 3 節把 K 拉到最大，看看 R 波峰值。'},
+ {q:'影像上用九格都是 1/9 的 3×3 核做卷積，效果是什麼？',a:'模糊、去雜訊',o:['模糊、去雜訊','找出邊緣','讓影像變亮一倍','把影像旋轉'],e:'每個像素都換成周圍九格的平均，雜訊互相抵消，但邊緣與小結節也會變模糊。',h:'第 4 節選「平均模糊」，比較左右兩張圖。'},
+ {q:'CNN 卷積層裡的 3×3 核數值是怎麼來的？',a:'從訓練資料中學出來的權重',o:['由醫師手動設定','從訓練資料中學出來的權重','固定為 Sobel 邊緣核','隨機產生、訓練時不會改變'],e:'傳統影像處理由人設計核；CNN 則讓網路自己學出最適合任務的核。',h:'第 4 節最後的說明框有答案。'}];
+var PRAISE=['Très bien！完全正確！','Magnifique！觀念很清楚！','Bravo！你抓到重點了！','Parfait！就是這樣！'];
+var QS={ans:0,ok:0,streak:0};
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function qbuild(){QS={ans:0,ok:0,streak:0};$('qscore').textContent='';$('qagain').style.display='none';
+  $('quiz').innerHTML=QZ.map(function(z,i){return '<div class="q" data-i="'+i+'"><div class="qt">'+(i+1)+'. '+z.q+'</div>'+shuffle(z.o).map(function(o){return '<button class="opt">'+o+'</button>';}).join('')+'<div class="fb"></div></div>';}).join('');}
+$('quiz').addEventListener('click',function(e){var b=e.target.closest('.opt');if(!b||b.disabled)return;var box=b.closest('.q'),z=QZ[+box.dataset.i],ok=b.textContent===z.a;
+  box.querySelectorAll('.opt').forEach(function(o){o.disabled=true;if(o.textContent===z.a)o.classList.add('right');});
+  var fb=box.querySelector('.fb');QS.ans++;
+  if(ok){QS.ok++;QS.streak++;fb.className='fb good';fb.textContent='✔ 正確！'+z.e;
+    AV2.mood('smile',QS.streak>=3?'連續答對 '+QS.streak+' 題！你的卷積功力已經像熱一樣擴散開來了！':PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+  else{QS.streak=0;b.classList.add('wrong');fb.className='fb bad';fb.textContent='✘ 正確答案是「'+z.a+'」。'+z.e;AV2.mood('frown',z.h);}
+  if(QS.ans===QZ.length){$('qscore').textContent='得分：'+QS.ok+' / '+QZ.length;$('qagain').style.display='inline-block';
+    setTimeout(function(){var r=QS.ok/QZ.length;
+      if(r===1)AV2.mood('smile','全對！Félicitations！翻轉、平移、相乘、加總，你都掌握了！',true);
+      else if(r>=0.7)AV2.mood('smile','很不錯！再回頭玩玩答錯題目的那一節，觀念就完整了。',true);
+      else AV2.mood('frown','別灰心！建議從第 1 節的逐步動畫重新走一次，再玩第 2、3 節。',true);},3300);}});
+$('qagain').onclick=function(){qbuild();AV2.mood('','新的一輪！選項順序已經打亂囉。');window.scrollTo({top:$('quiz').getBoundingClientRect().top+window.scrollY-80,behavior:'smooth'});};
+qbuild();
+
+/* ---------- 啟動與重畫 ---------- */
+function redrawAll(){DRAW.forEach(function(f){f();});}
+drender();redrawAll();
+var rt=null;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(redrawAll,120);});
+if(window.matchMedia)window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawAll);
+new MutationObserver(redrawAll).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+</script>
+</body>
+</html>
