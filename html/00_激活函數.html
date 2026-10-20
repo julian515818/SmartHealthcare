@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>激活函數互動教學</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;
+ --c1:#2f6fd6;--c2:#e8772e;--c3:#1f9d6b;--c4:#8a5cd6;--grid:#ecebe5;--soft:#f2f1ec;--code:#1e2230;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --c1:#6ea2ff;--c2:#ffa05c;--c3:#4fd19d;--c4:#b893ff;--grid:#262b36;--soft:#232834;--code:#11141b;}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --c1:#6ea2ff;--c2:#ffa05c;--c3:#4fd19d;--c4:#b893ff;--grid:#262b36;--soft:#232834;--code:#11141b;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:1.9rem}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:18px 0;min-width:0}
+h2{margin:0 0 12px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+h3{font-size:1.05rem;margin:4px 0 6px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--c2);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.formula{font-size:1.15rem;text-align:center;padding:10px;background:var(--soft);border-radius:10px;margin:10px 0;overflow-x:auto}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.9em;line-height:1.15;margin:0 2px}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 3px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.g2>*{min-width:0}
+@media (max-width:860px){.g2{grid-template-columns:minmax(0,1fr)}}
+.cvbox{width:100%;min-width:0}
+canvas{display:block;border-radius:10px}
+input[type=range]{width:100%;accent-color:var(--c2)}
+.ctl{flex:1 1 200px;min-width:0}
+.ctl label{font-size:.92rem;color:var(--mute)}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 14px;cursor:pointer}
+button:hover{border-color:var(--c2)}
+button.on{background:var(--c2);border-color:var(--c2);color:#fff}
+.box{background:var(--soft);border-radius:10px;padding:10px 14px;margin:10px 0}
+.box.or{border-left:4px solid var(--c2)}
+.box.bl{border-left:4px solid var(--c1)}
+.box.gr{border-left:4px solid var(--c3)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.9rem;margin:6px 0}
+.legend i{display:inline-block;width:22px;height:4px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.stat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0}
+.stat>div{background:var(--soft);border-radius:10px;padding:8px;text-align:center;min-width:0}
+.stat b{display:block;font-size:1.2rem}
+.stat span{font-size:.82rem;color:var(--mute)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.tabs button{flex:1 1 120px}
+.scrollx{overflow-x:auto;min-width:0}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border-bottom:1px solid var(--line);padding:5px 8px;text-align:center}
+th{color:var(--mute);font-weight:600}
+tr.hl td{background:color-mix(in srgb,var(--c2) 16%,transparent);font-weight:700}
+/* 神經元圖 */
+.nsvg{width:100%;max-width:560px;display:block;margin:0 auto}
+.nsvg text{fill:var(--ink);font-size:13px}
+.nsvg .wire{stroke:var(--line);stroke-width:4;transition:stroke .3s}
+.nsvg .wire.on{stroke:var(--c1)}
+.nsvg .wire.inh.on{stroke:var(--bad)}
+.nsvg .soma{fill:var(--card);stroke:var(--mute);stroke-width:3;transition:all .3s}
+.nsvg .soma.fire{fill:color-mix(in srgb,var(--c2) 30%,var(--card));stroke:var(--c2)}
+.nsvg .out{stroke:var(--line);stroke-width:5;transition:stroke .3s}
+.nsvg .out.fire{stroke:var(--c2)}
+.tg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tg button{text-align:left}
+.tg button.on.inh{background:var(--bad);border-color:var(--bad)}
+/* 輸出層 */
+.br{display:grid;grid-template-columns:96px minmax(0,1fr) 54px;gap:8px;align-items:center;font-size:.9rem;margin:4px 0}
+.tr{height:16px;border-radius:8px;background:var(--soft);overflow:hidden}
+.tr>div{height:100%;border-radius:8px;transition:width .25s}
+ol.ref{padding-left:1.4em}ol.ref li{margin:6px 0;font-size:.93rem}
+.tl{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.tl button{flex:1 1 130px}
+/* 小測驗 */
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opts button{text-align:left}
+.q .opts button.right{background:color-mix(in srgb,var(--ok) 22%,transparent);border-color:var(--ok)}
+.q .opts button.wrong{background:color-mix(in srgb,var(--bad) 18%,transparent);border-color:var(--bad)}
+.q .exp{margin-top:8px;font-size:.93rem}
+.q .exp.ok{color:var(--ok)}.q .exp.no{color:var(--bad)}
+.score{font-size:1.2rem;font-weight:700;margin:12px 0}
+footer{text-align:center;color:var(--mute);font-size:.9rem;margin-top:24px}
+
+/* 卡通老師 */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:top center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:top center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+
+/* 作者徽章（校徽待補） */
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute)}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main">
+    <h1>激活函數：神經元「要不要發訊號、發多強」</h1>
+    <p>智慧醫療 ・ 互動教學：激活函數（Activation Function）的涵義</p>
+  </div>
+  <div class="pu-badge"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+  <h2><span class="num">0</span>一句話：激活函數把「收到的總訊號」變成「神經元的輸出」</h2>
+  <div class="intro">
+    <div>
+      <p>人工神經元做兩件事：先把輸入<b>加權相加</b>得到 z，再用<b>激活函數</b> f 決定要輸出多少：</p>
+      <div class="formula">z = w₁x₁ + w₂x₂ + w₃x₃ + b　→　輸出 y = f(z)</div>
+      <svg class="nsvg" viewBox="0 0 520 200" id="n0"></svg>
+      <div class="g2">
+        <div>
+          <div class="ctl"><label>x₁ 空腹血糖（標準化）= <b id="x1v"></b></label><input id="x1" type="range" min="-2" max="3" step="0.1" value="1.2"></div>
+          <div class="ctl"><label>x₂ BMI（標準化）= <b id="x2v"></b></label><input id="x2" type="range" min="-2" max="3" step="0.1" value="0.5"></div>
+          <div class="ctl"><label>x₃ 每週運動（標準化）= <b id="x3v"></b></label><input id="x3" type="range" min="-2" max="3" step="0.1" value="0.8"></div>
+          <div class="tabs" id="f0tabs" style="margin-top:8px"></div>
+        </div>
+        <div><div class="cvbox"><canvas id="cv0"></canvas></div></div>
+      </div>
+      <div class="box or" id="calc0"></div>
+    </div>
+    <div class="avwrap"><div class="bubble" id="bub1">Hello！我是 McCulloch 老師。1943 年我和 Pitts 把神經元寫成數學的「開關」。點我聽故事！</div><div class="av" id="av1"></div></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+  <h2><span class="num">1</span>靈感來源：生物神經元的「全或無」</h2>
+  <p>生物神經元的膜電位平常約 −70 mV。刺激讓膜電位上升，一旦超過<b>閾值</b>（約 −55 mV），就發出一個<b>動作電位</b>（spike）。動作電位的高度<b>固定</b>——不是發就是不發，這叫「全或無（all-or-none）」。刺激更強時，改變的是<b>發放的頻率</b>。</p>
+  <div class="g2">
+    <div>
+      <h3>膜電位（100 毫秒）</h3>
+      <div class="cvbox"><canvas id="cv1"></canvas></div>
+      <div class="ctl"><label>刺激強度 = <b id="Iv"></b> mV（閾值差 15 mV）</label><input id="I" type="range" min="0" max="60" step="1" value="25"></div>
+      <div class="stat">
+        <div><b id="nSp">—</b><span>100 ms 內的 spike 數</span></div>
+        <div><b id="hSp">+30 mV</b><span>每個 spike 的高度</span></div>
+        <div><b id="rate">—</b><span>發放頻率</span></div>
+      </div>
+    </div>
+    <div>
+      <h3>刺激強度 → 發放頻率（f–I 曲線）</h3>
+      <div class="cvbox"><canvas id="cv1b"></canvas></div>
+      <div class="box or" id="sp_msg"></div>
+      <p class="mute" style="font-size:.84rem">簡化的「漏電積分發放」（LIF）模型：時間常數 10 ms、不反應期 2 ms。真實神經元更複雜。心肌細胞也有動作電位，心電圖記錄的就是心臟許多細胞電活動的總和。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="card">
+  <h2><span class="num">2</span>McCulloch–Pitts 神經元（1943）：第一個數學神經元</h2>
+  <p>McCulloch 與 Pitts 把「全或無」寫成數學：輸入只有 0 或 1，<b>興奮性</b>輸入加總後與<b>閾值 θ</b> 比較；只要有一個<b>抑制性</b>輸入是 1，神經元就不發放。激活函數就是一個<b>階梯函數</b>：</p>
+  <div class="formula">y = 1　若 Σ xᵢ ≥ θ 且沒有抑制輸入；否則 y = 0</div>
+  <div class="g2">
+    <div>
+      <svg class="nsvg" viewBox="0 0 520 230" id="n2"></svg>
+      <div class="tabs" id="mpPre"></div>
+    </div>
+    <div>
+      <div class="tg" id="mpIn"></div>
+      <div class="ctl"><label>閾值 θ = <b id="thv"></b></label><input id="th" type="range" min="0" max="4" step="1" value="2"></div>
+      <div class="box or" id="mp_msg"></div>
+      <div class="scrollx"><table id="mpTab"></table></div>
+      <p class="mute" style="font-size:.84rem">示意的通報規則，非真實臨床指引。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="card">
+  <h2><span class="num">3</span>為什麼一定要激活函數？——沒有非線性，疊再多層都只是一層</h2>
+  <div class="g2">
+    <div>
+      <p>如果 f(z) = z（不做任何轉換），兩層網路 y = W₂(W₁x) = (W₂W₁)x，仍然只是<b>一條直線（一個平面）</b>。例如 W₁ = [[1, 2], [0, 1]]、W₂ = [[3, 0], [1, 1]]：</p>
+      <div class="formula" style="font-size:1rem">W₂W₁ = [[3, 6], [1, 3]]　→　兩層 = 一層</div>
+      <p>經典例子是 <b>XOR</b>（互斥或）。想像一個示意情境：病人<b>恰好</b>服用 A、B 其中一種藥時療效適當；兩種都沒吃是未治療，兩種一起吃則有交互作用風險。</p>
+      <div class="tabs" id="xTabs"></div>
+      <div class="box or" id="x_msg"></div>
+    </div>
+    <div>
+      <div class="cvbox"><canvas id="cv3"></canvas></div>
+      <div class="legend"><span><i style="background:var(--ok)"></i>適當（應輸出 1）</span><span><i style="background:var(--bad)"></i>不適當（應輸出 0）</span><span>底色：網路判斷為 1 的區域</span></div>
+      <div class="scrollx"><table id="xTab"></table></div>
+      <p class="mute" style="font-size:.84rem">網路：h₁ = f(x₁ + x₂ − 0.5)，h₂ = f(x₁ + x₂ − 1.5)，y = h₁ − 3h₂，y &gt; 0.25 判為 1。四種激活函數使用完全相同的權重。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="card">
+  <h2><span class="num">4</span>激活函數的演進：從「開關」到「調光器」</h2>
+  <p>階梯函數的導數幾乎處處是 0，<b>梯度下降無從下手</b>。1986 年反向傳播普及後，大家改用平滑的 sigmoid、tanh；後來為了深層網路又發展出 ReLU、Swish、GELU 與門控家族。</p>
+  <div class="tabs" id="eTabs"></div>
+  <div class="g2">
+    <div>
+      <div class="cvbox"><canvas id="cv4"></canvas></div>
+      <div class="legend"><span><i style="background:var(--c2)"></i>f(z)</span><span><i style="background:var(--c1)"></i>導數 f′(z)</span></div>
+      <div class="ctl"><label>z = <b id="z4v"></b></label><input id="z4" type="range" min="-4" max="4" step="0.05" value="0.5"></div>
+    </div>
+    <div>
+      <div class="box or" id="e_msg"></div>
+      <div class="stat">
+        <div><b id="ef">—</b><span>f(z)</span></div>
+        <div><b id="ed">—</b><span>f′(z)</span></div>
+        <div><b id="eg">—</b><span>能用梯度學習？</span></div>
+      </div>
+      <p class="mute" style="font-size:.9rem">本單元其他頁：<a href="01_ReLU_智慧醫療.html">01 ReLU</a>、<a href="03_Swish.html">03 Swish</a>、<a href="04_SwiGLU.html">04 SwiGLU</a>、<a href="05_GLU.html">05 GLU</a>。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="card">
+  <h2><span class="num">5</span>智慧醫療模型裡的激活函數：隱藏層與輸出層</h2>
+  <p><b>隱藏層</b>用 ReLU、GELU、SwiGLU 等，負責提供非線性；<b>輸出層</b>的激活函數則依任務選擇，讓輸出符合我們要的意義：</p>
+  <div class="tabs" id="oTabs"></div>
+  <div class="g2">
+    <div id="oCtl"></div>
+    <div id="oOut"></div>
+  </div>
+  <p class="mute" style="font-size:.84rem">示意數值，非臨床判讀結果。</p>
+</section>
+
+<!-- 6 -->
+<section class="card">
+  <h2><span class="num">6</span>McCulloch 老師與 M-P 神經元的歷史</h2>
+  <div class="tl" id="tl"></div>
+  <div class="box bl" id="tlbox" style="min-height:5.5em"></div>
+  <h3 style="margin-top:12px">參考文獻</h3>
+  <ol class="ref">
+    <li>McCulloch, W. S., &amp; Pitts, W. (1943). A logical calculus of the ideas immanent in nervous activity. <i>Bulletin of Mathematical Biophysics, 5</i>(4), 115–133.</li>
+    <li>Rosenblatt, F. (1958). The perceptron: A probabilistic model for information storage and organization in the brain. <i>Psychological Review, 65</i>(6), 386–408.</li>
+    <li>Lettvin, J. Y., Maturana, H. R., McCulloch, W. S., &amp; Pitts, W. H. (1959). What the frog's eye tells the frog's brain. <i>Proceedings of the IRE, 47</i>(11), 1940–1951.</li>
+    <li>Rumelhart, D. E., Hinton, G. E., &amp; Williams, R. J. (1986). Learning representations by back-propagating errors. <i>Nature, 323</i>, 533–536.</li>
+    <li>Nair, V., &amp; Hinton, G. E. (2010). Rectified linear units improve restricted Boltzmann machines. In <i>Proceedings of the 27th International Conference on Machine Learning</i> (pp. 807–814).</li>
+  </ol>
+</section>
+
+<!-- 7 -->
+<section class="card">
+  <h2><span class="num">7</span>小測驗：激活函數的涵義</h2>
+  <div class="qgrid">
+    <div id="quiz"></div>
+    <div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+  </div>
+</section>
+
+<footer>激活函數的涵義互動教學 ・ 單一 HTML 檔，可離線開啟</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const sig=x=>1/(1+Math.exp(-x));
+const relu=x=>Math.max(0,x);
+const step=x=>x>=0?1:0;
+const fmt=(v,d=3)=>Number(v).toFixed(d);
+function erf(x){const s=Math.sign(x);x=Math.abs(x);const t=1/(1+0.3275911*x);
+  return s*(1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x));}
+const Phi=x=>0.5*(1+erf(x/Math.SQRT2)),phi=x=>Math.exp(-x*x/2)/Math.sqrt(2*Math.PI);
+
+/* ---------- 畫圖工具 ---------- */
+function fitCanvas(cv,h){
+  cv.style.width='0px';
+  const w=Math.max(160,cv.parentElement.clientWidth),dpr=window.devicePixelRatio||1;
+  if(h==='sq')h=Math.min(w,320);
+  cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+'px';cv.style.height=h+'px';
+  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return {c,w,h};
+}
+function plot(cv,h,o){
+  const {c,w}=fitCanvas(cv,h);
+  const pad={l:40,r:12,t:12,b:24},[x0,x1]=o.xr,[y0,y1]=o.yr;
+  const X=x=>pad.l+(x-x0)/(x1-x0)*(w-pad.l-pad.r),Y=y=>pad.t+(y1-y)/(y1-y0)*(h-pad.t-pad.b);
+  c.fillStyle=css('--card');c.fillRect(0,0,w,h);
+  c.strokeStyle=css('--grid');c.lineWidth=1;c.font='11px sans-serif';c.fillStyle=css('--mute');
+  const xs=o.xstep||1,ys=o.ystep||1;
+  for(let x=Math.ceil(x0/xs)*xs;x<=x1+1e-9;x+=xs){c.beginPath();c.moveTo(X(x),Y(y0));c.lineTo(X(x),Y(y1));c.stroke();c.textAlign='center';c.fillText(+x.toFixed(2),X(x),h-8);}
+  for(let y=Math.ceil(y0/ys)*ys;y<=y1+1e-9;y+=ys){c.beginPath();c.moveTo(X(x0),Y(y));c.lineTo(X(x1),Y(y));c.stroke();c.textAlign='right';c.fillText(+y.toFixed(2),pad.l-5,Y(y)+4);}
+  c.strokeStyle=css('--mute');c.lineWidth=1.3;
+  if(y0<0&&y1>0&&!o.noaxis){c.beginPath();c.moveTo(X(x0),Y(0));c.lineTo(X(x1),Y(0));c.stroke();}
+  if(x0<0&&x1>0&&!o.noaxis){c.beginPath();c.moveTo(X(0),Y(y0));c.lineTo(X(0),Y(y1));c.stroke();}
+  for(const hl of (o.hlines||[])){c.strokeStyle=hl.col;c.setLineDash([5,4]);c.lineWidth=1.5;c.beginPath();c.moveTo(X(x0),Y(hl.y));c.lineTo(X(x1),Y(hl.y));c.stroke();c.setLineDash([]);
+    c.fillStyle=hl.col;c.textAlign='left';c.fillText(hl.label,X(x0)+4,Y(hl.y)+(hl.below?13:-4));}
+  if(o.xlabel){c.fillStyle=css('--mute');c.textAlign='right';c.fillText(o.xlabel,w-pad.r,h-22);}
+  c.save();c.beginPath();c.rect(pad.l,pad.t,w-pad.l-pad.r,h-pad.t-pad.b);c.clip();
+  for(const cu of o.curves){
+    c.strokeStyle=cu.col;c.lineWidth=cu.w||2.5;c.setLineDash(cu.dash||[]);c.beginPath();let first=true,prev=null;
+    if(cu.pts){cu.pts.forEach((p,i)=>{if(i===0)c.moveTo(X(p[0]),Y(p[1]));else c.lineTo(X(p[0]),Y(p[1]));});}
+    else{const N=cu.n||400;for(let i=0;i<=N;i++){const x=x0+(x1-x0)*i/N,y=cu.f(x);
+      if(!isFinite(y)){first=true;continue;}
+      if(cu.jump&&prev!==null&&Math.abs(y-prev)>0.4)first=true;
+      if(first){c.moveTo(X(x),Y(y));first=false}else c.lineTo(X(x),Y(y));prev=y;}}
+    c.stroke();c.setLineDash([]);
+  }
+  c.restore();
+  for(const p of (o.pts||[])){c.fillStyle=p.col;c.beginPath();c.arc(X(p.x),Y(p.y),p.r||6,0,7);c.fill();c.strokeStyle=css('--card');c.lineWidth=2;c.stroke();}
+}
+
+/* ---------- 0 人工神經元 ---------- */
+const F0=[['階梯',step],['Sigmoid',sig],['ReLU',relu],['無（線性）',z=>z]];
+let f0=2;const W0=[0.9,0.6,-0.7],B0=-0.3;
+function drawN0(z,y){
+  const x=[+$('x1').value,+$('x2').value,+$('x3').value];
+  const lab=['血糖','BMI','運動'];
+  let s='';
+  x.forEach((v,i)=>{const yy=40+i*60,col=W0[i]>=0?css('--c1'):css('--bad'),wd=1+Math.abs(W0[i]*v)*3;
+    s+=`<line x1="80" y1="${yy}" x2="250" y2="100" stroke="${col}" stroke-width="${Math.min(10,wd)}" stroke-linecap="round" opacity=".8"/>`+
+       `<circle cx="56" cy="${yy}" r="22" fill="var(--soft)" stroke="var(--line)" stroke-width="2"/><text x="56" y="${yy-2}" text-anchor="middle" font-size="12">${lab[i]}</text><text x="56" y="${yy+13}" text-anchor="middle" font-size="11">${fmt(v,1)}</text>`+
+       `<text x="${150}" y="${yy+(i===1?-6:i===0?18:-12)}" font-size="11" fill="${col}">w=${W0[i]}</text>`;});
+  s+=`<circle cx="285" cy="100" r="38" fill="var(--card)" stroke="var(--mute)" stroke-width="3"/><text x="285" y="96" text-anchor="middle" font-size="15">Σ</text><text x="285" y="114" text-anchor="middle" font-size="12">z=${fmt(z,2)}</text>`;
+  s+=`<line x1="323" y1="100" x2="360" y2="100" stroke="var(--mute)" stroke-width="3"/>`;
+  s+=`<rect x="360" y="74" width="66" height="52" rx="12" fill="color-mix(in srgb,var(--c2) 18%,var(--card))" stroke="var(--c2)" stroke-width="3"/><text x="393" y="98" text-anchor="middle" font-size="15">f</text><text x="393" y="116" text-anchor="middle" font-size="10">${F0[f0][0]}</text>`;
+  s+=`<line x1="426" y1="100" x2="470" y2="100" stroke="var(--c2)" stroke-width="${2+Math.min(8,Math.abs(y)*3)}" stroke-linecap="round"/><text x="490" y="96" text-anchor="middle" font-size="12">輸出</text><text x="490" y="114" text-anchor="middle" font-size="13" font-weight="700">${fmt(y,2)}</text>`;
+  $('n0').innerHTML=s;
+}
+function draw0(){
+  const x=[+$('x1').value,+$('x2').value,+$('x3').value];['x1','x2','x3'].forEach((k,i)=>$(k+'v').textContent=fmt(x[i],1));
+  const z=W0.reduce((s,w,i)=>s+w*x[i],B0),f=F0[f0][1],y=f(z);
+  $('f0tabs').innerHTML='';F0.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t[0];if(i===f0)b.classList.add('on');b.onclick=()=>{f0=i;draw0();};$('f0tabs').appendChild(b);});
+  plot($('cv0'),190,{xr:[-4,4],yr:[-1.5,3],curves:[{f,col:css('--c2'),w:3,jump:f0===0}],pts:[{x:z,y,col:css('--c2')}]});
+  drawN0(z,y);
+  const msg=[`階梯：z ${z>=0?'≥':'<'} 0 → 輸出 <b>${y}</b>。只有「發」或「不發」，就像 1943 年的 M-P 神經元。`,
+    `Sigmoid：輸出 <b>${fmt(y)}</b>，介於 0～1，可以解讀成「風險機率」。`,
+    `ReLU：z ${z>0?'> 0，原樣輸出':'≤ 0，輸出 0'} → <b>${fmt(y)}</b>。現代深度網路最常用的隱藏層激活函數之一。`,
+    `線性（不做轉換）：輸出 = z = <b>${fmt(y)}</b>。下面第 3 節會看到，只用線性會有大問題。`][f0];
+  $('calc0').innerHTML=`z = 0.9×${fmt(x[0],1)} + 0.6×${fmt(x[1],1)} − 0.7×${fmt(x[2],1)} − 0.3 = <b>${fmt(z)}</b><br>`+msg+
+    '<br><span class="mute">權重 w 的正負代表「促進」或「抑制」：運動的權重是負的，運動越多，總訊號越低。</span>';
+}
+['x1','x2','x3'].forEach(k=>$(k).oninput=draw0);
+
+/* ---------- 1 全或無 ---------- */
+const TAU=10,TREF=2,VR=-70,VT=-55,VP=30;
+function simLIF(I,T=100){const dt=0.05,pts=[];let V=VR,ref=0,n=0;
+  for(let t=0;t<=T;t+=dt){
+    if(ref>0){ref-=dt;V=VR;pts.push([t,V]);continue;}
+    V+=dt*(-(V-VR)+I)/TAU;
+    if(V>=VT){pts.push([t,V]);pts.push([t,VP]);pts.push([t+dt,VR-5]);n++;V=VR;ref=TREF;continue;}
+    pts.push([t,V]);}
+  return {pts,n};}
+const rateOf=I=>I<=VT-VR?0:1000/(TREF+TAU*Math.log(I/(I-(VT-VR))));
+function draw1(){
+  const I=+$('I').value;$('Iv').textContent=I;
+  const {pts,n}=simLIF(I);
+  plot($('cv1'),230,{xr:[0,100],yr:[-80,40],xstep:20,ystep:20,noaxis:true,xlabel:'時間 (ms)',
+    hlines:[{y:VT,col:css('--bad'),label:'閾值 −55 mV'},{y:VR,col:css('--mute'),label:'靜止 −70 mV',below:true}],
+    curves:[{pts,col:css('--c2'),w:2}]});
+  const r=rateOf(I);
+  $('nSp').textContent=n;$('rate').textContent=fmt(r,0)+' Hz';$('hSp').textContent=n?'+30 mV':'—';
+  plot($('cv1b'),230,{xr:[0,60],yr:[0,220],xstep:10,ystep:50,xlabel:'刺激 (mV)',
+    curves:[{f:rateOf,col:css('--c2'),w:3,n:600}],pts:[{x:I,y:r,col:css('--c2')}]});
+  $('sp_msg').innerHTML=I<=15
+    ? `刺激 ${I} mV：膜電位升不到閾值，<b>完全不發放</b>（輸出 0）。`
+    : `刺激 ${I} mV：超過閾值，每個 spike 都一樣高，但頻率是 <b>${fmt(r,0)} Hz</b>。<br>這條曲線很像激活函數：低於閾值是 0（像 <b>ReLU</b>），刺激越強頻率越高，最後趨於飽和（像 <b>sigmoid</b>）。`;
+}
+$('I').oninput=draw1;
+
+/* ---------- 2 M-P 神經元 ---------- */
+const MPIN=[['x₁ 發燒',0],['x₂ 咳嗽',0],['x₃ 接觸史',0],['抑制：快篩陰性',1]];
+let mp=[1,1,0,0];
+const MPPRE=[['疑似感染通報（θ=2）',2],['OR：任一（θ=1）',1],['AND：三者皆有（θ=3）',3]];
+function mpOut(v,th){if(v[3])return 0;return (v[0]+v[1]+v[2])>=th?1:0;}
+function draw2(){
+  const th=+$('th').value;$('thv').textContent=th;
+  const y=mpOut(mp,th),S=mp[0]+mp[1]+mp[2];
+  let s='';
+  [0,1,2].forEach(i=>{const yy=30+i*55;s+=`<line class="wire${mp[i]?' on':''}" x1="150" y1="${yy}" x2="290" y2="115"/><text x="10" y="${yy+5}">${MPIN[i][0]}</text><circle cx="138" cy="${yy}" r="10" fill="${mp[i]?'var(--c1)':'var(--soft)'}" stroke="var(--line)" stroke-width="2"/><text x="138" y="${yy+4}" text-anchor="middle" font-size="11" fill="${mp[i]?'#fff':'var(--ink)'}">${mp[i]}</text>`;});
+  s+=`<line class="wire inh${mp[3]?' on':''}" x1="150" y1="200" x2="300" y2="150"/><circle cx="300" cy="150" r="7" fill="${mp[3]?'var(--bad)':'var(--line)'}"/><text x="10" y="205">抑制：快篩陰性</text><circle cx="138" cy="200" r="10" fill="${mp[3]?'var(--bad)':'var(--soft)'}" stroke="var(--line)" stroke-width="2"/><text x="138" y="204" text-anchor="middle" font-size="11" fill="${mp[3]?'#fff':'var(--ink)'}">${mp[3]}</text>`;
+  s+=`<circle class="soma${y?' fire':''}" cx="330" cy="115" r="44"/><text x="330" y="110" text-anchor="middle">Σ = ${S}</text><text x="330" y="128" text-anchor="middle" font-size="12">θ = ${th}</text>`;
+  s+=`<line class="out${y?' fire':''}" x1="374" y1="115" x2="440" y2="115"/><text x="480" y="108" text-anchor="middle" font-size="12">輸出</text><text x="480" y="132" text-anchor="middle" font-size="22" font-weight="700" fill="${y?'var(--c2)':'var(--mute)'}">${y}</text>`;
+  $('n2').innerHTML=s;
+  $('mpIn').innerHTML='';MPIN.forEach((t,i)=>{const b=document.createElement('button');b.textContent=(mp[i]?'✔ ':'○ ')+t[0];if(mp[i])b.classList.add('on');if(t[1])b.classList.add('inh');
+    b.onclick=()=>{mp[i]=1-mp[i];draw2();};$('mpIn').appendChild(b);});
+  $('mpPre').innerHTML='';MPPRE.forEach(([t,v])=>{const b=document.createElement('button');b.textContent=t;if(v===th)b.classList.add('on');b.onclick=()=>{$('th').value=v;draw2();};$('mpPre').appendChild(b);});
+  $('mp_msg').innerHTML=mp[3]?'抑制性輸入為 1：<b>不論其他輸入多少，一律不發放</b>（M-P 模型的「絕對抑制」）。'
+    :`興奮輸入總和 ${S} ${S>=th?'≥':'<'} θ = ${th} → 輸出 <b>${y}</b>${y?'：啟動隔離通報。':'：不通報。'}`;
+  let t='<tr><th>發燒</th><th>咳嗽</th><th>接觸史</th><th>Σ</th><th>輸出</th></tr>';
+  for(let k=0;k<8;k++){const v=[k>>2&1,k>>1&1,k&1],ss=v[0]+v[1]+v[2],o=ss>=th?1:0;const cur=!mp[3]&&v[0]===mp[0]&&v[1]===mp[1]&&v[2]===mp[2];
+    t+=`<tr class="${cur?'hl':''}"><td>${v[0]}</td><td>${v[1]}</td><td>${v[2]}</td><td>${ss}</td><td style="color:${o?'var(--c2)':'var(--mute)'}">${o}</td></tr>`;}
+  $('mpTab').innerHTML=t;
+}
+$('th').oninput=draw2;
+
+/* ---------- 3 XOR ---------- */
+const XF=[['無（線性）',z=>z],['階梯',step],['ReLU',relu],['Sigmoid（陡）',z=>sig(10*z)]];
+let xf=0;
+const xnet=(a,b,f)=>f(a+b-0.5)-3*f(a+b-1.5);
+function draw3(){
+  $('xTabs').innerHTML='';XF.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t[0];if(i===xf)b.classList.add('on');b.onclick=()=>{xf=i;draw3();
+    AV1.mood(i?'smile':'frown',i?`用「${t[0]}」當激活函數，四種用藥情況全部判斷正確！`:'只用線性：最多只能答對 3 個，畫不出 XOR 的邊界。');};$('xTabs').appendChild(b);});
+  const f=XF[xf][1];
+  const {c,w,h}=fitCanvas($('cv3'),'sq');const pad=34,lo=-0.3,hi=1.3,N=64,cs=(w-pad-8)/N,rs=(h-pad-8)/N;
+  const X=v=>pad+(v-lo)/(hi-lo)*(w-pad-8),Y=v=>8+(hi-v)/(hi-lo)*(h-pad-8);
+  c.fillStyle=css('--card');c.fillRect(0,0,w,h);
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){const a=lo+(i+.5)/N*(hi-lo),b=hi-(j+.5)/N*(hi-lo);
+    if(xnet(a,b,f)>0.25){c.fillStyle=`color-mix(in srgb,${css('--c2')} 30%,${css('--card')})`;c.fillRect(pad+i*cs,8+j*rs,cs+.6,rs+.6);}}
+  c.strokeStyle=css('--grid');c.strokeRect(pad,8,w-pad-8,h-pad-8);
+  c.fillStyle=css('--mute');c.font='11px sans-serif';c.textAlign='center';
+  c.fillText('藥 A（0 = 沒吃，1 = 吃）',(pad+w)/2,h-6);[0,1].forEach(v=>{c.fillText(v,X(v),h-20);});
+  c.textAlign='right';[0,1].forEach(v=>c.fillText(v,pad-6,Y(v)+4));
+  c.save();c.translate(11,(h-pad)/2);c.rotate(-Math.PI/2);c.textAlign='center';c.fillText('藥 B',0,0);c.restore();
+  let ok=0,t='<tr><th>藥 A</th><th>藥 B</th><th>應為</th><th>網路 y</th><th>判斷</th></tr>';
+  [[0,0],[0,1],[1,0],[1,1]].forEach(([a,b])=>{const tgt=a^b,y=xnet(a,b,f),p=y>0.25?1:0;ok+=p===tgt;
+    c.beginPath();c.arc(X(a),Y(b),11,0,7);c.fillStyle=tgt?css('--ok'):css('--bad');c.fill();c.strokeStyle=p===tgt?css('--card'):css('--ink');c.lineWidth=p===tgt?2:4;c.stroke();
+    t+=`<tr><td>${a}</td><td>${b}</td><td>${tgt}</td><td>${fmt(y,2)}</td><td style="color:${p===tgt?'var(--ok)':'var(--bad)'}">${p===tgt?'✔':'✘'} ${p}</td></tr>`;});
+  $('xTab').innerHTML=t;
+  $('x_msg').innerHTML=xf===0
+    ? `答對 <b>${ok} / 4</b>。沒有激活函數時，兩層化簡成 y = −2x₁ − 2x₂ + 4，判斷區域只能是直線的一側。不管怎麼調權重，<b>一條直線都分不開</b>對角的兩組點。`
+    : `答對 <b>${ok} / 4</b>！加上非線性的「${XF[xf][0]}」後，判斷區域變成一條<b>帶狀</b>區域，正好圈住「恰好吃一種藥」的兩點。<b>激活函數讓網路能畫出彎曲、分段的邊界。</b>`;
+}
+
+/* ---------- 4 演進 ---------- */
+const EV=[
+ ['階梯',step,z=>0,'1943 M-P 神經元、1958 感知器','只有 0 和 1。導數幾乎處處為 0（在 0 不可微），梯度下降<b>無法</b>告訴權重該往哪調。',false],
+ ['Sigmoid',sig,z=>sig(z)*(1-sig(z)),'1986 反向傳播普及','平滑的「軟開關」，輸出 0～1。導數最大只有 0.25，深層網路容易<b>梯度消失</b>。',true],
+ ['tanh',Math.tanh,z=>1-Math.tanh(z)**2,'1980–90 年代常用','輸出 −1～1、以 0 為中心，導數最大為 1；但 |z| 大時同樣飽和。',true],
+ ['ReLU',relu,z=>z>0?1:0,'2010 Nair & Hinton','正區導數恆為 1，計算便宜、深層網路好訓練，成為現代預設選擇。',true],
+ ['GELU',z=>z*Phi(z),z=>Phi(z)+z*phi(z),'2016 Hendrycks & Gimpel','x·Φ(x)：平滑版的 ReLU，BERT、GPT 等 Transformer 常用。',true],
+ ['Swish',z=>z*sig(z),z=>sig(z)+z*sig(z)*(1-sig(z)),'2017 自動搜尋發現','x·σ(x)：自我門控、平滑、非單調；SwiGLU 的基礎。',true]];
+let ev=0;
+function draw4(){
+  $('eTabs').innerHTML='';EV.forEach((e,i)=>{const b=document.createElement('button');b.textContent=e[0];if(i===ev)b.classList.add('on');b.onclick=()=>{ev=i;draw4();};$('eTabs').appendChild(b);});
+  const e=EV[ev],z=+$('z4').value;$('z4v').textContent=fmt(z,2);
+  plot($('cv4'),240,{xr:[-4,4],yr:[-1.2,2.5],ystep:0.5,curves:[{f:e[1],col:css('--c2'),w:3.5,jump:ev===0},{f:e[2],col:css('--c1'),w:2.5,dash:[6,4],jump:ev===3}],
+    pts:[{x:z,y:e[1](z),col:css('--c2')},{x:z,y:e[2](z),col:css('--c1'),r:5}]});
+  $('ef').textContent=fmt(e[1](z));$('ed').textContent=fmt(e[2](z));
+  $('eg').innerHTML=e[5]?'<span style="color:var(--ok)">可以</span>':'<span style="color:var(--bad)">不行</span>';
+  $('e_msg').innerHTML=`<b>${e[0]}</b>（${e[3]}）<br>${e[4]}`;
+}
+$('z4').oninput=draw4;
+
+/* ---------- 5 輸出層 ---------- */
+const OT=[['二元分類：Sigmoid'],['多類別：Softmax'],['數值預測：線性']];
+let ot=0,oz=0.8,ol=[2.0,0.5,1.2],olin=6.8;
+const ONM=['正常','細菌性肺炎','病毒性肺炎'];
+function build5(){
+  $('oTabs').innerHTML='';OT.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t[0];if(i===ot)b.classList.add('on');b.onclick=()=>{ot=i;build5();};$('oTabs').appendChild(b);});
+  const C=$('oCtl');
+  if(ot===0){
+    C.innerHTML=`<h3>任務：病人在 5 年內罹患糖尿病的機率</h3><div class="ctl"><label>最後一層的總訊號 z = <b id="ozv"></b></label><input id="oz" type="range" min="-6" max="6" step="0.1" value="${oz}"></div>
+      <div class="formula" style="font-size:1rem">p = σ(z) = <span class="frac"><span>1</span><span>1 + e<sup>−z</sup></span></span></div>`;
+    $('oz').oninput=e=>{oz=+e.target.value;upd5();};
+  }else if(ot===1){
+    C.innerHTML=`<h3>任務：胸部 X 光三選一判讀</h3>`+ONM.map((n,i)=>`<div class="ctl"><label>${n}的分數 z${i+1} = <b id="olv${i}"></b></label><input data-i="${i}" class="ol" type="range" min="-3" max="5" step="0.1" value="${ol[i]}"></div>`).join('')+
+      `<div class="formula" style="font-size:1rem">pᵢ = <span class="frac"><span>e<sup>zᵢ</sup></span><span>Σⱼ e<sup>zⱼ</sup></span></span></div>`;
+    C.querySelectorAll('.ol').forEach(r=>r.oninput=()=>{ol[+r.dataset.i]=+r.value;upd5();});
+  }else{
+    C.innerHTML=`<h3>任務：預測糖化血色素 HbA1c（%）</h3><div class="ctl"><label>最後一層的總訊號 z = <b id="olinv"></b></label><input id="olin" type="range" min="3" max="14" step="0.1" value="${olin}"></div>
+      <div class="formula" style="font-size:1rem">預測值 = z（恆等函數，不做轉換）</div>`;
+    $('olin').oninput=e=>{olin=+e.target.value;upd5();};
+  }
+  upd5();
+}
+function upd5(){
+  const O=$('oOut');
+  if(ot===0){
+    $('ozv').textContent=fmt(oz,1);const p=sig(oz);
+    O.innerHTML=`<div class="br"><span>罹病機率</span><div class="tr"><div style="width:${p*100}%;background:var(--bad)"></div></div><span><b>${Math.round(p*100)}%</b></span></div>
+      <div class="box or">Sigmoid 把任何實數 z 壓到 0～1，正好可以當成<b>機率</b>。z = 0 時機率 50%；z 越大越接近 100%。</div>`;
+  }else if(ot===1){
+    ol.forEach((v,i)=>$('olv'+i).textContent=fmt(v,1));
+    const ex=ol.map(Math.exp),S=ex.reduce((a,b)=>a+b,0),p=ex.map(v=>v/S),best=p.indexOf(Math.max(...p));
+    O.innerHTML=ONM.map((n,i)=>`<div class="br"><span>${n}</span><div class="tr"><div style="width:${p[i]*100}%;background:${['var(--c3)','var(--c2)','var(--c4)'][i]}"></div></div><span><b>${fmt(p[i]*100,1)}%</b></span></div>`).join('')+
+      `<div class="box or">Softmax 讓各類別機率都在 0～1 且<b>加總為 100%</b>。目前判讀為「<b>${ONM[best]}</b>」。拉高某一類的分數，其他類的機率會一起下降。</div>`;
+  }else{
+    $('olinv').textContent=fmt(olin,1);
+    O.innerHTML=`<div class="stat"><div><b>${fmt(olin,1)}%</b><span>線性輸出</span></div><div><b>${fmt(sig(olin),3)}</b><span>若誤用 sigmoid</span></div><div><b>${olin>=6.5?'≥ 6.5%':'< 6.5%'}</b><span>對照糖尿病診斷切點</span></div></div>
+      <div class="box or">數值預測要能輸出<b>任意大小</b>，所以輸出層不用激活函數（線性）。若誤用 sigmoid，結果永遠被壓在 0～1 之間，失去意義。</div>`;
+  }
+}
+
+/* ---------- 6 歷史 ---------- */
+const TL=[
+ ['1898：出生','Warren S. McCulloch 出生於美國紐澤西州。他學過哲學與心理學，後來取得醫學學位，成為<b>神經生理學家與精神科醫師</b>。'],
+ ['1943：M-P 神經元','與年輕的自學邏輯天才 <b>Walter Pitts</b> 發表〈A Logical Calculus of the Ideas Immanent in Nervous Activity〉：把神經元抽象成「全或無」的二元開關，並證明由這種神經元組成的網路可以計算邏輯運算。這是<b>人工神經網路的起點</b>。'],
+ ['1946–1953：控制論','主持梅西會議（Macy Conferences），和 Norbert Wiener 等數學家、生物學家、心理學家一起推動<b>控制論（Cybernetics）</b>。'],
+ ['1959：青蛙的眼睛','與 Lettvin、Maturana、Pitts 發表〈What the Frog\'s Eye Tells the Frog\'s Brain〉：青蛙視網膜已能偵測「像小蟲般移動的小黑點」，說明感覺器官本身就在做資訊處理。'],
+ ['之後的發展','1958 年 Rosenblatt 的<b>感知器</b>為 M-P 神經元加上可學習的權重；1986 年反向傳播普及後改用平滑的激活函數；2010 年起 ReLU 帶動深度學習。']];
+let tlSel=1;
+function drawTL(){$('tl').innerHTML='';TL.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t[0];if(i===tlSel)b.classList.add('on');b.onclick=()=>{tlSel=i;drawTL();};$('tl').appendChild(b);});$('tlbox').innerHTML=TL[tlSel][1];}
+
+/* ---------- McCulloch 老師頭像 ---------- */
+const MCC_SVG=`<svg viewBox="0 0 200 230" aria-label="McCulloch老師動畫">
+ <g class="bodyg">
+  <path d="M12 232 Q16 170 100 160 Q184 170 188 232 Z" fill="#2a2b30"/>
+  <path d="M74 166 L100 210 L126 166" stroke="#3b3c42" stroke-width="5" fill="none"/>
+  <circle cx="140" cy="196" r="2.5" fill="#c9c9c9"/>
+  <rect x="88" y="136" width="24" height="26" rx="10" fill="#dcae92"/>
+  <ellipse cx="67" cy="102" rx="6.5" ry="11" fill="#dcae92"/><ellipse cx="133" cy="102" rx="6.5" ry="11" fill="#dcae92"/>
+  <ellipse cx="100" cy="98" rx="32" ry="42" fill="#e8bfa3"/>
+  <path d="M80 68 Q100 63 120 68 M82 75 Q100 71 118 75" stroke="#c99a7e" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  <path d="M76 104 Q80 108 82 104 M118 104 Q120 108 124 104" stroke="#c99a7e" stroke-width="1.1" fill="none"/>
+  <ellipse class="blush" cx="80" cy="112" rx="7" ry="4" fill="#f08080"/>
+  <ellipse class="blush" cx="120" cy="112" rx="7" ry="4" fill="#f08080"/>
+  <path d="M67 92 Q62 54 100 50 Q138 54 133 92 Q130 70 120 62 Q100 56 80 62 Q70 70 67 92 Z" fill="#e9e6df" stroke="#cfcbc2" stroke-width="1"/>
+  <path d="M70 74 Q70 44 100 40 Q132 42 134 70 Q122 52 102 50 Q82 52 70 74 Z" fill="#e3dfd7" stroke="#cfcbc2" stroke-width="1"/>
+  <path d="M80 56 Q98 44 120 52 M78 64 Q96 52 124 60" stroke="#c9c4ba" stroke-width="1.3" fill="none"/>
+  <g class="hairL"><path d="M68 80 Q58 92 60 114 Q62 104 66 100 Q64 92 70 86 Z" fill="#dedad2"/></g>
+  <g class="hairR"><path d="M132 80 Q142 92 140 114 Q138 104 134 100 Q136 92 130 86 Z" fill="#dedad2"/></g>
+  <path class="brow browL" d="M75 86 Q84 79 95 84" stroke="#d6d2ca" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path class="brow browR" d="M105 84 Q116 79 125 86" stroke="#d6d2ca" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <g class="eyes"><ellipse cx="86" cy="95" rx="4.2" ry="3" fill="#fff"/><ellipse cx="114" cy="95" rx="4.2" ry="3" fill="#fff"/>
+   <circle cx="86.4" cy="95" r="2.4" fill="#3a3a3a"/><circle cx="114.4" cy="95" r="2.4" fill="#3a3a3a"/>
+   <circle cx="87.2" cy="94.2" r=".8" fill="#fff"/><circle cx="115.2" cy="94.2" r=".8" fill="#fff"/></g>
+  <path d="M80 99 Q86 102 92 99 M108 99 Q114 102 120 99" stroke="#c99a7e" stroke-width="1.2" fill="none"/>
+  <path d="M100 98 Q95 110 97 113 Q101 116 107 113" stroke="#c08c70" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M69 104 Q66 140 82 162 Q94 184 100 194 Q106 184 118 162 Q134 140 131 104 Q127 126 114 128 Q100 122 86 128 Q73 126 69 104 Z" fill="#eeebe5" stroke="#cfcbc2" stroke-width="1.2"/>
+  <path d="M82 140 Q86 158 94 172 M100 136 L100 182 M118 140 Q114 158 106 172 M74 124 Q76 142 84 152 M126 124 Q124 142 116 152" stroke="#d3cfc6" stroke-width="1.3" fill="none"/>
+  <path d="M83 121 Q100 112 117 121 Q109 126 100 123 Q91 126 83 121 Z" fill="#f4f2ed" stroke="#cfcbc2" stroke-width="1"/>
+  <path class="mo n" d="M91 128 Q100 132 109 128" stroke="#9a5a4a" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+  <path class="mo s" d="M89 126 Q100 139 111 126 Q100 130 89 126 Z" fill="#8f3a2c" stroke="#9a5a4a" stroke-width="1.4" stroke-linejoin="round"/>
+  <path class="mo f" d="M91 132 Q100 125 109 132" stroke="#9a5a4a" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+  <path class="sweat" d="M136 72 Q141 82 136 86 Q131 82 136 72 Z" fill="#7cc3f0"/>
+  <text class="spark" x="26" y="44" font-size="18" fill="#f0b400">✦</text>
+  <text class="spark" x="162" y="40" font-size="14" fill="#f0b400">✦</text>
+  <text class="spark" x="172" y="96" font-size="11" fill="#f0b400">✦</text>
+ </g></svg>`;
+function makeAvatar(el,bubble){
+  el.innerHTML=MCC_SVG;let tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold)tm=setTimeout(()=>{el.classList.remove('smile','frown');bubble.className='bubble';},3600);}};
+}
+var AV1=makeAvatar($('av1'),$('bub1')),AV2=makeAvatar($('av2'),$('bub2'));
+const QUOTES=[
+ '我是 Warren McCulloch（1898–1969），神經生理學家，也是精神科醫師。',
+ '1943 年我和 Walter Pitts 發表〈A Logical Calculus of the Ideas Immanent in Nervous Activity〉，這就是 M-P 神經元。',
+ 'Pitts 是自學成才的邏輯天才，我們合作時他還非常年輕。',
+ '我們把神經元看成「全或無」的開關：輸入總和達到閾值就輸出 1，否則輸出 0。',
+ '我們證明：把這種神經元連成網路，就能計算「且、或、非」等邏輯運算。',
+ '1940–50 年代，我主持梅西會議，和 Norbert Wiener 等人一起推動「控制論」。',
+ '1959 年我們發現，青蛙的眼睛已經會偵測「像小蟲般移動的小黑點」！',
+ '我們的開關不能學習。後來 Rosenblatt 的感知器加上了可學習的權重，激活函數也從開關演變成 sigmoid、ReLU……'];
+let qi=0;$('av1').onclick=()=>AV1.mood('smile',QUOTES[qi++%QUOTES.length]);
+
+/* ---------- 7 小測驗 ---------- */
+const QZ=[
+ {q:'激活函數在神經元中的作用是？',o:['把加權總和 z 轉換成神經元的輸出，並引入非線性','計算輸入的平均值','儲存訓練資料','決定網路有幾層'],a:0,e:'神經元先算 z = Σwx + b，再用激活函數 f(z) 決定輸出多少。',h:'第 0 節：Σ 之後的那個 f 是什麼？'},
+ {q:'生物神經元收到更強的刺激時，通常會怎樣？',o:['動作電位高度不變，但發放頻率增加','動作電位變得更高','膜電位永遠停在閾值','完全停止發放'],a:0,e:'這就是「全或無」：每個 spike 一樣高，訊號強弱用頻率表示。',h:'第 1 節：拉大刺激，spike 變高還是變密？'},
+ {q:'M-P 神經元（1943）的輸出是？',o:['0 或 1','任意實數','0～1 之間的機率','−1～1 之間的連續值'],a:0,e:'M-P 神經元是二元開關，激活函數是階梯函數。',h:'「全或無」。'},
+ {q:'三個興奮輸入、閾值 θ = 2 的 M-P 神經元何時輸出 1？',o:['至少兩個輸入為 1，且沒有抑制輸入','三個輸入都必須為 1','任一個輸入為 1','永遠輸出 1'],a:0,e:'Σxᵢ ≥ 2 才發放；只要抑制輸入為 1 就一律不發放。',h:'第 2 節的真值表。'},
+ {q:'如果網路完全沒有（非線性）激活函數，會發生什麼？',o:['不管疊幾層，都等同一個線性層','網路會變得更聰明','只能輸出 0','訓練速度變成無限快'],a:0,e:'W₂(W₁x) = (W₂W₁)x，多層線性仍是線性，無法解 XOR 這類問題。',h:'第 3 節選「無（線性）」。'},
+ {q:'為什麼階梯函數不適合用梯度下降訓練？',o:['它的導數幾乎處處為 0，梯度無法指出調整方向','它的計算太慢','它的輸出太大','它只能用在影像'],a:0,e:'梯度下降靠導數告訴權重往哪調；階梯函數的導數幾乎都是 0。',h:'第 4 節看階梯函數的藍色虛線。'},
+ {q:'預測「病人罹患某疾病的機率」，輸出層通常用？',o:['Sigmoid','ReLU','恆等（線性）','階梯函數'],a:0,e:'Sigmoid 把輸出壓在 0～1，可解讀為機率。',h:'第 5 節的第一個分頁。'},
+ {q:'胸部 X 光要在「正常／細菌性肺炎／病毒性肺炎」三選一，輸出層通常用？',o:['Softmax','ReLU','tanh','恆等（線性）'],a:0,e:'Softmax 讓各類機率在 0～1 之間且加總為 1。',h:'第 5 節的第二個分頁。'}];
+const PRAISE=['答對了！','Excellent！觀念很清楚。','很好！你的神經元發放了。','正確！'];
+let qs={done:0,score:0,streak:0};
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function buildQuiz(){
+  qs={done:0,score:0,streak:0};const box=$('quiz');box.innerHTML='';
+  QZ.forEach((z,k)=>{
+    const d=document.createElement('div');d.className='q';
+    d.innerHTML=`<b>${k+1}. ${z.q}</b><div class="opts"></div><div class="exp"></div>`;
+    const opts=d.querySelector('.opts'),exp=d.querySelector('.exp');let locked=false;
+    shuffle(z.o.map((t,i)=>i)).forEach(i=>{
+      const b=document.createElement('button');b.textContent=z.o[i];b.dataset.i=i;
+      b.onclick=()=>{if(locked)return;locked=true;qs.done++;
+        opts.querySelectorAll('button').forEach(x=>{if(+x.dataset.i===z.a)x.classList.add('right');});
+        if(i===z.a){qs.score++;qs.streak++;exp.className='exp ok';exp.textContent='✔ 正確！'+z.e;
+          AV2.mood('smile',qs.streak>=3?`連對 ${qs.streak} 題！全部「發放」了 😄`:PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+        else{qs.streak=0;b.classList.add('wrong');exp.className='exp no';exp.textContent='✘ '+z.e;AV2.mood('frown',z.h);}
+        if(qs.done===QZ.length)finish();};
+      opts.appendChild(b);});
+    box.appendChild(d);});
+  const s=document.createElement('div');s.id='qscore';box.appendChild(s);
+}
+function finish(){
+  const n=QZ.length,s=qs.score;
+  $('qscore').innerHTML=`<div class="score">得分：${s} / ${n}</div><button id="qagain">再做一次</button>`;
+  $('qagain').onclick=()=>{buildQuiz();AV2.mood('','新的一輪！這次試試全對。');};
+  setTimeout(()=>{
+    if(s===n)AV2.mood('smile','全對！你已經懂激活函數的涵義了。',true);
+    else if(s>=n-2)AV2.mood('smile','很不錯！回頭看看答錯的那幾題就完美了。',true);
+    else AV2.mood('frown','建議回到第 2、3 節，把 M-P 神經元和 XOR 再玩一次。',true);
+  },3300);
+}
+
+/* ---------- 啟動 ---------- */
+function drawAll(){draw0();draw1();draw2();draw3();draw4();drawTL();}
+build5();
+drawAll();buildQuiz();
+let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(drawAll,150);});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll);
+</script>
+</body>
+</html>
