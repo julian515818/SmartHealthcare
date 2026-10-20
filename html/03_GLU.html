@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GLU 互動教學</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;
+ --c1:#2f6fd6;--c2:#e8772e;--c3:#1f9d6b;--c4:#8a5cd6;--grid:#ecebe5;--soft:#f2f1ec;--code:#1e2230;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --c1:#6ea2ff;--c2:#ffa05c;--c3:#4fd19d;--c4:#b893ff;--grid:#262b36;--soft:#232834;--code:#11141b;}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --c1:#6ea2ff;--c2:#ffa05c;--c3:#4fd19d;--c4:#b893ff;--grid:#262b36;--soft:#232834;--code:#11141b;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:1.9rem}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:18px 0;min-width:0}
+h2{margin:0 0 12px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+h3{font-size:1.05rem;margin:4px 0 6px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--c2);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.formula{font-size:1.18rem;text-align:center;padding:10px;background:var(--soft);border-radius:10px;margin:10px 0;overflow-x:auto}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.g2>*{min-width:0}
+@media (max-width:860px){.g2{grid-template-columns:minmax(0,1fr)}}
+.cvbox{width:100%;min-width:0}
+canvas{display:block;border-radius:10px}
+input[type=range]{width:100%;accent-color:var(--c2)}
+.ctl{flex:1 1 200px;min-width:0}
+.ctl label{font-size:.92rem;color:var(--mute)}
+.ctls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px}
+.ctls>*{min-width:0}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 14px;cursor:pointer}
+button:hover{border-color:var(--c2)}
+button.on{background:var(--c2);border-color:var(--c2);color:#fff}
+.box{background:var(--soft);border-radius:10px;padding:10px 14px;margin:10px 0}
+.box.or{border-left:4px solid var(--c2)}
+.box.bl{border-left:4px solid var(--c1)}
+.box.gr{border-left:4px solid var(--c3)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.9rem;margin:6px 0}
+.legend i{display:inline-block;width:22px;height:4px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.stat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0}
+.stat>div{background:var(--soft);border-radius:10px;padding:8px;text-align:center;min-width:0}
+.stat b{display:block;font-size:1.2rem}
+.stat span{font-size:.82rem;color:var(--mute)}
+.prog{height:6px;background:var(--soft);border-radius:3px;overflow:hidden;margin:8px 0}
+.prog>div{height:100%;background:var(--c2);transition:width .3s}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.tabs button{flex:1 1 130px}
+/* 醫療門控 */
+.inp{display:grid;grid-template-columns:86px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:.9rem}
+.ch{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:8px 0}
+.ch .hd{display:flex;justify-content:space-between;font-weight:700;font-size:.95rem}
+.ch .hd span{font-weight:400;color:var(--mute);font-size:.82rem}
+.br{display:grid;grid-template-columns:56px minmax(0,1fr) 46px;gap:6px;align-items:center;font-size:.82rem;margin:3px 0}
+.tr{height:14px;border-radius:7px;background:var(--soft);overflow:hidden;position:relative}
+.tr>div{position:absolute;top:0;bottom:0;left:0;border-radius:7px;transition:width .3s}
+.ch.open{border-color:var(--c2);background:color-mix(in srgb,var(--c2) 6%,var(--card))}
+/* 平行格子 */
+.seq{display:grid;gap:4px;margin:4px 0}
+.tok{font-size:.78rem;text-align:center;color:var(--mute);overflow:hidden;white-space:nowrap}
+.cell{height:30px;border-radius:7px;border:2px solid var(--line);background:var(--card);transition:all .3s}
+.cell.on{background:color-mix(in srgb,var(--c1) 55%,var(--card));border-color:var(--c1)}
+.cell.now{box-shadow:0 0 0 3px color-mix(in srgb,var(--c2) 45%,transparent);border-color:var(--c2)}
+.rl{font-size:.78rem;color:var(--mute);display:flex;align-items:center}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{color:var(--mute);font-weight:600}
+.scrollx{overflow-x:auto;min-width:0}
+.tl{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.tl button{flex:1 1 140px}
+.tlbox{min-height:6em}
+.mix{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;text-align:center;font-size:.88rem}
+.mix>*{min-width:0}
+ol.ref{padding-left:1.4em}ol.ref li{margin:6px 0;font-size:.93rem}
+/* 小測驗 */
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opts button{text-align:left}
+.q .opts button.right{background:color-mix(in srgb,var(--ok) 22%,transparent);border-color:var(--ok)}
+.q .opts button.wrong{background:color-mix(in srgb,var(--bad) 18%,transparent);border-color:var(--bad)}
+.q .exp{margin-top:8px;font-size:.93rem}
+.q .exp.ok{color:var(--ok)}.q .exp.no{color:var(--bad)}
+.score{font-size:1.2rem;font-weight:700;margin:12px 0}
+footer{text-align:center;color:var(--mute);font-size:.9rem;margin-top:24px}
+
+/* 卡通老師 */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:top center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:top center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+
+/* 作者徽章（校徽待補） */
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute)}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main">
+    <h1>GLU：讓網路自己學會「該放行什麼」</h1>
+    <p>智慧醫療 ・ 互動教學：門控線性單元（Gated Linear Unit, GLU）的特點</p>
+  </div>
+  <div class="pu-badge"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+  <h2><span class="num">0</span>GLU 是什麼？一句話：內容 × 學出來的門</h2>
+  <div class="intro">
+    <div>
+      <div class="formula">GLU(x) = ( xW + b ) ⊗ σ( xV + c )</div>
+      <p style="margin-top:0">兩個線性投影：<b style="color:var(--c1)">內容</b> xW + b 是要傳下去的資訊；<b style="color:var(--c3)">門</b> σ(xV + c) 介於 0 到 1，決定內容的每個元素放行多少。⊗ 是逐元素相乘。W、V 都是<b>可學習</b>的參數。下面用一維的 x 先看形狀：</p>
+      <div class="g2">
+        <div>
+          <div class="cvbox"><canvas id="cv0"></canvas></div>
+          <div class="legend"><span><i style="background:var(--c1)"></i>內容 wx+b</span><span><i style="background:var(--c3)"></i>門 σ(vx+c)</span><span><i style="background:var(--c2)"></i>輸出 GLU</span></div>
+        </div>
+        <div>
+          <div class="ctls">
+            <div class="ctl"><label>w = <b id="wv"></b></label><input id="w" type="range" min="-2" max="2" step="0.1" value="1"></div>
+            <div class="ctl"><label>b = <b id="bv"></b></label><input id="b" type="range" min="-2" max="2" step="0.1" value="0.5"></div>
+            <div class="ctl"><label>v = <b id="vv"></b></label><input id="v" type="range" min="-4" max="4" step="0.1" value="2"></div>
+            <div class="ctl"><label>c = <b id="cv"></b></label><input id="c" type="range" min="-6" max="6" step="0.1" value="-1"></div>
+          </div>
+          <div class="ctl"><label>觀察點 x = <b id="xv"></b></label><input id="x" type="range" min="-4" max="4" step="0.05" value="1"></div>
+          <div class="row" id="pre0"></div>
+          <div class="box or" id="calc0"></div>
+        </div>
+      </div>
+    </div>
+    <div class="avwrap"><div class="bubble" id="bub1">Hi！我是 Dauphin 老師。2016 年我們在 FAIR 提出 GLU：用「門」控制資訊的流動。點我聽故事！</div><div class="av" id="av1"></div></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+  <h2><span class="num">1</span>特點一：門依輸入動態篩選資訊——急診分流的例子</h2>
+  <p>論文指出，門讓模型能「選擇哪些詞或特徵與預測有關」。想像一個 GLU 層讀入病人的檢驗數值（標準化分數，0 = 正常），有 4 個通道。每個通道的<b>門由同一筆輸入算出</b>，所以不同病人會打開不同的通道。</p>
+  <div class="tabs" id="pts"></div>
+  <div class="g2">
+    <div>
+      <h3>病人的輸入 x（可自行調整）</h3>
+      <div id="inputs"></div>
+      <div class="row"><button id="gOn" class="on">使用門（GLU）</button><button id="gOff">拿掉門（只有內容）</button></div>
+      <div class="box or" id="g_msg"></div>
+      <p class="mute" style="font-size:.84rem">示意用的權重由人工設定，用來呈現「學好的門」大致的樣子；真實模型的 W、V 由資料學出來。非臨床診斷工具。</p>
+    </div>
+    <div id="chans"></div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="card">
+  <h2><span class="num">2</span>特點二：內容保持線性——梯度有一條「不縮小」的路</h2>
+  <p>在 GLU 之前，PixelCNN（van den Oord 等人，2016）用的是 <b>GTU</b>：tanh(xW+b) ⊗ σ(xV+c)，內容先經過 tanh。Dauphin 等人把 tanh 拿掉，讓內容保持<b>線性</b>。比較兩者的梯度（論文式子）：</p>
+  <div class="formula" style="font-size:1rem;text-align:left;line-height:2">
+    GTU：∇[tanh(X) ⊗ σ(X)] = <b style="color:var(--bad)">tanh′(X)</b>∇X ⊗ σ(X) + <b style="color:var(--bad)">σ′(X)</b>∇X ⊗ tanh(X)<br>
+    GLU：∇[X ⊗ σ(X)] = <b style="color:var(--ok)">∇X ⊗ σ(X)</b> + X ⊗ σ′(X)∇X
+  </div>
+  <p style="margin-top:0">GLU 的第一項 ∇X ⊗ σ(X) 只乘上門 σ：門打開時（σ ≈ 1）梯度<b>原封不動</b>通過，論文稱之為「乘法式的跳接（multiplicative skip connection）」。GTU 則每層都多乘一個 tanh′ ≤ 1。</p>
+  <div class="g2">
+    <div>
+      <div class="cvbox"><canvas id="cv2"></canvas></div>
+      <div class="legend"><span><i style="background:var(--c2)"></i>GLU：每層 × σ(z)</span><span><i style="background:var(--c4)"></i>GTU：每層 × tanh′(a)·σ(z)</span></div>
+    </div>
+    <div>
+      <div class="ctl"><label>門的輸入 z = xV+c：<b id="zv"></b>（越大門越開）</label><input id="z" type="range" min="-3" max="6" step="0.1" value="3"></div>
+      <div class="ctl"><label>內容的大小 a = xW+b：<b id="av"></b></label><input id="a" type="range" min="0" max="3" step="0.05" value="1"></div>
+      <div class="ctl"><label>疊幾層 n = <b id="nv"></b></label><input id="n" type="range" min="1" max="20" step="1" value="10"></div>
+      <div class="stat">
+        <div><b id="fG">—</b><span>GLU 每層係數</span></div>
+        <div><b id="fT">—</b><span>GTU 每層係數</span></div>
+        <div><b id="rat">—</b><span>n 層後 GLU / GTU</span></div>
+      </div>
+      <div class="box or" id="gr_msg"></div>
+      <p class="mute" style="font-size:.84rem">簡化示意：只看沿「內容路徑」的梯度係數，忽略權重矩陣與第二項。論文實驗：GLU 在 WikiText-103 與 Google Billion Word 上都<b>收斂更快、困惑度更低</b>；在 Google Billion Word 上比 ReLU 好約 5 個困惑度點。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="card">
+  <h2><span class="num">3</span>特點三：卷積 ＋ 門——可以平行處理，速度快一個數量級</h2>
+  <p>論文的語言模型（Gated CNN）用<b>疊起來的卷積層 ＋ GLU</b> 取代循環網路（LSTM）。LSTM 要一個字接一個字算；卷積在同一層裡<b>所有位置可以同時算</b>。以一段病歷文字為例：</p>
+  <div class="row"><button id="p_reset">⟲ 重來</button><button id="p_next">下一個時間步 ▶</button><button id="p_auto">▶ 自動播放</button><span class="mute" id="p_t">時間步：0</span></div>
+  <div class="g2">
+    <div>
+      <h3 style="color:var(--mute)">LSTM：逐字計算</h3>
+      <div class="seq" id="sqL"></div>
+      <div class="box" id="p_l"></div>
+    </div>
+    <div>
+      <h3 style="color:var(--c1)">Gated CNN：3 層，每層所有位置同時算</h3>
+      <div class="seq" id="sqC"></div>
+      <div class="box" id="p_c"></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div>
+      <h3>論文數據：反應速度（tokens/秒，GPU）</h3>
+      <div class="scrollx"><table>
+        <tr><th>模型</th><th>回應速度</th></tr>
+        <tr><td>LSTM-2048</td><td>2,282</td></tr>
+        <tr><td>GCNN-9</td><td><b>29,116</b></td></tr>
+        <tr><td>GCNN-8 Bottleneck</td><td><b>45,878</b>（約 20 倍）</td></tr>
+      </table></div>
+    </div>
+    <div>
+      <h3>論文數據：WikiText-103 困惑度（越低越好）</h3>
+      <div class="scrollx"><table>
+        <tr><th>模型</th><th>困惑度</th></tr>
+        <tr><td>LSTM-1024</td><td>48.7</td></tr>
+        <tr><td>GCNN-8</td><td>44.9</td></tr>
+        <tr><td>GCNN-14</td><td><b style="color:var(--ok)">37.2</b>（當時最佳）</td></tr>
+      </table></div>
+    </div>
+  </div>
+  <p class="mute" style="font-size:.88rem">這是第一個在大型語言模型基準上能與強大循環網路競爭的非循環方法。對智慧醫療來說，快速處理大量病歷、臨床筆記的文字模型，正需要這種可平行的設計。</p>
+</section>
+
+<!-- 4 -->
+<section class="card">
+  <h2><span class="num">4</span>GLU 家族：換掉門的函數，就得到一整族</h2>
+  <p>把 GLU 的 σ 換成其他函數，就是 Shazeer（2020）比較的各種變體。下面把一維版本的 W、V 都設為 1、偏置設為 0，只看「門的形狀」：</p>
+  <div class="tabs" id="fam"></div>
+  <div class="g2">
+    <div>
+      <div class="cvbox"><canvas id="cv4"></canvas></div>
+      <div class="legend"><span><i style="background:var(--mute)"></i>ReLU（參考）</span><span><i style="background:var(--c2)"></i>x ⊗ 門(x)</span></div>
+    </div>
+    <div>
+      <div class="box or" id="fam_msg"></div>
+      <div class="scrollx"><table>
+        <tr><th>名稱</th><th>公式</th></tr>
+        <tr><td>GTU</td><td>tanh(xW) ⊗ σ(xV)</td></tr>
+        <tr><td><b>GLU</b></td><td>(xW) ⊗ σ(xV)</td></tr>
+        <tr><td>Bilinear</td><td>(xW) ⊗ (xV)</td></tr>
+        <tr><td>ReGLU</td><td>(xW) ⊗ max(0, xV)</td></tr>
+        <tr><td>GEGLU</td><td>(xW) ⊗ GELU(xV)</td></tr>
+        <tr><td><b>SwiGLU</b></td><td>(xW) ⊗ Swish(xV)</td></tr>
+      </table></div>
+      <p class="mute" style="font-size:.88rem">延伸閱讀：<a href="03_Swish.html">03_Swish</a>（自我門控）、<a href="04_SwiGLU.html">04_SwiGLU</a>（現代大型語言模型的 FFN）。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="card">
+  <h2><span class="num">5</span>Dauphin 老師的研究足跡與 mixup</h2>
+  <div class="tl" id="tl"></div>
+  <div class="box bl tlbox" id="tlbox"></div>
+  <h3 style="margin-top:12px">mixup：醫學影像資料少時的好幫手</h3>
+  <p style="margin-top:0">Zhang、Cisse、Dauphin 與 Lopez-Paz（2018）提出：把兩筆訓練資料<b>和它們的標籤</b>按比例 λ 混合，產生新的訓練樣本。醫學影像常常資料量小，這種簡單的資料增強很實用。</p>
+  <div class="formula" style="font-size:1.05rem">x̃ = λ·x<sub>i</sub> + (1 − λ)·x<sub>j</sub>　　ỹ = λ·y<sub>i</sub> + (1 − λ)·y<sub>j</sub></div>
+  <div class="g2">
+    <div class="mix">
+      <div><canvas id="mA"></canvas><div>影像 A：正常</div></div>
+      <div><canvas id="mM"></canvas><div><b>混合影像 x̃</b></div></div>
+      <div><canvas id="mB"></canvas><div>影像 B：有結節</div></div>
+    </div>
+    <div>
+      <div class="ctl"><label>λ = <b id="lv"></b></label><input id="lam" type="range" min="0" max="1" step="0.05" value="0.5"></div>
+      <div class="br"><span>正常</span><div class="tr"><div id="yA" style="background:var(--c1)"></div></div><span id="yAv"></span></div>
+      <div class="br"><span>有結節</span><div class="tr"><div id="yB" style="background:var(--bad)"></div></div><span id="yBv"></span></div>
+      <div class="box or" id="mix_msg"></div>
+      <p class="mute" style="font-size:.84rem">示意影像由程式產生，不是真實的醫學影像。</p>
+    </div>
+  </div>
+  <h3 style="margin-top:14px">參考文獻</h3>
+  <ol class="ref">
+    <li>Dauphin, Y. N., Fan, A., Auli, M., &amp; Grangier, D. (2017). Language modeling with gated convolutional networks. In <i>Proceedings of the 34th International Conference on Machine Learning</i> (pp. 933–941).</li>
+    <li>van den Oord, A., Kalchbrenner, N., Espeholt, L., Vinyals, O., Graves, A., &amp; Kavukcuoglu, K. (2016). Conditional image generation with PixelCNN decoders. In <i>Advances in Neural Information Processing Systems 29</i>.</li>
+    <li>Dauphin, Y. N., Pascanu, R., Gulcehre, C., Cho, K., Ganguli, S., &amp; Bengio, Y. (2014). Identifying and attacking the saddle point problem in high-dimensional non-convex optimization. In <i>Advances in Neural Information Processing Systems 27</i>.</li>
+    <li>Zhang, H., Cisse, M., Dauphin, Y. N., &amp; Lopez-Paz, D. (2018). mixup: Beyond empirical risk minimization. In <i>International Conference on Learning Representations</i>.</li>
+    <li>Shazeer, N. (2020). <i>GLU variants improve Transformer</i>. arXiv:2002.05202.</li>
+  </ol>
+</section>
+
+<!-- 6 -->
+<section class="card">
+  <h2><span class="num">6</span>小測驗：GLU 的特點</h2>
+  <div class="qgrid">
+    <div id="quiz"></div>
+    <div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+  </div>
+</section>
+
+<footer>GLU 激活函數互動教學 ・ 單一 HTML 檔，可離線開啟</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const sig=x=>1/(1+Math.exp(-x));
+const relu=x=>Math.max(0,x);
+const fmt=(v,d=3)=>Number(v).toFixed(d);
+function erf(x){const s=Math.sign(x);x=Math.abs(x);const t=1/(1+0.3275911*x);
+  return s*(1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x));}
+const gelu=x=>x*0.5*(1+erf(x/Math.SQRT2));
+
+/* ---------- 畫圖工具 ---------- */
+function fitCanvas(cv,h){
+  cv.style.width='0px';
+  const w=Math.max(120,cv.parentElement.clientWidth),dpr=window.devicePixelRatio||1;
+  if(h==='sq')h=w;
+  cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+'px';cv.style.height=h+'px';
+  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return {c,w,h};
+}
+function plot(cv,h,o){
+  const {c,w}=fitCanvas(cv,h);
+  const pad={l:38,r:12,t:12,b:24},[x0,x1]=o.xr,[y0,y1]=o.yr;
+  const X=x=>pad.l+(x-x0)/(x1-x0)*(w-pad.l-pad.r),Y=y=>pad.t+(y1-y)/(y1-y0)*(h-pad.t-pad.b);
+  c.fillStyle=css('--card');c.fillRect(0,0,w,h);
+  c.strokeStyle=css('--grid');c.lineWidth=1;c.font='11px sans-serif';c.fillStyle=css('--mute');
+  const xs=o.xstep||1,ys=o.ystep||1;
+  for(let x=Math.ceil(x0/xs)*xs;x<=x1+1e-9;x+=xs){c.beginPath();c.moveTo(X(x),Y(y0));c.lineTo(X(x),Y(y1));c.stroke();c.textAlign='center';c.fillText(+x.toFixed(2),X(x),h-8);}
+  for(let y=Math.ceil(y0/ys)*ys;y<=y1+1e-9;y+=ys){c.beginPath();c.moveTo(X(x0),Y(y));c.lineTo(X(x1),Y(y));c.stroke();c.textAlign='right';c.fillText(+y.toFixed(2),pad.l-5,Y(y)+4);}
+  c.strokeStyle=css('--mute');c.lineWidth=1.3;
+  if(y0<0&&y1>0){c.beginPath();c.moveTo(X(x0),Y(0));c.lineTo(X(x1),Y(0));c.stroke();}
+  if(x0<0&&x1>0){c.beginPath();c.moveTo(X(0),Y(y0));c.lineTo(X(0),Y(y1));c.stroke();}
+  if(o.xlabel){c.fillStyle=css('--mute');c.textAlign='right';c.fillText(o.xlabel,w-pad.r,h-22);}
+  c.save();c.beginPath();c.rect(pad.l,pad.t,w-pad.l-pad.r,h-pad.t-pad.b);c.clip();
+  for(const cu of o.curves){
+    c.strokeStyle=cu.col;c.lineWidth=cu.w||2.5;c.setLineDash(cu.dash||[]);
+    c.beginPath();let first=true;const N=cu.n||400;
+    for(let i=0;i<=N;i++){const x=x0+(x1-x0)*i/N,y=cu.f(x);
+      if(!isFinite(y)){first=true;continue;}
+      if(first){c.moveTo(X(x),Y(y));first=false}else c.lineTo(X(x),Y(y));}
+    c.stroke();c.setLineDash([]);
+  }
+  for(const s of (o.stems||[])){c.strokeStyle=s.col;c.lineWidth=s.w||6;c.lineCap='round';c.beginPath();c.moveTo(X(s.x),Y(0));c.lineTo(X(s.x),Y(s.y));c.stroke();c.lineCap='butt';}
+  c.restore();
+  for(const p of (o.pts||[])){c.fillStyle=p.col;c.beginPath();c.arc(X(p.x),Y(p.y),p.r||6,0,7);c.fill();c.strokeStyle=css('--card');c.lineWidth=2;c.stroke();}
+}
+
+/* ---------- 0 定義 ---------- */
+const P0=[['預設',[1,0.5,2,-1]],['門永遠開（c = +6）',[1,0.5,0,6]],['門永遠關（c = −6）',[1,0.5,0,-6]],['W = V = 1 → Swish！',[1,0,1,0]]];
+function draw0(){
+  const w=+$('w').value,b=+$('b').value,v=+$('v').value,c=+$('c').value,x=+$('x').value;
+  $('wv').textContent=fmt(w,1);$('bv').textContent=fmt(b,1);$('vv').textContent=fmt(v,1);$('cv').textContent=fmt(c,1);$('xv').textContent=fmt(x,2);
+  $('pre0').innerHTML='';P0.forEach(([t,p])=>{const e=document.createElement('button');e.textContent=t;
+    if(p[0]===w&&p[1]===b&&p[2]===v&&p[3]===c)e.classList.add('on');
+    e.onclick=()=>{['w','b','v','c'].forEach((k,i)=>$(k).value=p[i]);draw0();};$('pre0').appendChild(e);});
+  const A=t=>w*t+b,G=t=>sig(v*t+c),H=t=>A(t)*G(t);
+  plot($('cv0'),250,{xr:[-4,4],yr:[-3,4],curves:[{f:A,col:css('--c1'),w:2,dash:[6,4]},{f:G,col:css('--c3'),w:2.5},{f:H,col:css('--c2'),w:3.5}],
+    pts:[{x,y:H(x),col:css('--c2')}]});
+  const a=A(x),g=G(x);
+  let m=`內容 = ${fmt(w,1)}×${fmt(x,2)} + ${fmt(b,1)} = <b style="color:var(--c1)">${fmt(a)}</b><br>門 = σ(${fmt(v,1)}×${fmt(x,2)} + ${fmt(c,1)}) = <b style="color:var(--c3)">${fmt(g)}</b>（放行 ${Math.round(g*100)}%）<br>輸出 = ${fmt(a)} × ${fmt(g)} = <b>${fmt(a*g)}</b>`;
+  if(w===1&&b===0&&v===1&&c===0)m+='<br>✨ 內容和門用<b>同一個投影</b>時，GLU 就變成 x·σ(x)，也就是 <b>Swish／SiLU</b>。GLU 比 Swish 更一般：門有自己的權重 V。';
+  else if(v===0&&c>=5)m+='<br>門恆為 ≈ 1：GLU 退化成單純的線性層。';
+  else if(v===0&&c<=-5)m+='<br>門恆為 ≈ 0：什麼都過不去。';
+  $('calc0').innerHTML=m;
+}
+['w','b','v','c','x'].forEach(k=>$(k).oninput=draw0);
+
+/* ---------- 1 醫療門控 ---------- */
+const FEAT=[['體溫','T'],['心率','HR'],['肌鈣蛋白','Tn'],['白血球','WBC'],['缺氧程度','Hx']];
+const PTS=[['健康','🙂',[0,0,0,0,0]],['發燒感染','🤒',[2.4,1.4,0,2.6,0]],['急性心肌梗塞','💔',[0,1.2,3,0.3,0.2]],['肺炎合併缺氧','🫁',[1.8,1.6,0,2.2,2.6]]];
+// 每個通道：內容權重 W、門權重 V、門偏置 c
+const CH=[
+ {n:'感染跡象',d:'看體溫、白血球',W:[0.7,0.2,0,0.7,0],V:[2.2,0,0,2.2,0],c:-3},
+ {n:'心肌損傷',d:'看肌鈣蛋白',W:[0,0.3,1,0,0],V:[0,0,3,0,0],c:-2},
+ {n:'呼吸衰竭',d:'看缺氧程度',W:[0,0.3,0,0,1],V:[0,0,0,0,3],c:-2},
+ {n:'雜訊通道',d:'與分流無關的組合',W:[0.5,0.5,-0.4,0.4,0.4],V:[0,0,0,0,0],c:-3.5}];
+let xin=[0,0,0,0,0],pSel=0,useGate=true;
+function drawPts(){$('pts').innerHTML='';PTS.forEach((p,i)=>{const b=document.createElement('button');b.textContent=p[1]+' '+p[0];if(i===pSel)b.classList.add('on');
+  b.onclick=()=>{pSel=i;xin=[...p[2]];buildInputs();drawPts();drawGate();
+    const ch=CH.map((c,k)=>[k,sig(c.V.reduce((s,v,j)=>s+v*xin[j],0)+c.c)]).filter(t=>t[1]>0.6);
+    AV1.mood(ch.length?'smile':'',ch.length?`${p[0]}：門打開了「${ch.map(t=>CH[t[0]].n).join('、')}」通道！`:`${p[0]}：所有門都幾乎關著，訊號安靜。`);};
+  $('pts').appendChild(b);});}
+function buildInputs(){$('inputs').innerHTML='';FEAT.forEach((f,j)=>{const d=document.createElement('div');d.className='inp';
+  d.innerHTML=`<span>${f[0]}</span><input type="range" min="-1" max="3" step="0.1" value="${xin[j]}"><b>${fmt(xin[j],1)}</b>`;
+  const r=d.querySelector('input');r.oninput=()=>{xin[j]=+r.value;d.querySelector('b').textContent=fmt(xin[j],1);pSel=-1;drawPts();drawGate();};
+  $('inputs').appendChild(d);});}
+function drawGate(){
+  $('gOn').classList.toggle('on',useGate);$('gOff').classList.toggle('on',!useGate);
+  const R=$('chans');R.innerHTML='';let opened=[];let noise=0;
+  CH.forEach((c,k)=>{const a=c.W.reduce((s,w,j)=>s+w*xin[j],0),z=c.V.reduce((s,v,j)=>s+v*xin[j],0)+c.c,g=useGate?sig(z):1,h=a*g;
+    if(useGate&&g>0.6)opened.push(c.n);if(k===3)noise=Math.abs(h);
+    const d=document.createElement('div');d.className='ch'+(g>0.6&&Math.abs(h)>0.3?' open':'');
+    const bar=(v,col,mx)=>`<div class="tr"><div style="width:${Math.min(100,Math.abs(v)/mx*100)}%;background:${col}"></div></div>`;
+    d.innerHTML=`<div class="hd">${c.n}<span>${c.d}</span></div>
+      <div class="br"><span>內容</span>${bar(a,css('--c1'),4)}<span>${fmt(a,2)}</span></div>
+      <div class="br"><span>門</span>${bar(g,css('--c3'),1)}<span>${useGate?fmt(g,2):'—'}</span></div>
+      <div class="br"><span><b>輸出</b></span>${bar(h,css('--c2'),4)}<span><b>${fmt(h,2)}</b></span></div>`;
+    R.appendChild(d);});
+  $('g_msg').innerHTML=useGate
+    ? (opened.length?`門打開的通道：<b>${opened.join('、')}</b>。其他通道的門接近 0，內容被擋下。換一位病人看看，打開的通道就不同——這就是<b>依輸入動態控制資訊流動</b>。`
+                    :'所有通道的門都接近關閉：沒有明顯異常，下一層收到的訊號很安靜。')
+    : `拿掉門後，每個通道的內容都直接傳下去，連「雜訊通道」也輸出 ${fmt(noise,2)}。下一層必須自己從一堆混雜的訊號裡分辨重點。`;
+}
+$('gOn').onclick=()=>{useGate=true;drawGate();};$('gOff').onclick=()=>{useGate=false;drawGate();};
+
+/* ---------- 2 梯度 ---------- */
+function draw2(){
+  const z=+$('z').value,a=+$('a').value,n=+$('n').value;$('zv').textContent=fmt(z,1);$('av').textContent=fmt(a,2);$('nv').textContent=n;
+  const fG=sig(z),fT=(1-Math.tanh(a)**2)*sig(z);
+  $('fG').textContent=fmt(fG);$('fT').textContent=fmt(fT);
+  const r=Math.pow(fG/fT,n);$('rat').textContent=r>=1e4?r.toExponential(1)+' 倍':fmt(r,1)+' 倍';
+  const stems=[];for(let k=0;k<=n;k++){stems.push({x:k-0.13,y:Math.pow(fG,k),col:css('--c2'),w:5},{x:k+0.13,y:Math.pow(fT,k),col:css('--c4'),w:5});}
+  plot($('cv2'),250,{xr:[-0.6,n+0.6],yr:[0,1.05],xstep:n>12?2:1,ystep:0.25,curves:[],stems});
+  const gN=Math.pow(fG,n),tN=Math.pow(fT,n);
+  $('gr_msg').innerHTML=`往回傳過 ${n} 層後，梯度剩下：GLU <b>${gN<1e-3?gN.toExponential(2):fmt(gN)}</b>，GTU <b>${tN<1e-3?tN.toExponential(2):fmt(tN)}</b>。<br>`+
+    (z>=2?'門打開時 GLU 每層幾乎 × 1，梯度能一路傳回前面的層；GTU 每層還要多乘 tanh′(a)，'+(a>0.8?'內容一大就明顯縮小。':'內容很小時影響不大，把 a 往右拉看看。')
+         :'門關得比較緊時，兩者都會縮小——門的開關也控制了梯度的流動。');
+}
+['z','a','n'].forEach(k=>$(k).oninput=draw2);
+
+/* ---------- 3 平行 ---------- */
+const TOK=['病人','主訴','胸痛','三','小時','心電圖','ST段','上升'],NL=3;
+let pT=0,pTimer=null;
+function draw3(){
+  const N=TOK.length;
+  const L=$('sqL');L.style.gridTemplateColumns=`repeat(${N},minmax(0,1fr))`;L.innerHTML='';
+  TOK.forEach(t=>{const e=document.createElement('div');e.className='tok';e.textContent=t;L.appendChild(e);});
+  TOK.forEach((t,i)=>{const e=document.createElement('div');e.className='cell'+(i<pT?' on':'')+(i===pT-1?' now':'');L.appendChild(e);});
+  const C=$('sqC');C.style.gridTemplateColumns=`44px repeat(${N},minmax(0,1fr))`;C.innerHTML='<div></div>';
+  TOK.forEach(t=>{const e=document.createElement('div');e.className='tok';e.textContent=t;C.appendChild(e);});
+  for(let l=NL;l>=1;l--){const lab=document.createElement('div');lab.className='rl';lab.textContent='第'+l+'層';C.appendChild(lab);
+    TOK.forEach(()=>{const e=document.createElement('div');e.className='cell'+(l<=pT?' on':'')+(l===pT?' now':'');C.appendChild(e);});}
+  $('p_t').textContent='時間步：'+pT;
+  $('p_l').innerHTML=pT>=N?`✔ 用了 <b>${N}</b> 個時間步才讀完 ${N} 個詞（每一步都要等上一步的結果）。`:`已完成 <b>${pT} / ${N}</b> 個詞：必須等前一個詞算完才能算下一個。`;
+  $('p_c').innerHTML=pT>=NL?`✔ 只用 <b>${NL}</b> 個時間步就完成 3 層。每層的卷積寬度 3，疊 3 層後，最後一個詞能看到前面 7 個詞。`:`已完成 <b>${Math.min(pT,NL)} / ${NL}</b> 層：同一層的 ${N} 個位置<b>同時</b>計算（每個位置都用 GLU 決定放行什麼）。`;
+}
+function pStop(){clearInterval(pTimer);pTimer=null;$('p_auto').textContent='▶ 自動播放';$('p_auto').classList.remove('on');}
+$('p_reset').onclick=()=>{pStop();pT=0;draw3();};
+$('p_next').onclick=()=>{pStop();pT=Math.min(TOK.length,pT+1);draw3();};
+$('p_auto').onclick=()=>{if(pTimer){pStop();return;}if(pT>=TOK.length)pT=0;$('p_auto').textContent='⏸ 暫停';$('p_auto').classList.add('on');
+  pTimer=setInterval(()=>{if(pT>=TOK.length){pStop();return;}pT++;draw3();},1100);};
+
+/* ---------- 4 家族 ---------- */
+const FAM=[
+ ['GTU',x=>Math.tanh(x)*sig(x),'tanh(x)·σ(x)：內容先被 tanh 壓到 −1～1，輸出有上限。'],
+ ['GLU',x=>x*sig(x),'x·σ(x)：一維、共用權重時剛好就是 Swish。真正的 GLU 中，門有自己的權重 V，比 Swish 更有彈性。'],
+ ['Bilinear',x=>x*x,'x·x：沒有非線性函數，只靠兩個投影相乘。'],
+ ['ReGLU',x=>x*relu(x),'x·max(0,x)：門用 ReLU，負的一側完全關閉。'],
+ ['GEGLU',x=>x*gelu(x),'x·GELU(x)：門用 GELU，平滑版本。'],
+ ['SwiGLU',x=>x*x*sig(x),'x·Swish(x)：門用 Swish，PaLM、LLaMA 等大型語言模型採用。']];
+let fSel=1;
+function draw4(){
+  $('fam').innerHTML='';FAM.forEach((f,i)=>{const b=document.createElement('button');b.textContent=f[0];if(i===fSel)b.classList.add('on');b.onclick=()=>{fSel=i;draw4();};$('fam').appendChild(b);});
+  plot($('cv4'),240,{xr:[-3,3],yr:[-1,4],curves:[{f:relu,col:css('--mute'),w:1.5,dash:[5,4]},{f:FAM[fSel][1],col:css('--c2'),w:3.5}]});
+  $('fam_msg').innerHTML=`<b>${FAM[fSel][0]}</b>：${FAM[fSel][2]}`;
+}
+
+/* ---------- 5 時間軸與 mixup ---------- */
+const TL=[
+ ['博士班','在蒙特婁大學攻讀博士，指導教授是深度學習先驅、圖靈獎得主 <b>Yoshua Bengio</b>。'],
+ ['2014：鞍點','與 Pascanu、Gulcehre、Cho、Ganguli、Bengio 發表〈Identifying and attacking the saddle point problem…〉：高維非凸最佳化中，真正的障礙常是<b>鞍點</b>，而不是局部極小值。'],
+ ['2016：GLU','在 Facebook AI Research（FAIR）與 Fan、Auli、Grangier 提出<b>門控卷積語言模型</b>與 GLU，用門控機制動態控制資訊流動。'],
+ ['2018：mixup','與 Hongyi Zhang、Moustapha Cisse、David Lopez-Paz 提出 <b>mixup</b> 資料增強：把兩筆資料與標籤按比例混合。'],
+ ['現在','任職於 <b>Google DeepMind</b>，參與 Gemini 模型的研發，包含多模態與長上下文的優化，以及推理能力與智慧代理底層演算法的精進。']];
+let tlSel=2;
+function drawTL(){$('tl').innerHTML='';TL.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t[0];if(i===tlSel)b.classList.add('on');b.onclick=()=>{tlSel=i;drawTL();};$('tl').appendChild(b);});$('tlbox').innerHTML=TL[tlSel][1];}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const MN=16,IA=[],IB=[];
+(function(){const R=rng(5);for(let i=0;i<MN;i++)for(let j=0;j<MN;j++){
+  const lung=Math.exp(-(((i-7.5)/6.5)**2+((j-7.5)/7)**2)*1.2),base=0.18+0.5*(1-lung)+0.08*R();
+  IA.push(Math.min(1,base));const d=Math.exp(-(((i-5)/1.7)**2+((j-10)/1.7)**2));IB.push(Math.min(1,base*0.9+0.85*d+0.06*R()));}})();
+function drawImg(cv,arr){const {c,w}=fitCanvas(cv,'sq');const s=w/MN;
+  for(let i=0;i<MN;i++)for(let j=0;j<MN;j++){const v=Math.round(arr[i*MN+j]*235+10);c.fillStyle=`rgb(${v},${v},${v})`;c.fillRect(j*s,i*s,s+0.5,s+0.5);}}
+function drawMix(){
+  const l=+$('lam').value;$('lv').textContent=fmt(l,2);
+  drawImg($('mA'),IA);drawImg($('mB'),IB);drawImg($('mM'),IA.map((a,k)=>l*a+(1-l)*IB[k]));
+  $('yA').style.width=l*100+'%';$('yB').style.width=(1-l)*100+'%';$('yAv').textContent=fmt(l,2);$('yBv').textContent=fmt(1-l,2);
+  $('mix_msg').innerHTML=`新樣本 = ${fmt(l,2)} × A + ${fmt(1-l,2)} × B，標籤也跟著混合：「正常 ${fmt(l,2)}、有結節 ${fmt(1-l,2)}」。<br>這讓模型在兩類之間學到較平滑的判斷，不會對訓練資料過度自信。`;
+}
+$('lam').oninput=drawMix;
+
+/* ---------- Dauphin 老師頭像 ---------- */
+const LOC=(x1,y1,x2,y2,x3,y3)=>`<path d="M${x1} ${y1} Q${x2} ${y2} ${x3} ${y3}" stroke="#1d1613" stroke-width="7.5" fill="none" stroke-linecap="round"/><path d="M${x1} ${y1} Q${x2} ${y2} ${x3} ${y3}" stroke="#3d2c22" stroke-width="1.6" fill="none" stroke-dasharray="3 4"/>`;
+const DAUPHIN_SVG=`<svg viewBox="0 0 200 230" aria-label="Dauphin老師動畫">
+ <g class="bodyg">
+  <path d="M60 80 Q58 44 100 40 Q142 44 140 80 L146 150 Q100 160 54 150 Z" fill="#1d1613"/>
+  <path d="M12 232 Q16 168 100 158 Q184 168 188 232 Z" fill="#2f6b78"/>
+  <path d="M78 160 Q100 176 122 160" stroke="#245560" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <rect x="87" y="134" width="26" height="28" rx="10" fill="#875438"/>
+  <path d="M87 150 Q100 168 113 150 L113 160 Q100 172 87 160 Z" fill="#875438"/>
+  <ellipse cx="68" cy="104" rx="6" ry="10" fill="#875438"/><ellipse cx="132" cy="104" rx="6" ry="10" fill="#875438"/>
+  <ellipse cx="100" cy="101" rx="31" ry="40" fill="#9c6547"/>
+  <ellipse class="blush" cx="81" cy="116" rx="7" ry="4.5" fill="#d9655a"/>
+  <ellipse class="blush" cx="119" cy="116" rx="7" ry="4.5" fill="#d9655a"/>
+  <path d="M71 112 Q72 136 100 142 Q128 136 129 112 Q124 128 112 131 Q100 128 88 131 Q76 128 71 112 Z" fill="#241914" opacity=".28"/><path d="M89 131 Q100 148 111 131 Q111 140 100 143 Q89 140 89 131 Z" fill="#241914" opacity=".9"/>
+  <path d="M86 122 Q100 115 114 122 Q100 119 86 122 Z" fill="#241914"/>
+  <path d="M68 84 Q68 52 100 49 Q132 52 132 84 Q122 66 100 64 Q78 66 68 84 Z" fill="#1d1613"/>
+  <g class="hairL">${LOC(70,62,58,110,56,166)}${LOC(64,70,52,110,46,158)}${LOC(76,58,66,100,66,150)}</g>
+  <g class="hairR">${LOC(130,62,142,110,144,166)}${LOC(136,70,148,110,154,158)}${LOC(124,58,134,100,134,150)}</g>
+  <path class="brow browL" d="M78 87 Q86 83 94 86" stroke="#1d1613" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+  <path class="brow browR" d="M106 86 Q114 83 122 87" stroke="#1d1613" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+  <g class="eyes"><ellipse cx="87" cy="97" rx="4.3" ry="3.2" fill="#fff"/><ellipse cx="113" cy="97" rx="4.3" ry="3.2" fill="#fff"/>
+   <circle cx="87.4" cy="97" r="2.6" fill="#2a1a12"/><circle cx="113.4" cy="97" r="2.6" fill="#2a1a12"/>
+   <circle cx="88.2" cy="96.1" r=".9" fill="#fff"/><circle cx="114.2" cy="96.1" r=".9" fill="#fff"/></g>
+  <path d="M100 101 Q95 113 97 116 Q101 119 107 116" stroke="#6a3f28" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path class="mo n" d="M90 128 Q100 133 110 127" stroke="#e8c2b0" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+  <path class="mo s" d="M88 126 Q100 140 112 126 Q100 130 88 126 Z" fill="#6b1f1a" stroke="#e8c2b0" stroke-width="1.5" stroke-linejoin="round"/>
+  <path class="mo s" d="M90.5 127.3 Q100 130 109.5 127.3 L108.5 129.5 Q100 132 91.5 129.5 Z" fill="#fff"/>
+  <path class="mo f" d="M90 133 Q100 125 110 133" stroke="#e8c2b0" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+  <path class="sweat" d="M134 74 Q139 84 134 88 Q129 84 134 74 Z" fill="#7cc3f0"/>
+  <text class="spark" x="24" y="44" font-size="18" fill="#f0b400">✦</text>
+  <text class="spark" x="164" y="40" font-size="14" fill="#f0b400">✦</text>
+  <text class="spark" x="172" y="96" font-size="11" fill="#f0b400">✦</text>
+ </g></svg>`;
+function makeAvatar(el,bubble){
+  el.innerHTML=DAUPHIN_SVG;let tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold)tm=setTimeout(()=>{el.classList.remove('smile','frown');bubble.className='bubble';},3600);}};
+}
+var AV1=makeAvatar($('av1'),$('bub1')),AV2=makeAvatar($('av2'),$('bub2'));
+const QUOTES=[
+ '我的博士指導教授是圖靈獎得主 Yoshua Bengio。',
+ '2014 年我們發現：高維最佳化真正的麻煩常是「鞍點」，不是局部極小值。',
+ '2016 年在 Facebook AI Research，我和 Angela Fan、Michael Auli、David Grangier 用「卷積＋門」做語言模型。',
+ '以前 PixelCNN 的門是 tanh ⊗ σ。我們把 tanh 拿掉，讓內容保持線性，梯度就有一條不會縮小的路。',
+ '我們的 Gated CNN 在 WikiText-103 上達到當時最佳，計算一句話的延遲比循環網路低約一個數量級。',
+ '論文裡我們寫道：門讓模型選擇哪些詞或特徵與預測下一個字有關。',
+ '2018 年我們提出 mixup：把兩筆資料和標籤按比例混合，簡單又有效。',
+ '2020 年 Shazeer 把 GLU 的門換成 Swish、GELU，得到 SwiGLU、GEGLU，現在的大型語言模型幾乎都在用。',
+ '現在我在 Google DeepMind 參與 Gemini 模型的研發。'];
+let qi=0;$('av1').onclick=()=>AV1.mood('smile',QUOTES[qi++%QUOTES.length]);
+
+/* ---------- 6 小測驗 ---------- */
+const QZ=[
+ {q:'GLU 的公式是？',o:['(xW + b) ⊗ σ(xV + c)','max(0, xW + b)','tanh(xW + b)','x · Φ(x)'],a:0,e:'一個線性投影當內容、另一個經過 sigmoid 當門，逐元素相乘。',h:'名字是「門控（Gated）＋線性（Linear）」。'},
+ {q:'GLU 中 σ(xV + c) 扮演什麼角色？',o:['門：依輸入決定內容的每個元素放行多少','把輸出正規化成機率','計算損失函數','固定不變的常數'],a:0,e:'門介於 0～1，由輸入算出，所以不同輸入會放行不同的特徵。',h:'第 1 節：不同病人打開的通道為什麼不同？'},
+ {q:'GLU 和 GTU 最大的不同是？',o:['GLU 的內容分支是線性的，沒有經過 tanh','GLU 沒有門','GLU 只能用在影像','GTU 不使用 sigmoid'],a:0,e:'GTU = tanh(xW)⊗σ(xV)；GLU 拿掉 tanh，內容保持線性。',h:'比較第 2 節兩條公式的第一個因子。'},
+ {q:'為什麼 GLU 的梯度比較不容易消失？',o:['∇X ⊗ σ(X) 這一項在門打開時不會被縮小','因為它的輸出永遠是 0','因為它不需要反向傳播','因為 tanh′ 永遠等於 1'],a:0,e:'門開時 σ ≈ 1，梯度沿線性路徑原封不動通過；GTU 每層多乘 tanh′ ≤ 1。',h:'第 2 節：把 a 拉大，比較兩種係數。'},
+ {q:'Gated CNN 相比 LSTM 的主要優勢是？',o:['同一層所有位置可平行計算，延遲低約一個數量級','參數一定比較少','可以處理無限長的上下文','不需要任何訓練資料'],a:0,e:'卷積不必等前一個字；論文回報反應速度約快 20 倍。',h:'第 3 節的時間步數比較。'},
+ {q:'一維 GLU 若內容和門共用同一個投影（W = V = 1，偏置 0），會變成？',o:['Swish／SiLU：x · σ(x)','ReLU','常數 1','tanh'],a:0,e:'(x)·σ(x) 就是 Swish（β = 1）。GLU 是更一般的形式。',h:'第 0 節按「W = V = 1」看看。'},
+ {q:'SwiGLU 和 GLU 的關係是？',o:['把 GLU 的 sigmoid 門換成 Swish','把 GLU 的內容換成 tanh','SwiGLU 沒有門','兩者完全無關'],a:0,e:'SwiGLU = (xW) ⊗ Swish(xV)，是 Shazeer（2020）的 GLU 變體之一。',h:'第 4 節的 GLU 家族表。'},
+ {q:'mixup 資料增強的做法是？',o:['把兩筆資料與它們的標籤按比例 λ 線性混合','把影像隨機旋轉','刪除一半的訓練資料','只增加標籤、不改資料'],a:0,e:'x̃ = λxᵢ + (1−λ)xⱼ，ỹ = λyᵢ + (1−λ)yⱼ。',h:'第 5 節的混合影像。'}];
+const PRAISE=['答對了！','Excellent！門控觀念很清楚。','很好！你抓到重點了。','正確！這就是 GLU 的精神。'];
+let qs={done:0,score:0,streak:0};
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function buildQuiz(){
+  qs={done:0,score:0,streak:0};const box=$('quiz');box.innerHTML='';
+  QZ.forEach((z,k)=>{
+    const d=document.createElement('div');d.className='q';
+    d.innerHTML=`<b>${k+1}. ${z.q}</b><div class="opts"></div><div class="exp"></div>`;
+    const opts=d.querySelector('.opts'),exp=d.querySelector('.exp');let locked=false;
+    shuffle(z.o.map((t,i)=>i)).forEach(i=>{
+      const b=document.createElement('button');b.textContent=z.o[i];b.dataset.i=i;
+      b.onclick=()=>{if(locked)return;locked=true;qs.done++;
+        opts.querySelectorAll('button').forEach(x=>{if(+x.dataset.i===z.a)x.classList.add('right');});
+        if(i===z.a){qs.score++;qs.streak++;exp.className='exp ok';exp.textContent='✔ 正確！'+z.e;
+          AV2.mood('smile',qs.streak>=3?`連對 ${qs.streak} 題！你的門全開了 😄`:PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+        else{qs.streak=0;b.classList.add('wrong');exp.className='exp no';exp.textContent='✘ '+z.e;AV2.mood('frown',z.h);}
+        if(qs.done===QZ.length)finish();};
+      opts.appendChild(b);});
+    box.appendChild(d);});
+  const s=document.createElement('div');s.id='qscore';box.appendChild(s);
+}
+function finish(){
+  const n=QZ.length,s=qs.score;
+  $('qscore').innerHTML=`<div class="score">得分：${s} / ${n}</div><button id="qagain">再做一次</button>`;
+  $('qagain').onclick=()=>{buildQuiz();AV2.mood('','新的一輪！這次試試全對。');};
+  setTimeout(()=>{
+    if(s===n)AV2.mood('smile','全對！GLU 的特點你都掌握了。',true);
+    else if(s>=n-2)AV2.mood('smile','很不錯！回頭看看答錯的那幾題就完美了。',true);
+    else AV2.mood('frown','建議回到第 1、2 節，把「門」和「線性梯度路徑」再玩一次。',true);
+  },3300);
+}
+
+/* ---------- 啟動 ---------- */
+function drawAll(){draw0();drawGate();draw2();draw3();draw4();drawTL();drawMix();}
+drawPts();buildInputs();drawAll();buildQuiz();
+let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(drawAll,150);});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll);
+</script>
+</body>
+</html>

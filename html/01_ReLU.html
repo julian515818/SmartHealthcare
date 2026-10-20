@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ReLU 互動教學</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;
+ --c1:#2f6fd6;--c2:#e8772e;--c3:#1f9d6b;--c4:#8a5cd6;--grid:#ecebe5;--soft:#f2f1ec;--code:#1e2230;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --c1:#6ea2ff;--c2:#ffa05c;--c3:#4fd19d;--c4:#b893ff;--grid:#262b36;--soft:#232834;--code:#11141b;}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --c1:#6ea2ff;--c2:#ffa05c;--c3:#4fd19d;--c4:#b893ff;--grid:#262b36;--soft:#232834;--code:#11141b;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:1.9rem}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:18px 0;min-width:0}
+h2{margin:0 0 12px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--c2);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.formula{font-size:1.25rem;text-align:center;padding:10px;background:var(--soft);border-radius:10px;margin:10px 0}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.9em;line-height:1.15;margin:0 2px}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 3px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.g2>*,.g3>*{min-width:0}
+@media (max-width:860px){.g2,.g3{grid-template-columns:minmax(0,1fr)}}
+.cvbox{width:100%;min-width:0}
+canvas{display:block;border-radius:10px}
+input[type=range]{width:100%;accent-color:var(--c2)}
+.ctl{flex:1 1 220px;min-width:0}
+.ctl label{font-size:.92rem;color:var(--mute)}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 14px;cursor:pointer}
+button:hover{border-color:var(--c2)}
+button.on{background:var(--c2);border-color:var(--c2);color:#fff}
+.box{background:var(--soft);border-radius:10px;padding:10px 14px;margin:10px 0}
+.box.or{border-left:4px solid var(--c2)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.9rem;margin:6px 0}
+.legend i{display:inline-block;width:22px;height:4px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.pill{display:inline-block;padding:1px 10px;border-radius:99px;background:var(--soft);font-weight:700}
+/* 計算成本 */
+.fn{border:1px solid var(--line);border-radius:12px;padding:12px}
+.fn h3{margin:0 0 6px;font-size:1.05rem}
+.ops{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.op{font-size:.85rem;padding:2px 9px;border-radius:99px;background:var(--soft)}
+.op.exp{background:color-mix(in srgb,var(--bad) 18%,transparent)}
+.op.cmp{background:color-mix(in srgb,var(--ok) 20%,transparent)}
+.bar{height:16px;border-radius:8px;background:var(--c2);transition:width .5s;min-width:4px}
+.barrow{display:grid;grid-template-columns:76px minmax(0,1fr) 84px;gap:8px;align-items:center;margin:6px 0;font-size:.92rem}
+/* 梯度鏈 */
+.chain{display:grid;gap:4px;margin:6px 0 2px}
+.cell{aspect-ratio:1;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.68rem;position:relative;background:var(--card);transition:background .35s,border-color .35s}
+.cell.out{border-color:var(--c1)}
+.chlabel{font-weight:700;margin-top:8px;font-size:.95rem}
+.prog{height:6px;background:var(--soft);border-radius:3px;overflow:hidden;margin:8px 0}
+.prog>div{height:100%;background:var(--c2);transition:width .3s}
+.code{background:var(--code);color:#e8eaf0;border-radius:10px;padding:10px 0;font-family:Consolas,"Courier New",monospace;font-size:.88rem;overflow-x:auto}
+.code div{padding:1px 14px;white-space:pre;border-left:4px solid transparent}
+.code div.hl{background:rgba(232,119,46,.22);border-left-color:#e8772e}
+/* 稀疏網格 */
+.grid8{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;max-width:420px}
+.nr{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.7rem;border:1px solid var(--line);transition:background .3s}
+/* 時間軸 */
+.tl{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.tl button{flex:1 1 150px}
+.tlbox{min-height:7.5em}
+ol.ref{padding-left:1.4em}ol.ref li{margin:6px 0;font-size:.93rem}
+/* 小測驗 */
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opts button{text-align:left}
+.q .opts button.right{background:color-mix(in srgb,var(--ok) 22%,transparent);border-color:var(--ok)}
+.q .opts button.wrong{background:color-mix(in srgb,var(--bad) 18%,transparent);border-color:var(--bad)}
+.q .exp{margin-top:8px;font-size:.93rem}
+.q .exp.ok{color:var(--ok)}.q .exp.no{color:var(--bad)}
+.score{font-size:1.2rem;font-weight:700;margin:12px 0}
+footer{text-align:center;color:var(--mute);font-size:.9rem;margin-top:24px}
+
+/* 卡通老師 */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:top center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:top center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+
+/* 作者徽章（校徽待補） */
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
+.pu-badge img{width:58px;height:58px;display:block}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute)}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main">
+    <h1>ReLU：為什麼「負值變零」這麼好用？</h1>
+    <p>智慧醫療 ・ 互動教學：整流線性單元（Rectified Linear Unit, ReLU）的優點</p>
+  </div>
+  <div class="pu-badge"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+  <h2><span class="num">0</span>ReLU 是什麼？一句話：負的歸零，正的照傳</h2>
+  <div class="intro">
+    <div>
+      <div class="formula">ReLU(x) = max(0, x) = <span style="white-space:nowrap">{ x，x &gt; 0；0，x ≤ 0 }</span></div>
+      <div class="cvbox"><canvas id="cv0"></canvas></div>
+      <div class="row"><div class="ctl"><label>輸入 x = <b id="x0v"></b></label><input id="x0" type="range" min="-5" max="5" step="0.1" value="2"></div></div>
+      <div class="box or" id="calc0"></div>
+    </div>
+    <div class="avwrap"><div class="bubble" id="bub1">Hello！我是 Hinton 老師。ReLU 只做一件事：把負數截成 0。點我聽故事！</div><div class="av" id="av1"></div></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+  <h2><span class="num">1</span>優點一：計算超便宜——只要「比大小」</h2>
+  <p>Sigmoid 與 tanh 都要算指數 e<sup>x</sup>；ReLU 只要判斷 x 是否大於 0。神經網路每次訓練要算上億次激活函數，省下的時間非常可觀。</p>
+  <div class="row"><div class="ctl"><label>輸入 x = <b id="x1v"></b></label><input id="x1" type="range" min="-5" max="5" step="0.1" value="-1.5"></div></div>
+  <div class="g3">
+    <div class="fn"><h3 style="color:var(--c2)">ReLU</h3><div>max(0, x)</div><div class="ops"><span class="op cmp">比較 ×1</span></div><div id="r1"></div></div>
+    <div class="fn"><h3 style="color:var(--c1)">Sigmoid σ</h3><div>1 / (1 + e<sup>−x</sup>)</div><div class="ops"><span class="op exp">指數 ×1</span><span class="op">加法 ×1</span><span class="op">除法 ×1</span></div><div id="s1"></div></div>
+    <div class="fn"><h3 style="color:var(--c4)">tanh</h3><div>(e<sup>x</sup> − e<sup>−x</sup>) / (e<sup>x</sup> + e<sup>−x</sup>)</div><div class="ops"><span class="op exp">指數 ×2</span><span class="op">加減 ×2</span><span class="op">除法 ×1</span></div><div id="t1"></div></div>
+  </div>
+  <div class="box">
+    <div class="row" style="margin:0 0 6px"><button id="benchBtn">▶ 在你的瀏覽器實測：各算 200 萬次</button><span class="mute" id="benchNote">（結果依電腦而異）</span></div>
+    <div class="barrow"><span>ReLU</span><div><div class="bar" id="bR" style="width:0"></div></div><span id="tR">—</span></div>
+    <div class="barrow"><span>Sigmoid</span><div><div class="bar" id="bS" style="width:0;background:var(--c1)"></div></div><span id="tS">—</span></div>
+    <div class="barrow"><span>tanh</span><div><div class="bar" id="bT" style="width:0;background:var(--c4)"></div></div><span id="tT">—</span></div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="card">
+  <h2><span class="num">2</span>優點二：梯度不會越傳越小（緩解梯度消失）</h2>
+  <div class="g2">
+    <div>
+      <p>先看導數。ReLU 在正區間的導數<b>恆為 1</b>，sigmoid 的導數<b>最大只有 0.25</b>。</p>
+      <div class="formula">
+        <span class="frac"><span>d ReLU</span><span>dx</span></span> = 1（x &gt; 0）
+        &nbsp;&nbsp;
+        <span class="frac"><span>dσ</span><span>dx</span></span> = σ(x)(1−σ(x)) ≤ 0.25
+      </div>
+      <div class="cvbox"><canvas id="cv2"></canvas></div>
+      <div class="legend"><span><i style="background:var(--c2)"></i>ReLU′</span><span><i style="background:var(--c1)"></i>σ′</span><span><i style="background:var(--c4)"></i>tanh′</span></div>
+    </div>
+    <div>
+      <p>反向傳播時，梯度要<b>連乘</b>每一層的導數：</p>
+      <div class="formula" style="font-size:1.05rem"><span class="frac"><span>∂L</span><span>∂h<sub>1</sub></span></span> = <span class="frac"><span>∂L</span><span>∂h<sub>n</sub></span></span> · f′ · f′ · … · f′</div>
+      <div class="row"><div class="ctl"><label>網路層數 n = <b id="Lv"></b></label><input id="Ln" type="range" min="3" max="12" step="1" value="8"></div></div>
+      <div class="row">
+        <button id="g_reset">⟲ 重來</button><button id="g_prev">◀ 上一步</button><button id="g_next">下一步 ▶</button><button id="g_auto">▶ 自動播放</button>
+      </div>
+      <div class="prog"><div id="gprog"></div></div>
+      <div class="chlabel" style="color:var(--c2)">ReLU（每層 × 1）</div>
+      <div class="chain" id="chR"></div>
+      <div class="chlabel" style="color:var(--c1)">Sigmoid（每層 × 0.25，這還是最好的情況）</div>
+      <div class="chain" id="chS"></div>
+      <div class="box or" id="gexp"></div>
+      <p class="mute" style="font-size:.88rem">簡化假設：權重皆為 1、ReLU 神經元都在活化區（x&gt;0）。橘色深淺代表梯度大小。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="card">
+  <h2><span class="num">3</span>優點三：稀疏活化——很多神經元「乾脆休息」</h2>
+  <p>ReLU 會讓相當比例的神經元輸出<b>剛好等於 0</b>。每個輸入只動用一部分神經元，表示法更精簡、也更容易解讀；sigmoid 的輸出永遠大於 0，所有神經元都會「有一點點反應」。</p>
+  <div class="g2">
+    <div>
+      <div class="row"><button id="spR" class="on">ReLU</button><button id="spS">Sigmoid</button><button id="spNew">🎲 換一筆輸入</button></div>
+      <div class="row"><div class="ctl"><label>偏置 b = <b id="bv"></b>（往負調 → 更稀疏）</label><input id="bb" type="range" min="-1" max="1" step="0.05" value="0"></div></div>
+      <div class="box" id="spStat"></div>
+    </div>
+    <div><div class="grid8" id="grid8"></div><p class="mute" style="font-size:.88rem">64 個隱藏神經元：h = f(Wx + b)，x 為 16 維隨機輸入。灰色＝輸出恰為 0。</p></div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="card">
+  <h2><span class="num">4</span>Nair &amp; Hinton（2010）：從 RBM 長出來的 ReLU</h2>
+  <p>受限玻爾茲曼機（Restricted Boltzmann Machine, RBM）原本用<b>二元</b>隱藏單元（只能 0 或 1）。Nair 與 Hinton 的想法：把同一個單元<b>複製 N 份</b>，共用權重，但偏置依序偏移 −0.5、−1.5、−2.5…，再把它們加起來：</p>
+  <div class="formula" style="font-size:1.08rem">Σ<sub>i=1…N</sub> σ(x − i + 0.5) ≈ log(1 + e<sup>x</sup>) ≈ max(0, x)</div>
+  <div class="g2">
+    <div>
+      <div class="cvbox"><canvas id="cv4"></canvas></div>
+      <div class="legend"><span><i style="background:var(--c4);opacity:.5"></i>每一份 σ</span><span><i style="background:var(--c2)"></i>相加結果</span><span><i style="background:var(--c1)"></i>softplus log(1+eˣ)</span><span><i style="background:var(--mute)"></i>ReLU</span></div>
+    </div>
+    <div>
+      <div class="row"><div class="ctl"><label>複製份數 N = <b id="Nv"></b></label><input id="Nn" type="range" min="1" max="20" step="1" value="1"></div></div>
+      <div class="row"><div class="ctl"><label>觀察點 x = <b id="x4v"></b></label><input id="x4" type="range" min="-3" max="7" step="0.1" value="3"></div></div>
+      <div class="box or" id="tab4"></div>
+      <div class="box">
+        <b>這帶來的優點</b>
+        <ul style="margin:6px 0;padding-left:1.2em">
+          <li>二元單元只能說「有／沒有」；整流單元還能表達<b>強度有多大</b>。</li>
+          <li>數學上只需一個 max 運算，就近似了「無限多個二元單元」的效果，加上雜訊即為 noisy ReLU：max(0, x + 雜訊)。</li>
+          <li>論文顯示，用這種單元訓練的 RBM 在物件辨識與人臉驗證資料上學到的特徵比二元單元更好。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="card">
+  <h2><span class="num">5</span>歷史脈絡：概念早已存在，關鍵在「系統性地用起來」</h2>
+  <div class="tl" id="tl"></div>
+  <div class="box or tlbox" id="tlbox"></div>
+  <h3 style="margin:14px 0 4px;font-size:1.05rem">參考文獻</h3>
+  <ol class="ref">
+    <li>Nair, V., &amp; Hinton, G. E. (2010). Rectified linear units improve restricted Boltzmann machines. In <i>Proceedings of the 27th International Conference on Machine Learning</i> (pp. 807–814).</li>
+    <li>Glorot, X., Bordes, A., &amp; Bengio, Y. (2011). Deep sparse rectifier neural networks. In <i>Proceedings of the Fourteenth International Conference on Artificial Intelligence and Statistics</i> (pp. 315–323).</li>
+    <li>Krizhevsky, A., Sutskever, I., &amp; Hinton, G. E. (2012). ImageNet classification with deep convolutional neural networks. In <i>Advances in Neural Information Processing Systems 25</i> (pp. 1097–1105).</li>
+  </ol>
+</section>
+
+<!-- 6 -->
+<section class="card">
+  <h2><span class="num">6</span>小測驗：ReLU 的觀念</h2>
+  <div class="qgrid">
+    <div id="quiz"></div>
+    <div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+  </div>
+</section>
+
+<footer>ReLU 互動教學 ・ 單一 HTML 檔，可離線開啟</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const sig=x=>1/(1+Math.exp(-x));
+const relu=x=>Math.max(0,x);
+const softplus=x=>x>30?x:Math.log1p(Math.exp(x));
+const fmt=(v,d=3)=>Number(v).toFixed(d);
+
+/* ---------- 畫圖工具 ---------- */
+function fitCanvas(cv,h){
+  cv.style.width='0px';
+  const w=Math.max(200,cv.parentElement.clientWidth);
+  const dpr=window.devicePixelRatio||1;
+  cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+'px';cv.style.height=h+'px';
+  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return {c,w,h};
+}
+function plot(cv,h,o){
+  const {c,w}=fitCanvas(cv,h);
+  const pad={l:34,r:12,t:12,b:24};
+  const [x0,x1]=o.xr,[y0,y1]=o.yr;
+  const X=x=>pad.l+(x-x0)/(x1-x0)*(w-pad.l-pad.r);
+  const Y=y=>pad.t+(y1-y)/(y1-y0)*(h-pad.t-pad.b);
+  c.fillStyle=css('--card');c.fillRect(0,0,w,h);
+  c.strokeStyle=css('--grid');c.lineWidth=1;c.font='11px sans-serif';c.fillStyle=css('--mute');
+  const ys=o.ystep||1;
+  for(let x=Math.ceil(x0);x<=x1;x++){c.beginPath();c.moveTo(X(x),Y(y0));c.lineTo(X(x),Y(y1));c.stroke();c.textAlign='center';c.fillText(x,X(x),h-8);}
+  for(let y=Math.ceil(y0/ys)*ys;y<=y1+1e-9;y+=ys){c.beginPath();c.moveTo(X(x0),Y(y));c.lineTo(X(x1),Y(y));c.stroke();c.textAlign='right';c.fillText(+y.toFixed(2),pad.l-5,Y(y)+4);}
+  c.strokeStyle=css('--mute');c.lineWidth=1.3;
+  c.beginPath();c.moveTo(X(x0),Y(0));c.lineTo(X(x1),Y(0));c.stroke();
+  c.beginPath();c.moveTo(X(0),Y(y0));c.lineTo(X(0),Y(y1));c.stroke();
+  c.save();c.beginPath();c.rect(pad.l,pad.t,w-pad.l-pad.r,h-pad.t-pad.b);c.clip();
+  for(const cu of o.curves){
+    c.strokeStyle=cu.col;c.lineWidth=cu.w||2.5;c.globalAlpha=cu.a||1;c.setLineDash(cu.dash||[]);
+    c.beginPath();let first=true,prev=null;
+    for(let i=0;i<=400;i++){const x=x0+(x1-x0)*i/400,y=cu.f(x);
+      if(cu.jump&&prev!==null&&Math.abs(y-prev)>0.5){first=true;}
+      if(first){c.moveTo(X(x),Y(y));first=false}else c.lineTo(X(x),Y(y));prev=y;}
+    c.stroke();c.globalAlpha=1;c.setLineDash([]);
+  }
+  c.restore();
+  for(const p of (o.pts||[])){
+    if(p.guide){c.strokeStyle=p.col;c.setLineDash([4,4]);c.lineWidth=1.2;c.beginPath();c.moveTo(X(p.x),Y(0));c.lineTo(X(p.x),Y(p.y));c.lineTo(X(x0),Y(p.y));c.stroke();c.setLineDash([]);}
+    c.fillStyle=p.col;c.beginPath();c.arc(X(p.x),Y(p.y),6,0,7);c.fill();
+    c.strokeStyle=css('--card');c.lineWidth=2;c.stroke();
+    if(p.label){c.fillStyle=css('--ink');c.font='bold 12px sans-serif';c.textAlign=X(p.x)>w-110?'right':'left';c.fillText(p.label,X(p.x)+(X(p.x)>w-110?-10:10),Y(p.y)-10);}
+  }
+}
+
+/* ---------- 0 定義 ---------- */
+function draw0(){
+  const x=+$('x0').value;$('x0v').textContent=fmt(x,1);
+  plot($('cv0'),260,{xr:[-5,5],yr:[-1,5],curves:[{f:relu,col:css('--c2'),w:3.5}],
+    pts:[{x,y:relu(x),col:css('--c1'),guide:true,label:`(${fmt(x,1)}, ${fmt(relu(x),1)})`}]});
+  $('calc0').innerHTML=x>0
+    ? `ReLU(${fmt(x,1)}) = max(0, ${fmt(x,1)}) = <b>${fmt(x,1)}</b>　→ 正值<b>原封不動</b>通過。`
+    : `ReLU(${fmt(x,1)}) = max(0, ${fmt(x,1)}) = <b>0</b>　→ 負值（或 0）被<b>截成 0</b>。`;
+}
+$('x0').oninput=draw0;
+
+/* ---------- 1 計算成本 ---------- */
+function draw1(){
+  const x=+$('x1').value;$('x1v').textContent=fmt(x,1);
+  $('r1').innerHTML=`${fmt(x,1)} ${x>0?'&gt;':'≤'} 0 → <b>${fmt(relu(x),3)}</b>`;
+  $('s1').innerHTML=`e<sup>${fmt(-x,1)}</sup> = ${fmt(Math.exp(-x),3)} → <b>${fmt(sig(x),3)}</b>`;
+  $('t1').innerHTML=`→ <b>${fmt(Math.tanh(x),3)}</b>`;
+}
+$('x1').oninput=draw1;
+$('benchBtn').onclick=()=>{
+  $('benchNote').textContent='計算中…';
+  setTimeout(()=>{
+    const N=2e6,a=new Float64Array(N);for(let i=0;i<N;i++)a[i]=Math.random()*10-5;
+    const run=f=>{let s=0;const t=performance.now();for(let i=0;i<N;i++)s+=f(a[i]);return [performance.now()-t,s];};
+    const fR=v=>v>0?v:0,fS=v=>1/(1+Math.exp(-v)),fT=v=>Math.tanh(v);
+    run(fR);run(fS);run(fT); // 暖身
+    const best=f=>Math.min(run(f)[0],run(f)[0],run(f)[0]);
+    const tR=best(fR),tS=best(fS),tT=best(fT),m=Math.max(tR,tS,tT);
+    $('bR').style.width=(tR/m*100)+'%';$('bS').style.width=(tS/m*100)+'%';$('bT').style.width=(tT/m*100)+'%';
+    $('tR').textContent=fmt(tR,1)+' ms';$('tS').textContent=fmt(tS,1)+' ms';$('tT').textContent=fmt(tT,1)+' ms';
+    $('benchNote').textContent=`Sigmoid 約為 ReLU 的 ${fmt(tS/tR,1)} 倍時間（結果依電腦而異）`;
+  },30);
+};
+
+/* ---------- 2 梯度 ---------- */
+let gStep=0,gTimer=null;
+function draw2plot(){
+  plot($('cv2'),230,{xr:[-5,5],yr:[-0.1,1.2],ystep:0.25,curves:[
+    {f:x=>x>0?1:0,col:css('--c2'),w:3.5,jump:true},
+    {f:x=>sig(x)*(1-sig(x)),col:css('--c1'),w:2.5},
+    {f:x=>1-Math.tanh(x)**2,col:css('--c4'),w:2.5,dash:[6,4]}]});
+}
+function draw2(){
+  const n=+$('Ln').value;$('Lv').textContent=n;
+  gStep=Math.min(gStep,n);
+  for(const [id,d] of [['chR',1],['chS',0.25]]){
+    const el=$(id);el.style.gridTemplateColumns=`repeat(${n+1},minmax(0,1fr))`;el.innerHTML='';
+    for(let k=0;k<=n;k++){ // k: 0=輸入層 h1 … n=輸出
+      const back=n-k;                // 距離輸出幾層
+      const reached=back<=gStep;
+      const g=Math.pow(d,back);
+      const cell=document.createElement('div');cell.className='cell'+(k===n?' out':'');
+      if(reached){cell.style.background=`color-mix(in srgb,${css('--c2')} ${Math.max(0,g*100)}%,${css('--card')})`;
+        cell.style.borderColor=g>0.02?css('--c2'):css('--line');
+        cell.textContent=g>=0.01?(+g.toFixed(2)):'≈0';}
+      cell.title=`第 ${k+1} 層，梯度 = ${g.toExponential(2)}`;
+      el.appendChild(cell);
+    }
+  }
+  $('gprog').style.width=(gStep/n*100)+'%';
+  const sNow=Math.pow(0.25,gStep);
+  $('gexp').innerHTML=gStep===0
+    ? `第 0 步：損失對輸出的梯度設為 1（右端藍框）。按「下一步」往回傳。`
+    : gStep<n
+    ? `第 ${gStep} 步：梯度往回經過 ${gStep} 層。ReLU：1<sup>${gStep}</sup> = <b>1</b>；Sigmoid：0.25<sup>${gStep}</sup> = <b>${sNow<0.001?sNow.toExponential(2):+sNow.toFixed(4)}</b>`
+    : `完成！傳到第 1 層時，ReLU 仍是 <b>1</b>，Sigmoid 只剩 <b>${sNow.toExponential(2)}</b>，前面幾層幾乎學不動——這就是<b>梯度消失</b>。ReLU 讓深層網路的前幾層也能有效更新。`;
+}
+function gGo(s){gStep=Math.max(0,Math.min(+$('Ln').value,s));draw2();}
+$('g_reset').onclick=()=>{stopAuto();gGo(0)};
+$('g_prev').onclick=()=>{stopAuto();gGo(gStep-1)};
+$('g_next').onclick=()=>{stopAuto();gGo(gStep+1)};
+function stopAuto(){clearInterval(gTimer);gTimer=null;$('g_auto').textContent='▶ 自動播放';$('g_auto').classList.remove('on');}
+$('g_auto').onclick=()=>{
+  if(gTimer){stopAuto();return;}
+  if(gStep>=+$('Ln').value)gGo(0);
+  $('g_auto').textContent='⏸ 暫停';$('g_auto').classList.add('on');
+  gTimer=setInterval(()=>{if(gStep>=+$('Ln').value){stopAuto();return;}gGo(gStep+1);},1200);
+};
+$('Ln').oninput=()=>{stopAuto();gStep=0;draw2();};
+
+/* ---------- 3 稀疏 ---------- */
+let spMode='relu',W=[],xin=[];
+function randn(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function newW(){W=Array.from({length:64},()=>Array.from({length:16},()=>randn()/4));}
+function newX(){xin=Array.from({length:16},randn);}
+function draw3(){
+  const b=+$('bb').value;$('bv').textContent=fmt(b,2);
+  const z=W.map(r=>r.reduce((s,w,i)=>s+w*xin[i],0)+b);
+  const f=spMode==='relu'?relu:sig;const h=z.map(f);const mx=Math.max(...h,1e-9);
+  const g=$('grid8');g.innerHTML='';
+  let zero=0;
+  h.forEach(v=>{const d=document.createElement('div');d.className='nr';
+    if(v===0){zero++;d.style.background=css('--soft');d.style.color=css('--mute');d.textContent='0';}
+    else{d.style.background=`color-mix(in srgb,${css('--c2')} ${15+85*v/mx}%,${css('--card')})`;d.textContent=v.toFixed(2);}
+    g.appendChild(d);});
+  $('spStat').innerHTML=spMode==='relu'
+    ? `輸出恰為 0：<span class="pill">${zero} / 64（${Math.round(zero/64*100)}%）</span><br>只有 ${64-zero} 個神經元參與表示這筆輸入——這就是<b>稀疏活化</b>。換一筆輸入，休息的會是另一批。`
+    : `輸出恰為 0：<span class="pill">0 / 64（0%）</span><br>Sigmoid 的輸出永遠介於 0 與 1 之間、不會剛好是 0，所有神經元都在「小聲說話」。`;
+}
+$('spR').onclick=()=>{spMode='relu';$('spR').classList.add('on');$('spS').classList.remove('on');draw3();};
+$('spS').onclick=()=>{spMode='sig';$('spS').classList.add('on');$('spR').classList.remove('on');draw3();};
+$('spNew').onclick=()=>{newX();draw3();};
+$('bb').oninput=draw3;
+
+/* ---------- 4 RBM ---------- */
+const sumSig=(x,N)=>{let s=0;for(let i=1;i<=N;i++)s+=sig(x-i+0.5);return s;};
+function draw4(){
+  const N=+$('Nn').value,x=+$('x4').value;$('Nv').textContent=N;$('x4v').textContent=fmt(x,1);
+  const curves=[];
+  for(let i=1;i<=N;i++)curves.push({f:t=>sig(t-i+0.5),col:css('--c4'),w:1.3,a:.45});
+  curves.push({f:relu,col:css('--mute'),w:2});
+  curves.push({f:softplus,col:css('--c1'),w:2.5,dash:[7,5]});
+  curves.push({f:t=>sumSig(t,N),col:css('--c2'),w:3.5});
+  plot($('cv4'),270,{xr:[-3,7],yr:[-0.5,7],curves,pts:[{x,y:sumSig(x,N),col:css('--c2')}]});
+  const S=sumSig(x,N),sp=softplus(x);
+  $('tab4').innerHTML=`在 x = ${fmt(x,1)}：<br>相加結果 Σσ = <b>${fmt(S)}</b><br>softplus = <b>${fmt(sp)}</b>　（差 ${fmt(Math.abs(S-sp))}）<br>ReLU = <b>${fmt(relu(x))}</b><br>`+
+    (N<5?'<span class="mute">只有幾份時，相加結果很快就「飽和」。把 N 往右拉！</span>':'<span class="mute">份數夠多時，只要 x 遠小於 N，三條曲線幾乎重合。</span>');
+}
+$('Nn').oninput=draw4;$('x4').oninput=draw4;
+
+/* ---------- 5 時間軸 ---------- */
+const TL=[
+ ['早期：整流的想法','神經科學很早就觀察到：神經元的放電率不會是負的，刺激低於門檻就不放電，高於門檻後大致隨刺激增加。類比電路與早期神經網路模型（例如福島邦彥的 Cognitron／Neocognitron）也用過類似「負值截為零」的整流非線性。<b>所以 ReLU 的概念並不是 2010 年才出現。</b>'],
+ ['2010：Nair & Hinton','把整流單元<b>系統性地用在受限玻爾茲曼機（RBM）</b>：說明它近似「無限多個共用權重、偏置逐步偏移的二元單元相加」，並顯示用它訓練的 RBM 學到更好的特徵。這是關鍵貢獻。（ICML 2010, pp. 807–814）'],
+ ['2011：Glorot, Bordes & Bengio','〈Deep Sparse Rectifier Neural Networks〉進一步說明 ReLU 讓<b>深層網路</b>更容易訓練，並強調<b>稀疏活化</b>的好處；在許多實驗中，深層整流網路不需要非監督式預訓練也能表現良好。'],
+ ['2012 之後：普及','Krizhevsky、Sutskever 與 Hinton 的 AlexNet 在 ImageNet 競賽中使用 ReLU，論文指出它的訓練速度比 tanh 快數倍。從此 ReLU 成為深度學習最常見的預設激活函數之一。']];
+let tlSel=1;
+function drawTL(){
+  $('tl').innerHTML='';
+  TL.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t[0];if(i===tlSel)b.classList.add('on');b.onclick=()=>{tlSel=i;drawTL();};$('tl').appendChild(b);});
+  $('tlbox').innerHTML=TL[tlSel][1];
+}
+
+/* ---------- Hinton 老師頭像 ---------- */
+const HINTON_SVG=`<svg viewBox="0 0 200 230" aria-label="Hinton老師動畫">
+ <g class="bodyg">
+  <path d="M14 232 Q20 172 100 160 Q180 172 186 232 Z" fill="#2c3547"/>
+  <path d="M82 160 L100 196 L118 160 Q100 166 82 160 Z" fill="#cfe0f2"/>
+  <path d="M82 160 L92 182 L100 170 Z M118 160 L108 182 L100 170 Z" fill="#e8f0f9"/>
+  <path d="M60 176 L84 162 L98 210 Z" fill="#232b3a"/><path d="M140 176 L116 162 L102 210 Z" fill="#232b3a"/>
+  <rect x="85" y="132" width="30" height="32" rx="10" fill="#e8bea4"/>
+  <ellipse cx="68" cy="104" rx="6" ry="10" fill="#e8bea4"/><ellipse cx="132" cy="104" rx="6" ry="10" fill="#e8bea4"/>
+  <ellipse cx="100" cy="98" rx="32" ry="42" fill="#f3d0b8"/>
+  <path d="M84 70 Q100 66 116 70" stroke="#e2b79c" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  <path d="M87 76 Q100 73 113 76" stroke="#e2b79c" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <ellipse class="blush" cx="80" cy="117" rx="7" ry="4.5" fill="#f08080"/>
+  <ellipse class="blush" cx="120" cy="117" rx="7" ry="4.5" fill="#f08080"/>
+  <g class="hairL"><path d="M70 74 Q63 84 64 98 Q66 92 69 96 Q67 86 73 80 Q72 92 71 100 Q75 86 76 76 Z" fill="#d6d4cf"/></g>
+  <g class="hairR"><path d="M130 74 Q137 84 136 98 Q134 92 131 96 Q133 86 127 80 Q128 92 129 100 Q125 86 124 76 Z" fill="#d6d4cf"/></g>
+  <path class="brow browL" d="M77 85 Q85 81 93 84" stroke="#9a948c" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+  <path class="brow browR" d="M107 84 Q115 81 123 85" stroke="#9a948c" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+  <g class="eyes"><ellipse cx="86" cy="96" rx="3.8" ry="3" fill="#fff"/><ellipse cx="114" cy="96" rx="3.8" ry="3" fill="#fff"/>
+   <circle cx="86" cy="96" r="2.4" fill="#3d4652"/><circle cx="114" cy="96" r="2.4" fill="#3d4652"/>
+   <circle cx="87" cy="95" r=".9" fill="#fff"/><circle cx="115" cy="95" r=".9" fill="#fff"/></g>
+  <rect x="75" y="88" width="22" height="16" rx="5" fill="none" stroke="#4a4f57" stroke-width="2"/>
+  <rect x="103" y="88" width="22" height="16" rx="5" fill="none" stroke="#4a4f57" stroke-width="2"/>
+  <path d="M97 94 Q100 92 103 94" stroke="#4a4f57" stroke-width="2" fill="none"/>
+  <path d="M75 93 L69 91 M125 93 L131 91" stroke="#4a4f57" stroke-width="2"/>
+  <path d="M100 103 Q96 116 99 120 Q103 122 107 119" stroke="#cc9b80" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M84 123 Q86 128 88 129 M116 123 Q114 128 112 129" stroke="#dcae93" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  <path class="mo n" d="M89 129 Q100 135 111 129" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+  <path class="mo s" d="M87 126 Q100 142 113 126 Q100 131 87 126 Z" fill="#9b3a2c" stroke="#8a4a3a" stroke-width="1.5" stroke-linejoin="round"/>
+  <path class="mo f" d="M89 134 Q100 126 111 134" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+  <path class="sweat" d="M138 70 Q143 80 138 84 Q133 80 138 70 Z" fill="#7cc3f0"/>
+  <text class="spark" x="30" y="44" font-size="18" fill="#f0b400">✦</text>
+  <text class="spark" x="160" y="40" font-size="14" fill="#f0b400">✦</text>
+  <text class="spark" x="170" y="96" font-size="11" fill="#f0b400">✦</text>
+ </g></svg>`;
+function makeAvatar(el,bubble){
+  el.innerHTML=HINTON_SVG;let tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold)tm=setTimeout(()=>{el.classList.remove('smile','frown');bubble.className='bubble';},3200);}};
+}
+var AV1=makeAvatar($('av1'),$('bub1')),AV2=makeAvatar($('av2'),$('bub2'));
+const QUOTES=[
+ '「負值截為零」不是我發明的！神經科學、類比電路和早期神經網路裡早就有整流的想法。',
+ '2010 年我和學生 Vinod Nair 把整流單元用在 RBM：它近似無限多個偏置逐步偏移的二元單元相加。',
+ '那些 sigmoid 相加後會趨近 softplus：log(1+eˣ)，而 softplus 又很像 max(0,x)。到第 4 節自己拉拉看！',
+ '2011 年 Glorot、Bordes 和 Bengio 說明了 ReLU 對深層網路與稀疏活化的好處，ReLU 才真正流行起來。',
+ '2012 年 AlexNet 用了 ReLU，訓練比 tanh 快好幾倍。從此大家幾乎都先試 ReLU。',
+ '我出生於英國，後來長年在多倫多大學研究神經網路；2018 年與 Bengio、LeCun 一起獲得圖靈獎。'];
+let qi=0;
+$('av1').onclick=()=>AV1.mood('smile',QUOTES[qi++%QUOTES.length]);
+
+/* ---------- 6 小測驗 ---------- */
+const QZ=[
+ {q:'ReLU(−3) 等於多少？',o:['0','−3','3','0.047'],a:0,e:'ReLU(x)=max(0,x)，負值一律截成 0。',h:'max(0, −3) 哪個大？'},
+ {q:'ReLU 為什麼比 sigmoid 計算快？',o:['只要比較大小，不需要算指數','它的輸出永遠是整數','它只能處理正數輸入','它不需要權重'],a:0,e:'sigmoid、tanh 都要計算 eˣ；ReLU 只要判斷 x 是否大於 0。',h:'回到第 1 節，看看各自需要哪些運算。'},
+ {q:'深層網路中，ReLU 能緩解梯度消失，主要原因是？',o:['正區間導數恆為 1，連乘不會變小','它的導數最大是 0.25','它讓所有輸出都變成 0','它會自動調整學習率'],a:0,e:'梯度要逐層連乘導數。ReLU 在活化區導數為 1，乘再多層也不會縮小；sigmoid 每層至多 ×0.25。',h:'想想 1ⁿ 和 0.25ⁿ 的差別。'},
+ {q:'「稀疏活化」指的是什麼？',o:['許多神經元的輸出恰好是 0','網路的權重都很小','神經元數量很少','輸出全部介於 0 與 1'],a:0,e:'ReLU 讓一部分神經元輸出剛好為 0，每筆輸入只動用部分神經元，表示更精簡。',h:'第 3 節的灰色格子代表什麼？'},
+ {q:'Nair 與 Hinton（2010）的關鍵貢獻是什麼？',o:['把整流單元系統性用於 RBM，並顯示其訓練優勢','第一個提出「負值截為零」的概念','發明了 sigmoid 函數','提出反向傳播演算法'],a:0,e:'整流的概念早已存在；他們的貢獻是系統性地用在 RBM 並展示優點。',h:'第 5 節時間軸：概念早就有了，關鍵在「用起來」。'},
+ {q:'把許多偏置依序偏移 0.5、1.5、2.5… 的 sigmoid 相加，會近似哪個函數？',o:['softplus：log(1+eˣ)，與 ReLU 很接近','常數函數','sigmoid 本身','tanh'],a:0,e:'Σσ(x−i+0.5) ≈ log(1+eˣ)，而 softplus 在 x 遠離 0 時幾乎就是 max(0,x)。',h:'到第 4 節把 N 拉到 20 看看橘色曲線。'},
+ {q:'Glorot、Bordes 與 Bengio（2011）的研究主要說明了什麼？',o:['ReLU 對深層網路訓練與稀疏活化的效果','ReLU 只適合淺層網路','sigmoid 比 ReLU 更不易梯度消失','RBM 不能使用整流單元'],a:0,e:'論文〈Deep Sparse Rectifier Neural Networks〉說明 ReLU 有助深層網路訓練並帶來稀疏表示，促成其普及。',h:'論文標題裡有 Deep 和 Sparse 兩個字。'}];
+const PRAISE=['答對了！就是這樣。','Excellent！觀念很清楚。','很好！你抓到重點了。','正確！ReLU 就是這麼簡單。'];
+let qs={done:0,score:0,streak:0};
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function buildQuiz(){
+  qs={done:0,score:0,streak:0};const box=$('quiz');box.innerHTML='';
+  QZ.forEach((z,qi2)=>{
+    const d=document.createElement('div');d.className='q';
+    d.innerHTML=`<b>${qi2+1}. ${z.q}</b><div class="opts"></div><div class="exp"></div>`;
+    const opts=d.querySelector('.opts'),exp=d.querySelector('.exp');let locked=false;
+    shuffle(z.o.map((t,i)=>i)).forEach(i=>{
+      const b=document.createElement('button');b.textContent=z.o[i];b.dataset.i=i;
+      b.onclick=()=>{if(locked)return;locked=true;qs.done++;
+        opts.querySelectorAll('button').forEach(x=>{if(+x.dataset.i===z.a)x.classList.add('right');});
+        if(i===z.a){qs.score++;qs.streak++;exp.className='exp ok';exp.textContent='✔ 正確！'+z.e;
+          AV2.mood('smile',qs.streak>=3?`連對 ${qs.streak} 題！你的梯度完全沒有消失 😄`:PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+        else{qs.streak=0;b.classList.add('wrong');exp.className='exp no';exp.textContent='✘ '+z.e;AV2.mood('frown',z.h);}
+        if(qs.done===QZ.length)finish();};
+      opts.appendChild(b);});
+    box.appendChild(d);});
+  const s=document.createElement('div');s.id='qscore';box.appendChild(s);
+}
+function finish(){
+  const n=QZ.length,s=qs.score;
+  $('qscore').innerHTML=`<div class="score">得分：${s} / ${n}</div><button id="qagain">再做一次</button>`;
+  $('qagain').onclick=()=>{buildQuiz();AV2.mood('','新的一輪！這次試試全對。');};
+  setTimeout(()=>{
+    if(s===n)AV2.mood('smile','全對！ReLU 的優點你都掌握了。',true);
+    else if(s>=n-2)AV2.mood('smile','很不錯！再回頭看看答錯的那幾題就完美了。',true);
+    else AV2.mood('frown','建議回到第 2 節（梯度）和第 4 節（RBM）再玩一次。',true);
+  },3300);
+}
+
+/* ---------- 啟動 ---------- */
+newW();newX();
+function drawAll(){draw0();draw1();draw2plot();draw2();draw3();draw4();drawTL();}
+drawAll();buildQuiz();
+let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{draw0();draw2plot();draw4();},120);});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll);
+</script>
+</body>
+</html>

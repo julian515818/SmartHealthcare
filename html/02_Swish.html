@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Swish 互動教學</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;
+ --c1:#2f6fd6;--c2:#e8772e;--c3:#1f9d6b;--c4:#8a5cd6;--grid:#ecebe5;--soft:#f2f1ec;--code:#1e2230;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --c1:#6ea2ff;--c2:#ffa05c;--c3:#4fd19d;--c4:#b893ff;--grid:#262b36;--soft:#232834;--code:#11141b;}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --c1:#6ea2ff;--c2:#ffa05c;--c3:#4fd19d;--c4:#b893ff;--grid:#262b36;--soft:#232834;--code:#11141b;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:1.9rem}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:18px 0;min-width:0}
+h2{margin:0 0 12px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+h3{font-size:1.05rem;margin:4px 0 6px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--c2);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.formula{font-size:1.18rem;text-align:center;padding:10px;background:var(--soft);border-radius:10px;margin:10px 0;overflow-x:auto}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.9em;line-height:1.15;margin:0 2px}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 3px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.g2>*{min-width:0}
+@media (max-width:860px){.g2{grid-template-columns:minmax(0,1fr)}}
+.cvbox{width:100%;min-width:0}
+canvas{display:block;border-radius:10px}
+input[type=range]{width:100%;accent-color:var(--c2)}
+.ctl{flex:1 1 220px;min-width:0}
+.ctl label{font-size:.92rem;color:var(--mute)}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 14px;cursor:pointer}
+button:hover{border-color:var(--c2)}
+button.on{background:var(--c2);border-color:var(--c2);color:#fff}
+.box{background:var(--soft);border-radius:10px;padding:10px 14px;margin:10px 0}
+.box.or{border-left:4px solid var(--c2)}
+.box.bl{border-left:4px solid var(--c1)}
+.box.gr{border-left:4px solid var(--c3)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.9rem;margin:6px 0}
+.legend i{display:inline-block;width:22px;height:4px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.pill{display:inline-block;padding:1px 10px;border-radius:99px;background:var(--soft);font-weight:700}
+.stat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0}
+.stat>div{background:var(--soft);border-radius:10px;padding:8px;text-align:center;min-width:0}
+.stat b{display:block;font-size:1.2rem}
+.stat span{font-size:.82rem;color:var(--mute)}
+.prog{height:6px;background:var(--soft);border-radius:3px;overflow:hidden;margin:8px 0}
+.prog>div{height:100%;background:var(--c2);transition:width .3s}
+/* 搜尋動畫 */
+.unit{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;font-size:1.15rem;margin:10px 0}
+.slot{min-width:88px;padding:8px 10px;border:2px dashed var(--line);border-radius:12px;text-align:center;transition:all .35s;background:var(--card)}
+.slot small{display:block;font-size:.72rem;color:var(--mute)}
+.slot.fill{border-style:solid;border-color:var(--c2);background:color-mix(in srgb,var(--c2) 12%,var(--card))}
+.slot.cur{box-shadow:0 0 0 4px color-mix(in srgb,var(--c2) 30%,transparent)}
+.loop{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0}
+.loop span{padding:4px 10px;border-radius:99px;background:var(--soft);font-size:.86rem;transition:all .3s}
+.loop span.on{background:var(--c1);color:#fff}
+.gal{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.gal button{font-size:.88rem;padding:6px 6px}
+@media (max-width:600px){.gal{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* 門 */
+.dim{display:grid;grid-template-columns:96px minmax(0,1fr) 64px;gap:8px;align-items:center;margin:5px 0;font-size:.92rem}
+.track{height:16px;border-radius:8px;background:var(--soft);overflow:hidden}
+.track>div{height:100%;border-radius:8px;transition:width .25s}
+/* 醫療實驗 */
+.nets{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.nets>*{min-width:0}
+.nets h3{text-align:center}
+.cbar{height:10px;border-radius:5px;margin:4px 0 2px}
+.cbl{display:flex;justify-content:space-between;font-size:.78rem;color:var(--mute)}
+@media (max-width:600px){.nets{grid-template-columns:minmax(0,1fr)}}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{color:var(--mute);font-weight:600}
+.scrollx{overflow-x:auto;min-width:0}
+.tl{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.tl button{flex:1 1 170px}
+.tlbox{min-height:6.5em}
+ol.ref{padding-left:1.4em}ol.ref li{margin:6px 0;font-size:.93rem}
+/* 小測驗 */
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opts button{text-align:left}
+.q .opts button.right{background:color-mix(in srgb,var(--ok) 22%,transparent);border-color:var(--ok)}
+.q .opts button.wrong{background:color-mix(in srgb,var(--bad) 18%,transparent);border-color:var(--bad)}
+.q .exp{margin-top:8px;font-size:.93rem}
+.q .exp.ok{color:var(--ok)}.q .exp.no{color:var(--bad)}
+.score{font-size:1.2rem;font-weight:700;margin:12px 0}
+footer{text-align:center;color:var(--mute);font-size:.9rem;margin-top:24px}
+
+/* 卡通老師 */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:top center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:top center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+
+/* 作者徽章（校徽待補） */
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
+.pu-badge img{width:58px;height:58px;display:block}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute)}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main">
+    <h1>Swish：讓電腦自己「搜尋」出來的激活函數</h1>
+    <p>智慧醫療 ・ 互動教學：Swish 激活函數的特點</p>
+  </div>
+  <div class="pu-badge"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+  <h2><span class="num">0</span>Swish 是什麼？一句話：輸入 × 自己算出來的門</h2>
+  <div class="intro">
+    <div>
+      <p>判讀 X 光、分析心電圖、預測疾病風險的神經網路，每一層都需要<b>激活函數</b>決定訊號要放行多少。Swish 是 2017 年由 Google Brain 用自動搜尋找到的激活函數：</p>
+      <div class="formula">Swish<sub>β</sub>(x) = x · σ(βx)　　其中 σ(z) = <span class="frac"><span>1</span><span>1 + e<sup>−z</sup></span></span></div>
+      <div class="cvbox"><canvas id="cv0"></canvas></div>
+      <div class="legend"><span><i style="background:var(--mute)"></i>ReLU</span><span><i style="background:var(--c2)"></i>Swish（β = 1）</span></div>
+      <div class="row"><div class="ctl"><label>輸入 x = <b id="x0v"></b></label><input id="x0" type="range" min="-5" max="5" step="0.05" value="1.5"></div></div>
+      <div class="box or" id="calc0"></div>
+    </div>
+    <div class="avwrap"><div class="bubble" id="bub1">Hi！我是 Prajit 老師。Swish 不是人想出來的，是電腦「搜尋」出來的！點我聽故事！</div><div class="av" id="av1"></div></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+  <h2><span class="num">1</span>它是怎麼被找到的？——自動搜尋激活函數</h2>
+  <p>Ramachandran、Zoph 與 Le（2017）把激活函數拆成可組合的積木：<b>核心單元</b> = 二元函數 b( 一元函數 u₁(x)，一元函數 u₂(x) )。再讓電腦組合積木、逐一試訓練，留下表現最好的。</p>
+  <div class="unit">
+    <span>f(x) =</span>
+    <div class="slot" id="slB"><small>二元函數 b</small><span>？</span></div>
+    <span>(</span>
+    <div class="slot" id="slU1"><small>一元函數 u₁</small><span>？</span></div>
+    <span>,</span>
+    <div class="slot" id="slU2"><small>一元函數 u₂</small><span>？</span></div>
+    <span>)</span>
+  </div>
+  <div class="loop" id="loop"><span>① 控制器提出候選</span><span>② 子網路試訓練</span><span>③ 驗證準確率 = 獎勵</span><span>④ 強化學習更新控制器</span></div>
+  <div class="row">
+    <button id="k_reset">⟲ 重來</button><button id="k_prev">◀ 上一步</button><button id="k_next">下一步 ▶</button><button id="k_auto">▶ 自動播放</button>
+  </div>
+  <div class="prog"><div id="kprog"></div></div>
+  <div class="g2">
+    <div class="box or" id="k_msg"></div>
+    <div class="cvbox"><canvas id="cv1"></canvas></div>
+  </div>
+  <h3 style="margin-top:12px">論文列出的表現最佳函數（點選看形狀）</h3>
+  <div class="gal" id="gal"></div>
+  <div class="g2" style="margin-top:8px">
+    <div class="cvbox"><canvas id="cvG"></canvas></div>
+    <div class="box gr">
+      <b>搜尋得到的三個觀察</b>
+      <ul style="margin:6px 0;padding-left:1.2em">
+        <li><b>簡單的比較好：</b>最佳函數只用一到兩個核心單元；太複雜的函數反而難以最佳化。</li>
+        <li><b>常見形式是 b(x, g(x))：</b>原始輸入 x 直接進入最後的二元函數。ReLU = max(x, 0) 也是這種形式。</li>
+        <li><b>週期函數常出現：</b>sin、cos 常和 x 相加或相減；含除法的函數則多半表現不好。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="card">
+  <h2><span class="num">2</span>特點一：平滑、處處可微——沒有 ReLU 的「折角」</h2>
+  <div class="g2">
+    <div>
+      <div class="cvbox"><canvas id="cv2"></canvas></div>
+      <div class="legend"><span><i style="background:var(--mute)"></i>ReLU′</span><span><i style="background:var(--c2)"></i>Swish′（β = 1）</span></div>
+      <div class="row"><div class="ctl"><label>x = <b id="x2v"></b></label><input id="x2" type="range" min="-4" max="4" step="0.02" value="-0.1"></div></div>
+    </div>
+    <div>
+      <div class="formula" style="font-size:1.05rem"><span class="frac"><span>d Swish</span><span>dx</span></span> = σ(βx) + βx · σ(βx)(1 − σ(βx))</div>
+      <div class="stat">
+        <div><b id="d_relu">—</b><span>ReLU′(x)</span></div>
+        <div><b id="d_sw">—</b><span>Swish′(x)</span></div>
+        <div><b id="d_sw0">0.5</b><span>Swish′(0)</span></div>
+      </div>
+      <div class="box or" id="d_msg"></div>
+      <ul>
+        <li>ReLU 的導數在 x = 0 從 0 <b>跳到</b> 1；Swish 的導數<b>連續</b>變化，最佳化地形較平順。</li>
+        <li>Swish 在負區的導數<b>不是 0</b>：梯度仍能流動，神經元不容易「死亡」。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="card">
+  <h2><span class="num">3</span>特點二：非單調、下有界、上無界——負區的「小凹陷」</h2>
+  <div class="g2">
+    <div>
+      <div class="cvbox"><canvas id="cv3"></canvas></div>
+      <div class="row"><div class="ctl"><label>x = <b id="x3v"></b></label><input id="x3" type="range" min="-7" max="4" step="0.05" value="-2.5"></div></div>
+    </div>
+    <div>
+      <div class="box or" id="m_msg"></div>
+      <table>
+        <tr><th>區域</th><th>Swish 的行為</th><th>意義</th></tr>
+        <tr><td style="color:var(--c1)"><b>x 很負</b></td><td>輸出 → 0（下有界）</td><td>像 ReLU 一樣把強烈的負訊號關掉</td></tr>
+        <tr><td style="color:var(--bad)"><b>−1.28 附近</b></td><td>最小值約 −0.278</td><td>保留「有點負」的資訊，ReLU 會全變 0</td></tr>
+        <tr><td style="color:var(--c2)"><b>x 為正</b></td><td>輸出 ≈ x（上無界）</td><td>大訊號不會飽和，梯度不消失</td></tr>
+      </table>
+      <p class="mute" style="font-size:.88rem">「非單調」：x 從 −∞ 往右增加時，輸出先<b>下降</b>到最小值，之後才上升。ReLU、sigmoid、tanh 都是單調函數。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="card">
+  <h2><span class="num">4</span>特點三：自我門控（Self-Gating）與可調的 β</h2>
+  <p>Swish = 輸入 x × 門 σ(βx)。<b>門由輸入本身算出</b>，不需要額外的權重，所以能直接替換任何網路裡的 ReLU。β 可以固定，也可以當成參數一起訓練。</p>
+  <div class="g2">
+    <div>
+      <div class="cvbox"><canvas id="cv4"></canvas></div>
+      <div class="legend"><span><i style="background:var(--c4)"></i>x / 2（β = 0）</span><span><i style="background:var(--mute)"></i>ReLU（β → ∞）</span><span><i style="background:var(--c2)"></i>Swish<sub>β</sub></span></div>
+    </div>
+    <div>
+      <div class="row"><div class="ctl"><label>β = <b id="bv"></b></label><input id="bb" type="range" min="0" max="10" step="0.1" value="1"></div></div>
+      <div class="row" id="bpre"></div>
+      <div class="row"><div class="ctl"><label>觀察點 x = <b id="x4v"></b></label><input id="x4" type="range" min="-4" max="4" step="0.05" value="-1"></div></div>
+      <div class="dim"><span>門 σ(βx)</span><div class="track"><div id="gate" style="background:var(--c2)"></div></div><span id="gatev"></span></div>
+      <div class="box or" id="b_msg"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="card">
+  <h2><span class="num">5</span>智慧醫療小實驗：糖尿病風險預測，ReLU vs Swish</h2>
+  <p>以<b>模擬</b>資料訓練兩個一模一樣的小型神經網路（輸入 2 → 隱藏層 12 → 風險機率），唯一差別是隱藏層的激活函數。輸入為空腹血糖與 BMI，紅點為「有風險」、藍點為「無風險」。</p>
+  <div class="row">
+    <button id="m_train">▶ 開始訓練</button><button id="m_reset">⟲ 重設</button><button id="m_data">🎲 換一組病患資料</button>
+    <span class="mute" id="m_step">訓練步數：0</span>
+  </div>
+  <div class="nets">
+    <div><h3 style="color:var(--mute)">ReLU 網路</h3><div class="cvbox"><canvas id="hmR"></canvas></div>
+      <div class="stat"><div><b id="rL">—</b><span>損失</span></div><div><b id="rA">—</b><span>準確率</span></div><div><b>折線</b><span>決策邊界</span></div></div></div>
+    <div><h3 style="color:var(--c2)">Swish 網路</h3><div class="cvbox"><canvas id="hmS"></canvas></div>
+      <div class="stat"><div><b id="sL">—</b><span>損失</span></div><div><b id="sA">—</b><span>準確率</span></div><div><b>平滑</b><span>決策邊界</span></div></div></div>
+  </div>
+  <div class="cbar" id="cbar"></div><div class="cbl"><span>風險低 0</span><span>0.5</span><span>1 風險高</span></div>
+  <h3 style="margin-top:14px">固定 BMI，看風險怎麼隨血糖變化</h3>
+  <div class="g2">
+    <div>
+      <div class="cvbox"><canvas id="slice"></canvas></div>
+      <div class="legend"><span><i style="background:var(--mute)"></i>ReLU 網路</span><span><i style="background:var(--c2)"></i>Swish 網路</span></div>
+    </div>
+    <div>
+      <div class="row"><div class="ctl"><label>BMI = <b id="bmiv"></b></label><input id="bmi" type="range" min="18" max="40" step="0.5" value="28"></div></div>
+      <div class="row"><button id="vLogit" class="on">看風險分數（logit）</button><button id="vProb">看風險機率</button></div>
+      <div class="box or">
+        兩個網路的<b>準確率相近</b>，差別在曲線的「形狀」：ReLU 網路的風險分數是一段段直線接起來，有<b>折角</b>；Swish 網路的曲線<b>平滑</b>。<br>
+        在醫療上，平滑代表「檢驗值小小改變 → 風險也小小改變」，不會在某個數值突然轉彎，模型行為較符合臨床直覺、也較容易解釋。
+      </div>
+      <p class="mute" style="font-size:.84rem">資料為程式產生的示意數據，非真實臨床資料；兩個網路使用相同的初始權重與 Adam 最佳化器。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="card">
+  <h2><span class="num">6</span>成果、影響與 Prajit 老師的研究</h2>
+  <div class="g2">
+    <div>
+      <h3>論文成果：只把 ReLU 換成 Swish</h3>
+      <div class="scrollx"><table>
+        <tr><th>模型</th><th>資料集</th><th>top-1 準確率提升</th></tr>
+        <tr><td>Mobile NASNet-A</td><td>ImageNet</td><td><b style="color:var(--ok)">+0.9%</b></td></tr>
+        <tr><td>Inception-ResNet-v2</td><td>ImageNet</td><td><b style="color:var(--ok)">+0.6%</b></td></tr>
+      </table></div>
+      <p class="mute" style="font-size:.88rem">論文指出 Swish 在<b>較深的模型</b>上通常優於 ReLU。</p>
+      <h3 style="margin-top:12px">名稱小知識與後續影響</h3>
+      <ul style="padding-left:1.2em;margin:4px 0">
+        <li>β = 1 的 Swish 與 Elfwing 等人在強化學習中提出的 <b>SiLU</b>（Sigmoid-weighted Linear Unit）相同，論文中也有說明；PyTorch 的 <code>F.silu</code> 就是它。</li>
+        <li>GELU = x·Φ(x) 的形狀與 Swish 相近（論文說約像 β = 1.4）。</li>
+        <li>EfficientNet（2019）使用 Swish；這類模型也常用於醫學影像分類。</li>
+        <li>大型語言模型的 <b>SwiGLU</b> 就是把 Swish 當作門，詳見 <a href="02_SwiGLU.html">02_SwiGLU</a>。</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Prajit Ramachandran 的代表研究</h3>
+      <div class="tl" id="tl"></div>
+      <div class="box bl tlbox" id="tlbox"></div>
+      <p class="mute" style="font-size:.88rem">曾任職於 Google Brain 及 Google DeepMind。</p>
+    </div>
+  </div>
+  <h3 style="margin-top:14px">參考文獻</h3>
+  <ol class="ref">
+    <li>Ramachandran, P., Zoph, B., &amp; Le, Q. V. (2017). <i>Searching for activation functions</i>. arXiv:1710.05941.</li>
+    <li>Ramachandran, P., Liu, P. J., &amp; Le, Q. V. (2017). Unsupervised pretraining for sequence to sequence learning. In <i>Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing</i>.</li>
+    <li>Ramachandran, P., Parmar, N., Vaswani, A., Bello, I., Levskaya, A., &amp; Shlens, J. (2019). Stand-alone self-attention in vision models. In <i>Advances in Neural Information Processing Systems 32</i>.</li>
+    <li>Elfwing, S., Uchibe, E., &amp; Doya, K. (2018). Sigmoid-weighted linear units for neural network function approximation in reinforcement learning. <i>Neural Networks, 107</i>, 3–11.</li>
+    <li>Hendrycks, D., &amp; Gimpel, K. (2016). <i>Gaussian error linear units (GELUs)</i>. arXiv:1606.08415.</li>
+    <li>Tan, M., &amp; Le, Q. V. (2019). EfficientNet: Rethinking model scaling for convolutional neural networks. In <i>Proceedings of the 36th International Conference on Machine Learning</i>.</li>
+    <li>Dosovitskiy, A., et al. (2021). An image is worth 16x16 words: Transformers for image recognition at scale. In <i>International Conference on Learning Representations</i>.</li>
+  </ol>
+</section>
+
+<!-- 7 -->
+<section class="card">
+  <h2><span class="num">7</span>小測驗：Swish 的特點</h2>
+  <div class="qgrid">
+    <div id="quiz"></div>
+    <div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+  </div>
+</section>
+
+<footer>Swish 激活函數互動教學 ・ 單一 HTML 檔，可離線開啟</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const sig=x=>1/(1+Math.exp(-x));
+const relu=x=>Math.max(0,x);
+const swish=(x,b=1)=>x*sig(b*x);
+const dswish=(x,b=1)=>{const s=sig(b*x);return s+b*x*s*(1-s);};
+const fmt=(v,d=3)=>Number(v).toFixed(d);
+
+/* ---------- 畫圖工具 ---------- */
+function fitCanvas(cv,h){
+  cv.style.width='0px';
+  const w=Math.max(200,cv.parentElement.clientWidth),dpr=window.devicePixelRatio||1;
+  if(h==='sq')h=Math.min(w,320);
+  cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+'px';cv.style.height=h+'px';
+  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return {c,w,h};
+}
+function plot(cv,h,o){
+  const {c,w}=fitCanvas(cv,h);
+  const pad={l:38,r:12,t:12,b:24},[x0,x1]=o.xr,[y0,y1]=o.yr;
+  const X=x=>pad.l+(x-x0)/(x1-x0)*(w-pad.l-pad.r),Y=y=>pad.t+(y1-y)/(y1-y0)*(h-pad.t-pad.b);
+  c.fillStyle=css('--card');c.fillRect(0,0,w,h);
+  for(const z of (o.zones||[])){c.fillStyle=z.col;c.globalAlpha=.10;c.fillRect(X(Math.max(z.a,x0)),pad.t,X(Math.min(z.b,x1))-X(Math.max(z.a,x0)),h-pad.t-pad.b);c.globalAlpha=1;}
+  c.strokeStyle=css('--grid');c.lineWidth=1;c.font='11px sans-serif';c.fillStyle=css('--mute');
+  const xs=o.xstep||1,ys=o.ystep||1;
+  for(let x=Math.ceil(x0/xs)*xs;x<=x1+1e-9;x+=xs){c.beginPath();c.moveTo(X(x),Y(y0));c.lineTo(X(x),Y(y1));c.stroke();c.textAlign='center';c.fillText(+x.toFixed(2),X(x),h-8);}
+  for(let y=Math.ceil(y0/ys)*ys;y<=y1+1e-9;y+=ys){c.beginPath();c.moveTo(X(x0),Y(y));c.lineTo(X(x1),Y(y));c.stroke();c.textAlign='right';c.fillText(+y.toFixed(2),pad.l-5,Y(y)+4);}
+  c.strokeStyle=css('--mute');c.lineWidth=1.3;
+  if(y0<0&&y1>0){c.beginPath();c.moveTo(X(x0),Y(0));c.lineTo(X(x1),Y(0));c.stroke();}
+  if(x0<0&&x1>0){c.beginPath();c.moveTo(X(0),Y(y0));c.lineTo(X(0),Y(y1));c.stroke();}
+  if(o.xlabel){c.fillStyle=css('--mute');c.textAlign='right';c.fillText(o.xlabel,w-pad.r,h-22);}
+  c.save();c.beginPath();c.rect(pad.l,pad.t,w-pad.l-pad.r,h-pad.t-pad.b);c.clip();
+  for(const cu of o.curves){
+    c.strokeStyle=cu.col;c.lineWidth=cu.w||2.5;c.globalAlpha=cu.a||1;c.setLineDash(cu.dash||[]);
+    c.beginPath();let first=true,prev=null;const N=cu.n||500;
+    for(let i=0;i<=N;i++){const x=x0+(x1-x0)*i/N,y=cu.f(x);
+      if(!isFinite(y)||Math.abs(y)>1e3){first=true;continue;}
+      if(cu.jump&&prev!==null&&Math.abs(y-prev)>0.4)first=true;
+      if(first){c.moveTo(X(x),Y(y));first=false}else c.lineTo(X(x),Y(y));prev=y;}
+    c.stroke();c.globalAlpha=1;c.setLineDash([]);
+  }
+  c.restore();
+  for(const p of (o.pts||[])){
+    c.fillStyle=p.col;c.beginPath();c.arc(X(p.x),Y(p.y),p.r||6,0,7);c.fill();c.strokeStyle=css('--card');c.lineWidth=2;c.stroke();
+    if(p.label){c.fillStyle=css('--ink');c.font='bold 12px sans-serif';const right=X(p.x)>w-130;c.textAlign=right?'right':'left';c.fillText(p.label,X(p.x)+(right?-10:10),Y(p.y)+(p.dy||-10));}
+  }
+}
+
+/* ---------- 0 定義 ---------- */
+function draw0(){
+  const x=+$('x0').value;$('x0v').textContent=fmt(x,2);
+  plot($('cv0'),250,{xr:[-5,5],yr:[-1,5],curves:[{f:relu,col:css('--mute'),w:2},{f:swish,col:css('--c2'),w:3.5}],
+    pts:[{x,y:swish(x),col:css('--c2'),label:`Swish = ${fmt(swish(x))}`}]});
+  const g=sig(x);
+  $('calc0').innerHTML=`Swish(${fmt(x,2)}) = ${fmt(x,2)} × σ(${fmt(x,2)}) = ${fmt(x,2)} × <b>${fmt(g)}</b> = <b>${fmt(swish(x))}</b><br>`+
+    `門 σ(x) = ${fmt(g)}，代表 x 的 <b>${Math.round(g*100)}%</b> 被放行：`+
+    (g>0.95?'門幾乎全開，輸出 ≈ x，和 ReLU 一樣。'
+     :g<0.05?'門幾乎全關，輸出 ≈ 0，和 ReLU 一樣。'
+     :g>=0.6?'<b>大部分放行</b>。ReLU 在 x &gt; 0 時會 100% 放行；Swish 的門像調光器，可以停在中間。'
+     :g>0.4?'<b>大約放行一半</b>。ReLU 只有 0% 或 100%，沒有中間值。'
+     :'<b>只放行一小部分</b>（輸出是小小的負值）。ReLU 在這裡會 0% 放行、輸出 0。');
+}
+$('x0').oninput=draw0;
+
+/* ---------- 1 搜尋動畫 ---------- */
+const KS=[
+ {fill:{},loop:-1,f:null,msg:'搜尋空間：一元函數例如 x、−x、|x|、x²、x³、√x、eˣ、sin x、cos x、σ(x)、tanh x、max(x,0)…；二元函數例如 x₁+x₂、x₁·x₂、x₁−x₂、max(x₁,x₂)、min(x₁,x₂)…。組合起來有非常多種可能。按「下一步」看電腦怎麼找。'},
+ {fill:{U1:'x'},cur:'U1',loop:0,f:null,msg:'① <b>RNN 控制器</b>一次預測一個積木。第一個：u₁(x) = <b>x</b>（恆等函數，原封不動）。'},
+ {fill:{U1:'x',U2:'σ(βx)'},cur:'U2',loop:0,f:null,msg:'控制器接著預測 u₂(x) = <b>σ(βx)</b>（sigmoid）。'},
+ {fill:{U1:'x',U2:'σ(βx)',B:'x₁ · x₂'},cur:'B',loop:0,f:x=>swish(x),msg:'再預測二元函數 b = <b>相乘</b>。組合起來：f(x) = x · σ(βx)——這就是 <b>Swish</b>！'},
+ {fill:{U1:'x',U2:'σ(βx)',B:'x₁ · x₂'},loop:1,f:x=>swish(x),msg:'② 把這個激活函數放進<b>子網路</b>（ResNet-20），在 CIFAR-10 影像資料上訓練 10K 步。很多台機器同時測試不同候選。'},
+ {fill:{U1:'x',U2:'σ(βx)',B:'x₁ · x₂'},loop:2,f:x=>swish(x),msg:'③ 子網路的<b>驗證準確率</b>就是給控制器的「獎勵」。'},
+ {fill:{U1:'x',U2:'σ(βx)',B:'x₁ · x₂'},loop:3,f:x=>swish(x),msg:'④ 用強化學習（PPO）更新控制器：讓得高分的組合更常被提出，再回到 ①。小的搜尋空間則直接<b>窮舉</b>。最後再把頂尖候選放到更大的模型上驗證。'}];
+let kStep=0,kTimer=null;
+function drawK(){
+  const st=KS[kStep];
+  for(const k of ['U1','U2','B']){const el=$('sl'+k);el.classList.toggle('fill',!!st.fill[k]);el.classList.toggle('cur',st.cur===k);el.querySelector('span').textContent=st.fill[k]||'？';}
+  [...$('loop').children].forEach((s,i)=>s.classList.toggle('on',i===st.loop));
+  $('kprog').style.width=(kStep/(KS.length-1)*100)+'%';
+  $('k_msg').innerHTML=st.msg;
+  const curves=[{f:relu,col:css('--mute'),w:1.5,dash:[5,4]}];
+  if(st.f)curves.push({f:st.f,col:css('--c2'),w:3.5});
+  else if(st.fill.U1)curves.push({f:x=>x,col:css('--c4'),w:2.5});
+  if(st.fill.U2&&!st.f)curves.push({f:x=>sig(x),col:css('--c1'),w:2.5});
+  plot($('cv1'),220,{xr:[-4,4],yr:[-1,4],curves});
+}
+function kGo(s){kStep=Math.max(0,Math.min(KS.length-1,s));drawK();}
+function kStop(){clearInterval(kTimer);kTimer=null;$('k_auto').textContent='▶ 自動播放';$('k_auto').classList.remove('on');}
+$('k_reset').onclick=()=>{kStop();kGo(0)};$('k_prev').onclick=()=>{kStop();kGo(kStep-1)};$('k_next').onclick=()=>{kStop();kGo(kStep+1)};
+$('k_auto').onclick=()=>{if(kTimer){kStop();return;}if(kStep>=KS.length-1)kGo(0);
+  $('k_auto').textContent='⏸ 暫停';$('k_auto').classList.add('on');
+  kTimer=setInterval(()=>{if(kStep>=KS.length-1){kStop();return;}kGo(kStep+1);},1400);};
+
+const asinh=Math.asinh,sinc=x=>Math.abs(x)<1e-6?1:Math.sin(x)/x;
+const GAL=[['x·σ(βx)',x=>swish(x)],['x·(sinh⁻¹x)²',x=>x*asinh(x)**2],['min(x, sin x)',x=>Math.min(x,Math.sin(x))],['(tan⁻¹x)² − x',x=>Math.atan(x)**2-x],
+ ['max(x, σ(x))',x=>Math.max(x,sig(x))],['cos x − x',x=>Math.cos(x)-x],['max(x, tanh x)',x=>Math.max(x,Math.tanh(x))],['sinc(x) + x',x=>sinc(x)+x]];
+let gSel=0;
+function drawGal(){
+  $('gal').innerHTML='';
+  GAL.forEach((g,i)=>{const b=document.createElement('button');b.textContent=g[0];if(i===gSel)b.classList.add('on');b.onclick=()=>{gSel=i;drawGal();};$('gal').appendChild(b);});
+  plot($('cvG'),210,{xr:[-5,5],yr:[-4,5],curves:[{f:relu,col:css('--mute'),w:1.5,dash:[5,4]},{f:GAL[gSel][1],col:gSel===0?css('--c2'):css('--c4'),w:3}]});
+}
+
+/* ---------- 2 平滑 ---------- */
+function draw2(){
+  const x=+$('x2').value;$('x2v').textContent=fmt(x,2);
+  plot($('cv2'),250,{xr:[-4,4],yr:[-0.3,1.3],ystep:0.25,curves:[
+    {f:t=>t>0?1:0,col:css('--mute'),w:2.5,jump:true},{f:t=>dswish(t),col:css('--c2'),w:3.5}],
+    pts:[{x,y:x>0?1:0,col:css('--mute'),r:5},{x,y:dswish(x),col:css('--c2')}]});
+  $('d_relu').textContent=x>0?'1':'0';$('d_sw').textContent=fmt(dswish(x));
+  $('d_msg').innerHTML=Math.abs(x)<0.4
+    ? `在 0 附近：ReLU′ 只能是 0 或 1（x = ${fmt(x,2)} 時為 <b>${x>0?1:0}</b>），Swish′ = <b>${fmt(dswish(x))}</b>，左右拖動時平滑變化。`
+    : x<0 ? `x = ${fmt(x,2)}：ReLU′ = 0，梯度完全停住；Swish′ = <b>${fmt(dswish(x))}</b>，仍有梯度。`
+          : `x = ${fmt(x,2)}：兩者導數都接近 1。注意 Swish′ 會略超過 1（最大約 1.1），這是非單調形狀帶來的。`;
+}
+$('x2').oninput=draw2;
+
+/* ---------- 3 非單調 ---------- */
+const XMIN=-1.2785,YMIN=swish(-1.2785);
+function draw3(){
+  const x=+$('x3').value;$('x3v').textContent=fmt(x,2);
+  plot($('cv3'),260,{xr:[-7,4],yr:[-0.6,4],ystep:0.5,
+    zones:[{a:-7,b:-3.5,col:css('--c1')},{a:-3.5,b:0,col:css('--bad')},{a:0,b:4,col:css('--c2')}],
+    curves:[{f:relu,col:css('--mute'),w:1.5,dash:[5,4]},{f:swish,col:css('--c2'),w:3.5}],
+    pts:[{x:XMIN,y:YMIN,col:css('--bad'),r:5,label:`最小值 (${fmt(XMIN,2)}, ${fmt(YMIN)})`,dy:22},{x,y:swish(x),col:css('--c2')}]});
+  const d=dswish(x);
+  $('m_msg').innerHTML=`Swish(${fmt(x,2)}) = <b>${fmt(swish(x))}</b>，ReLU = ${fmt(relu(x))}<br>`+
+    `此處斜率 ${fmt(d)}：x 往右增加時，輸出`+(d<-1e-3?'<b style="color:var(--bad)">變小</b>（下降段）':d>1e-3?'<b style="color:var(--ok)">變大</b>':'幾乎不變（正在最低點）')+'。';
+}
+$('x3').oninput=draw3;
+
+/* ---------- 4 β ---------- */
+const BPRE=[[0,'β = 0'],[0.5,'β = 0.5'],[1,'β = 1（SiLU）'],[3,'β = 3'],[10,'β = 10']];
+function draw4(){
+  const b=+$('bb').value,x=+$('x4').value;$('bv').textContent=fmt(b,1);$('x4v').textContent=fmt(x,2);
+  $('bpre').innerHTML='';BPRE.forEach(([v,t])=>{const e=document.createElement('button');e.textContent=t;if(Math.abs(v-b)<1e-9)e.classList.add('on');e.onclick=()=>{$('bb').value=v;draw4();};$('bpre').appendChild(e);});
+  plot($('cv4'),260,{xr:[-4,4],yr:[-1.5,4],curves:[
+    {f:t=>t/2,col:css('--c4'),w:2,dash:[6,4]},{f:relu,col:css('--mute'),w:2,dash:[6,4]},{f:t=>swish(t,b),col:css('--c2'),w:3.5}],
+    pts:[{x,y:swish(x,b),col:css('--c2')}]});
+  const g=sig(b*x);$('gate').style.width=g*100+'%';$('gatev').textContent=fmt(g,3);
+  $('b_msg').innerHTML=`Swish<sub>${fmt(b,1)}</sub>(${fmt(x,2)}) = ${fmt(x,2)} × ${fmt(g)} = <b>${fmt(swish(x,b))}</b><br>`+
+    (b===0?'β = 0：門恆為 σ(0) = 0.5，Swish 變成<b>線性</b>函數 x/2。'
+     :b>=6?'β 很大：門幾乎是 0/1 的階梯，Swish <b>接近 ReLU</b>。'
+     :'β 介於兩者之間：Swish 在「線性」與「ReLU」之間<b>平滑內插</b>。β 可以讓網路自己學。');
+}
+$('bb').oninput=draw4;$('x4').oninput=draw4;
+
+/* ---------- 5 醫療小實驗 ---------- */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const G0=70,G1=220,B0=18,B1=40;
+const gn=g=>(g-145)/75,bn=b=>(b-29)/11;
+let dSeed=2,DATA=[];
+function makeData(seed){const R=rng(seed);DATA=[];
+  for(let i=0;i<240;i++){const g=G0+R()*(G1-G0),b=B0+R()*(B1-B0),x1=gn(g),x2=bn(b);
+    const s=3.2*x1+1.6*x2+1.2*Math.sin(2.2*x2)+0.9*x1*x2-0.2;
+    DATA.push([x1,x2,R()<sig(3*s)?1:0,g,b]);}}
+function makeNet(act){const R=rng(11),H=12;
+  const rn=()=>{let u=0,v=0;while(!u)u=R();while(!v)v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+  const th=new Float64Array(4*H+1);for(let j=0;j<H;j++){th[2*j]=rn()*0.9;th[2*j+1]=rn()*0.9;th[2*H+j]=rn()*0.1;th[3*H+j]=rn()*0.4;}
+  const f=act==='relu'?(z=>z>0?z:0):(z=>z*sig(z)),df=act==='relu'?(z=>z>0?1:0):(z=>{const s=sig(z);return s+z*s*(1-s);});
+  const m=new Float64Array(th.length),v=new Float64Array(th.length);let t=0;
+  const net={L:NaN,A:NaN,
+    logit(x1,x2){let o=th[4*H];for(let j=0;j<H;j++)o+=th[3*H+j]*f(th[2*j]*x1+th[2*j+1]*x2+th[2*H+j]);return o;},
+    step(){const g=new Float64Array(th.length);let L=0,A=0;
+      for(const [x1,x2,y] of DATA){const z=[],h=[];let o=th[4*H];
+        for(let j=0;j<H;j++){z[j]=th[2*j]*x1+th[2*j+1]*x2+th[2*H+j];h[j]=f(z[j]);o+=th[3*H+j]*h[j];}
+        const p=sig(o);L+=-(y*Math.log(p+1e-9)+(1-y)*Math.log(1-p+1e-9));A+=((p>.5)===(y===1))?1:0;const d=p-y;
+        for(let j=0;j<H;j++){g[3*H+j]+=d*h[j];const dz=d*th[3*H+j]*df(z[j]);g[2*j]+=dz*x1;g[2*j+1]+=dz*x2;g[2*H+j]+=dz;}g[4*H]+=d;}
+      t++;const n=DATA.length;
+      for(let k=0;k<th.length;k++){const gk=g[k]/n;m[k]=.9*m[k]+.1*gk;v[k]=.999*v[k]+.001*gk*gk;th[k]-=0.03*(m[k]/(1-.9**t))/(Math.sqrt(v[k]/(1-.999**t))+1e-8);}
+      net.L=L/n;net.A=A/n;}};
+  return net;}
+let NR,NS,mSteps=0,mTimer=null,viewLogit=true;
+function lerpCol(a,b,t){return a.map((v,i)=>Math.round(v+(b[i]-v)*t));}
+function riskCol(p){const lo=[47,111,214],mid=[245,245,240],hi=[214,51,79];return p<.5?lerpCol(lo,mid,p*2):lerpCol(mid,hi,(p-.5)*2);}
+function drawHeat(cv,net){
+  const {c,w,h}=fitCanvas(cv,'sq');const pad={l:34,r:6,t:6,b:28};
+  const X=g=>pad.l+(g-G0)/(G1-G0)*(w-pad.l-pad.r),Y=b=>pad.t+(B1-b)/(B1-B0)*(h-pad.t-pad.b);
+  c.fillStyle=css('--card');c.fillRect(0,0,w,h);
+  const N=48,cw=(w-pad.l-pad.r)/N,ch=(h-pad.t-pad.b)/N;
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){const g=G0+(i+.5)/N*(G1-G0),b=B1-(j+.5)/N*(B1-B0);
+    const p=mSteps?sig(net.logit(gn(g),bn(b))):0.5;const col=riskCol(p);c.fillStyle=`rgb(${col})`;c.fillRect(pad.l+i*cw,pad.t+j*ch,cw+0.6,ch+0.6);}
+  if(mSteps){c.strokeStyle='#1d2330';c.lineWidth=1.5;c.beginPath();
+    for(let i=0;i<=N*2;i++){const g=G0+i/(N*2)*(G1-G0);let lo=B0,hi=B1,fl=net.logit(gn(g),bn(lo)),fh=net.logit(gn(g),bn(hi));
+      if(fl*fh>0)continue;for(let k=0;k<30;k++){const mid=(lo+hi)/2,fm=net.logit(gn(g),bn(mid));if(fm*fl>0){lo=mid;fl=fm}else hi=mid;}
+      c.lineTo(X(g),Y((lo+hi)/2));}
+    c.stroke();}
+  for(const d of DATA){c.beginPath();c.arc(X(d[3]),Y(d[4]),2.6,0,7);c.fillStyle=d[2]?'#c2253f':'#2456b0';c.fill();c.strokeStyle='#fff';c.lineWidth=.8;c.stroke();}
+  c.fillStyle=css('--mute');c.font='11px sans-serif';c.textAlign='center';
+  for(const g of [80,120,160,200])c.fillText(g,X(g),h-14);
+  c.fillText('空腹血糖 (mg/dL)',(pad.l+w)/2,h-2);
+  c.textAlign='right';for(const b of [20,25,30,35,40])c.fillText(b,pad.l-4,Y(b)+4);
+  c.save();c.translate(10,(pad.t+h-pad.b)/2);c.rotate(-Math.PI/2);c.textAlign='center';c.fillText('BMI',0,0);c.restore();
+}
+function drawSlice(){
+  const B=+$('bmi').value;$('bmiv').textContent=fmt(B,1);
+  const sc=g=>gn(g);
+  const fR=g=>mSteps?(viewLogit?NR.logit(sc(g),bn(B)):sig(NR.logit(sc(g),bn(B)))):NaN;
+  const fS=g=>mSteps?(viewLogit?NS.logit(sc(g),bn(B)):sig(NS.logit(sc(g),bn(B)))):NaN;
+  let yr=[0,1],ys=0.25;
+  if(viewLogit&&mSteps){let lo=1e9,hi=-1e9;for(let g=G0;g<=G1;g+=1){for(const v of [fR(g),fS(g)]){lo=Math.min(lo,v);hi=Math.max(hi,v);}}
+    const span=Math.max(1,hi-lo);yr=[Math.floor(lo-0.1*span),Math.ceil(hi+0.1*span)];ys=Math.max(1,Math.round((yr[1]-yr[0])/6));}
+  plot($('slice'),250,{xr:[G0,G1],yr,xstep:30,ystep:ys,xlabel:'空腹血糖',
+    curves:[{f:fR,col:css('--mute'),w:2.5,n:600},{f:fS,col:css('--c2'),w:3,n:600}]});
+}
+function drawMed(){
+  drawHeat($('hmR'),NR);drawHeat($('hmS'),NS);drawSlice();
+  $('m_step').textContent='訓練步數：'+mSteps;
+  $('rL').textContent=mSteps?fmt(NR.L,3):'—';$('rA').textContent=mSteps?Math.round(NR.A*100)+'%':'—';
+  $('sL').textContent=mSteps?fmt(NS.L,3):'—';$('sA').textContent=mSteps?Math.round(NS.A*100)+'%':'—';
+  const cb=[0,.25,.5,.75,1].map(p=>`rgb(${riskCol(p)}) ${p*100}%`).join(',');$('cbar').style.background=`linear-gradient(90deg,${cb})`;
+}
+function mStop(){clearInterval(mTimer);mTimer=null;$('m_train').textContent='▶ 繼續訓練';$('m_train').classList.remove('on');}
+function mReset(){mStop();NR=makeNet('relu');NS=makeNet('swish');mSteps=0;$('m_train').textContent='▶ 開始訓練';drawMed();}
+$('m_train').onclick=()=>{
+  if(mTimer){mStop();return;}
+  if(mSteps>=600){mReset();}
+  $('m_train').textContent='⏸ 暫停';$('m_train').classList.add('on');
+  mTimer=setInterval(()=>{for(let k=0;k<10;k++){NR.step();NS.step();mSteps++;}drawMed();
+    if(mSteps>=600){mStop();$('m_train').textContent='⟲ 重新訓練';
+      AV1.mood('smile',`訓練完成！ReLU 準確率 ${Math.round(NR.A*100)}%，Swish ${Math.round(NS.A*100)}%，差不多——但看看下面風險曲線的形狀！`);}},40);
+};
+$('m_reset').onclick=mReset;
+$('m_data').onclick=()=>{dSeed=dSeed%3+1;makeData(dSeed);mReset();};
+$('bmi').oninput=drawSlice;
+$('vLogit').onclick=()=>{viewLogit=true;$('vLogit').classList.add('on');$('vProb').classList.remove('on');drawSlice();};
+$('vProb').onclick=()=>{viewLogit=false;$('vProb').classList.add('on');$('vLogit').classList.remove('on');drawSlice();};
+
+/* ---------- 6 研究時間軸 ---------- */
+const TL=[
+ ['2017：seq2seq 預訓練','〈Unsupervised Pretraining for Sequence to Sequence Learning〉（與 Peter J. Liu、Quoc V. Le）：先用大量無標註文字預訓練語言模型，再用來初始化序列到序列（seq2seq）模型的編碼器與解碼器，是「先預訓練、再微調」想法在 seq2seq 上的早期研究。'],
+ ['2017：搜尋激活函數','〈Searching for Activation Functions〉（與 Barret Zoph、Quoc V. Le）：結合窮舉與強化學習搜尋，發現 <b>Swish</b> = x·σ(βx)，並在 ImageNet 等任務上優於 ReLU。'],
+ ['2019：獨立自注意力','〈Stand-Alone Self-Attention in Vision Models〉（與 Parmar、Vaswani、Bello、Levskaya、Shlens）：以<b>局部自注意力</b>取代 ResNet 中的空間卷積，證明純注意力也能做好影像辨識，為 2020 年的 Vision Transformer（ViT）與後續純注意力視覺架構奠定重要基礎。']];
+let tlSel=1;
+function drawTL(){$('tl').innerHTML='';TL.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t[0];if(i===tlSel)b.classList.add('on');b.onclick=()=>{tlSel=i;drawTL();};$('tl').appendChild(b);});$('tlbox').innerHTML=TL[tlSel][1];}
+
+/* ---------- Prajit 老師頭像 ---------- */
+const PRAJIT_SVG=`<svg viewBox="0 0 200 230" aria-label="Prajit老師動畫">
+ <g class="bodyg">
+  <path d="M12 232 Q16 166 100 156 Q184 166 188 232 Z" fill="#23262c"/>
+  <path d="M80 158 Q100 174 120 158" stroke="#3a3e46" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <rect x="86" y="132" width="28" height="30" rx="10" fill="#e6b593"/>
+  <path d="M86 150 Q100 168 114 150 L114 158 Q100 172 86 158 Z" fill="#e6b593"/>
+  <ellipse cx="62" cy="106" rx="8.5" ry="12" fill="#e6b593"/><ellipse cx="138" cy="106" rx="8.5" ry="12" fill="#e6b593"/>
+  <ellipse cx="62" cy="106" rx="3.5" ry="6.5" fill="#d39d7c"/><ellipse cx="138" cy="106" rx="3.5" ry="6.5" fill="#d39d7c"/>
+  <ellipse cx="100" cy="104" rx="37" ry="39" fill="#f0c5a4"/>
+  <path d="M65 108 Q68 137 100 143 Q132 137 135 108 Q130 128 115 132 Q100 126 85 132 Q70 128 65 108 Z" fill="#7d6b5e" opacity=".32"/>
+  <path d="M86 124 Q100 119 114 124 Q100 122 86 124 Z" fill="#7d6b5e" opacity=".35"/>
+  <ellipse class="blush" cx="79" cy="117" rx="7" ry="4.5" fill="#f08080"/>
+  <ellipse class="blush" cx="121" cy="117" rx="7" ry="4.5" fill="#f08080"/>
+  <g class="hairL"><path d="M68 84 Q64 92 66 100 L70 99 Q69 92 72 86 Z" fill="#6e5a4a"/></g>
+  <g class="hairR"><path d="M132 84 Q136 92 134 100 L130 99 Q131 92 128 86 Z" fill="#6e5a4a"/></g>
+  <path d="M64 88 Q60 56 100 52 Q140 56 136 88 Z" fill="#f4f4f2" stroke="#c9cbcd" stroke-width="1.2"/>
+  <path d="M64 88 Q61 63 79 56 L83 88 Z" fill="#8c9096"/>
+  <path d="M136 88 Q139 63 121 56 L117 88 Z" fill="#8c9096"/>
+  <path d="M83 88 L79 56 M117 88 L121 56" stroke="#6d7177" stroke-width="1.4"/>
+  <circle cx="100" cy="52.5" r="3" fill="#8c9096"/>
+  <path d="M60 86 Q100 78 140 86 Q142 94 100 93 Q58 94 60 86 Z" fill="#3c4148"/>
+  <path d="M62 86 Q100 79 138 86" stroke="#f4f4f2" stroke-width="2" fill="none"/>
+  <path class="brow browL" d="M77 96 Q85 92 93 95" stroke="#5a4a3e" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path class="brow browR" d="M107 95 Q115 92 123 96" stroke="#5a4a3e" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <g class="eyes"><ellipse cx="86" cy="103" rx="4.2" ry="2.6" fill="#fff"/><ellipse cx="114" cy="103" rx="4.2" ry="2.6" fill="#fff"/>
+   <circle cx="86.5" cy="103" r="2.3" fill="#4a3528"/><circle cx="114.5" cy="103" r="2.3" fill="#4a3528"/>
+   <circle cx="87.3" cy="102.2" r=".8" fill="#fff"/><circle cx="115.3" cy="102.2" r=".8" fill="#fff"/></g>
+  <path d="M80 107 Q86 110 92 107 M108 107 Q114 110 120 107" stroke="#d6a585" stroke-width="1.2" fill="none"/>
+  <path d="M100 106 Q96 117 98 120 Q103 123 108 119" stroke="#c99677" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path class="mo n" d="M86 128 Q100 138 114 128 Q100 132 86 128 Z" fill="#fff" stroke="#8a4a3a" stroke-width="2" stroke-linejoin="round"/>
+  <path class="mo s" d="M85 126 Q100 144 115 126 Q100 130 85 126 Z" fill="#9b3a2c" stroke="#8a4a3a" stroke-width="1.5" stroke-linejoin="round"/>
+  <path class="mo s" d="M88 127.5 Q100 131 112 127.5 L111 130 Q100 133 89 130 Z" fill="#fff"/>
+  <path class="mo f" d="M89 134 Q100 126 111 134" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+  <path class="sweat" d="M140 92 Q145 102 140 106 Q135 102 140 92 Z" fill="#7cc3f0"/>
+  <text class="spark" x="30" y="44" font-size="18" fill="#f0b400">✦</text>
+  <text class="spark" x="160" y="40" font-size="14" fill="#f0b400">✦</text>
+  <text class="spark" x="170" y="96" font-size="11" fill="#f0b400">✦</text>
+ </g></svg>`;
+function makeAvatar(el,bubble){
+  el.innerHTML=PRAJIT_SVG;let tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold)tm=setTimeout(()=>{el.classList.remove('smile','frown');bubble.className='bubble';},3600);}};
+}
+var AV1=makeAvatar($('av1'),$('bub1')),AV2=makeAvatar($('av2'),$('bub2'));
+const QUOTES=[
+ '我曾在 Google Brain 和 Google DeepMind 做研究。',
+ '2017 年我和 Barret Zoph、Quoc V. Le 發表〈Searching for Activation Functions〉：與其靠人想激活函數，不如讓電腦自己找！',
+ '我們讓一個 RNN 控制器組合「一元函數＋二元函數」的積木，再用強化學習（PPO）訓練它；每個候選都放進 ResNet-20，在 CIFAR-10 上試訓練。',
+ '搜尋結果告訴我們：簡單的函數比較好，而且最好的形式常是 b(x, g(x))——ReLU = max(x, 0) 也是這個樣子。',
+ '只要把 ReLU 換成 Swish，Mobile NASNet-A 在 ImageNet 的 top-1 準確率提升 0.9%，Inception-ResNet-v2 提升 0.6%。',
+ 'β = 1 的 Swish 其實和 Elfwing 等人提出的 SiLU 是同一個函數，我們在論文中也有說明。',
+ '2017 年我也研究過 seq2seq 模型的非監督預訓練：先用大量文字預訓練，再拿來初始化編碼器和解碼器。',
+ '2019 年我們發表〈Stand-Alone Self-Attention in Vision Models〉，只用自注意力做影像辨識，為後來的 Vision Transformer 鋪路。'];
+let qi=0;$('av1').onclick=()=>AV1.mood('smile',QUOTES[qi++%QUOTES.length]);
+
+/* ---------- 7 小測驗 ---------- */
+const QZ=[
+ {q:'Swish 激活函數的公式是？',o:['x · σ(βx)','max(0, x)','σ(x)','x · Φ(x)'],a:0,e:'Swish = 輸入 x 乘上 sigmoid 門 σ(βx)。x·Φ(x) 是 GELU。',h:'名字的意思是「x × 自己算出來的門」。'},
+ {q:'Swish 是怎麼被發現的？',o:['用窮舉與強化學習自動搜尋一元／二元函數的組合','從神經科學實驗量測得到','由 ReLU 微分推導出來','隨機猜測後人工挑選'],a:0,e:'RNN 控制器組合積木、子網路試訓練、驗證準確率當獎勵，再用強化學習更新控制器；小空間則直接窮舉。',h:'第 1 節的四步循環。'},
+ {q:'和 ReLU 相比，Swish 在 x = 0 附近的特點是？',o:['平滑、處處可微，導數連續變化','導數從 0 跳到 1','輸出恆為 0','完全不可微'],a:0,e:'ReLU 在 0 有折角；Swish 的導數在 0 為 0.5，左右平滑變化。',h:'第 2 節：拖動滑桿經過 0，橘色線怎麼變？'},
+ {q:'Swish 「非單調」指的是？',o:['負區有小凹陷：x 增加時輸出先下降再上升','輸出永遠遞增','輸出只能是 0 或 1','輸出會無限下降'],a:0,e:'Swish 在 x ≈ −1.28 有最小值約 −0.278，之前是下降段，之後才上升。',h:'第 3 節的紅點。'},
+ {q:'β 非常大時，Swish 會接近哪個函數？',o:['ReLU','x / 2','sigmoid','常數 0'],a:0,e:'β → ∞ 時門 σ(βx) 變成 0/1 的階梯，Swish → ReLU；β = 0 時則是 x/2。',h:'到第 4 節把 β 拉到 10。'},
+ {q:'「自我門控」（self-gating）的意思是？',o:['門 σ(βx) 由輸入本身算出，不需額外權重','需要另一組可學習的權重 V 當門','門由醫師手動設定','完全沒有門'],a:0,e:'Swish 的門來自同一個輸入 x，因此能直接替換 ReLU。需要另一組權重的是 GLU／SwiGLU。',h:'比較 x·σ(x) 和 (xW)⊗σ(xV)。'},
+ {q:'在糖尿病風險小實驗中，Swish 網路最明顯的差異是？',o:['風險分數隨血糖平滑變化，沒有折角','準確率一定高出 20% 以上','訓練完全不需要資料','只能預測 BMI'],a:0,e:'兩者準確率相近；Swish 網路的風險曲線平滑，ReLU 網路則由直線段接成、有折角。',h:'第 5 節下方的風險曲線。'}];
+const PRAISE=['答對了！','Excellent！觀念很清楚。','很好！你抓到重點了。','正確！這就是 Swish 的特點。'];
+let qs={done:0,score:0,streak:0};
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function buildQuiz(){
+  qs={done:0,score:0,streak:0};const box=$('quiz');box.innerHTML='';
+  QZ.forEach((z,k)=>{
+    const d=document.createElement('div');d.className='q';
+    d.innerHTML=`<b>${k+1}. ${z.q}</b><div class="opts"></div><div class="exp"></div>`;
+    const opts=d.querySelector('.opts'),exp=d.querySelector('.exp');let locked=false;
+    shuffle(z.o.map((t,i)=>i)).forEach(i=>{
+      const b=document.createElement('button');b.textContent=z.o[i];b.dataset.i=i;
+      b.onclick=()=>{if(locked)return;locked=true;qs.done++;
+        opts.querySelectorAll('button').forEach(x=>{if(+x.dataset.i===z.a)x.classList.add('right');});
+        if(i===z.a){qs.score++;qs.streak++;exp.className='exp ok';exp.textContent='✔ 正確！'+z.e;
+          AV2.mood('smile',qs.streak>=3?`連對 ${qs.streak} 題！你的門全開了 😄`:PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+        else{qs.streak=0;b.classList.add('wrong');exp.className='exp no';exp.textContent='✘ '+z.e;AV2.mood('frown',z.h);}
+        if(qs.done===QZ.length)finish();};
+      opts.appendChild(b);});
+    box.appendChild(d);});
+  const s=document.createElement('div');s.id='qscore';box.appendChild(s);
+}
+function finish(){
+  const n=QZ.length,s=qs.score;
+  $('qscore').innerHTML=`<div class="score">得分：${s} / ${n}</div><button id="qagain">再做一次</button>`;
+  $('qagain').onclick=()=>{buildQuiz();AV2.mood('','新的一輪！這次試試全對。');};
+  setTimeout(()=>{
+    if(s===n)AV2.mood('smile','全對！Swish 的特點你都掌握了。',true);
+    else if(s>=n-2)AV2.mood('smile','很不錯！回頭看看答錯的那幾題就完美了。',true);
+    else AV2.mood('frown','建議回到第 2～4 節，把平滑、非單調、β 再玩一次。',true);
+  },3300);
+}
+
+/* ---------- 啟動 ---------- */
+makeData(dSeed);NR=makeNet('relu');NS=makeNet('swish');
+function drawAll(){draw0();drawK();drawGal();draw2();draw3();draw4();drawMed();drawTL();}
+drawAll();buildQuiz();
+let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(drawAll,150);});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll);
+</script>
+</body>
+</html>
