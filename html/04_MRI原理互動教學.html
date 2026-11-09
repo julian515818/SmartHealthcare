@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MRI 原理互動教學</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;
+ --acc:#2f6fdf;--org:#e07a1f;--xr:#7a4fe0;--soft:#e8a07a;--bone:#cfc6a8;--metal:#9aa3b5;--glow:#ffcc33;--code:#1b1f2a;--chip:#f1efe8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --acc:#6fa0ff;--org:#ffa24d;--xr:#a98bff;--soft:#f0a983;--bone:#e2d8b4;--metal:#b7bfcf;--glow:#ffd75a;--code:#10131a;--chip:#262b37}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --acc:#6fa0ff;--org:#ffa24d;--xr:#a98bff;--soft:#f0a983;--bone:#e2d8b4;--metal:#b7bfcf;--glow:#ffd75a;--code:#10131a;--chip:#262b37}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:clamp(1.5rem,3.4vw,2.2rem)}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:20px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card h2{margin:0 0 12px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+.num{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--xr);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.formula{background:var(--chip);border-radius:10px;padding:10px 14px;margin:10px 0;font-size:1.08rem;text-align:center;overflow-x:auto}
+.note{background:var(--chip);border-left:4px solid var(--xr);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:.95rem}
+.two{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+.two>*{min-width:0}
+@media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
+canvas{display:block;width:100%;border-radius:12px;background:var(--chip)}
+.ctrl{display:grid;grid-template-columns:auto minmax(0,1fr) 5.2em;gap:6px 10px;align-items:center;margin:8px 0}
+.ctrl label{font-size:.95rem;white-space:nowrap}
+.ctrl output{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--xr)}
+canvas.sq{max-width:300px;height:auto;aspect-ratio:1/1;background:#000}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--xr)}
+button.on{background:var(--xr);color:#fff;border-color:var(--xr)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.stat{background:var(--chip);border-radius:10px;padding:8px 12px}
+.stat b{display:block;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.85rem;color:var(--mute)}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.15;margin:0 2px}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 3px}
+.c-xr{color:var(--xr);font-weight:600}.c-acc{color:var(--acc);font-weight:600}.c-org{color:var(--org);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.9rem;margin:6px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.steps3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.steps3>div{background:var(--chip);border-radius:12px;padding:10px 12px}
+.steps3 b{color:var(--xr)}
+@media (max-width:600px){.steps3{grid-template-columns:minmax(0,1fr)}}
+.bars{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.bar{display:grid;grid-template-columns:8.5em minmax(0,1fr) 6.8em;gap:8px;align-items:center;font-size:.92rem}
+.bar .track{height:14px;background:var(--chip);border-radius:7px;overflow:hidden}
+.bar .fill{height:100%;background:var(--xr);border-radius:7px}
+.bar em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
+/* quiz */
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0}
+.q .qt{font-weight:600;margin-bottom:8px}
+.q .opts{display:grid;gap:6px}
+.q .opts button{text-align:left}
+.q .opts button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--card))}
+.q .opts button.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--card))}
+.q .ex{margin-top:8px;font-size:.95rem}
+.q .ex.ok{color:var(--ok)}.q .ex.no{color:var(--bad)}
+#score{font-size:1.15rem;font-weight:700;margin:10px 0}
+footer{text-align:center;color:var(--mute);font-size:.9rem;margin-top:30px}
+/* avatar */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:bottom center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:bottom center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+</style>
+<style id="pu-badge-style">
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line,#e3e1da);border-radius:12px;background:var(--card,var(--surface,#fff));color:var(--ink,#1d2330);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif}
+.pu-badge img{width:58px;height:58px;display:block}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute,var(--muted,#667085))}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main"><h1>磁振造影（MRI）的原理</h1>
+  <p>智慧醫療 ・ 互動教學：拉莫爾進動、共振、弛豫、T1／T2 對比與梯度空間編碼</p></div>
+  <div class="pu-badge"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+  <h2><span class="num">0</span>一句話直覺：讓身體裡的氫原子「唱歌」，再聽出歌聲從哪裡來</h2>
+  <div class="intro">
+    <div>
+      <p>人體約六成是水，每個水分子有兩個<b>氫原子核（質子）</b>。質子會自轉，像一顆顆小磁鐵。把人放進強磁場 <b>B<sub>0</sub></b>，質子會繞著磁場方向<b>進動（precession）</b>；這時打入頻率剛好的<b>無線電波（RF）</b>，它們就會「共振」被翻倒；關掉 RF 後，它們一邊恢復原狀（<b>弛豫，relaxation</b>）、一邊發出微弱的無線電訊號。最後用<b>梯度磁場</b>讓不同位置唱不同的音高，就能分辨訊號來自哪裡。</p>
+      <div class="steps3">
+        <div><b>① 共振</b><br>頻率 f = γ̄B<sub>0</sub>，對準了才翻得動（第 1、2 節）。</div>
+        <div><b>② 對比</b><br>不同組織恢復速度 T1、T2 不同（第 3、4 節）。</div>
+        <div><b>③ 定位</b><br>梯度讓位置 ↔ 頻率一一對應（第 5 節）。</div>
+      </div>
+      <p class="mute" style="margin:6px 0 0;font-size:.92rem">MRI 用的是磁場與無線電波，<b>沒有游離輻射</b>。早期叫「核磁共振造影」，指的是原子<b>核</b>，和放射性無關；後來為了避免誤會，臨床多稱「磁振造影」。</p>
+    </div>
+    <div class="avwrap"><div class="bubble" id="bub1">Hi！我是保羅・勞特伯（Paul Lauterbur）。是我想到用梯度磁場讓 NMR 變成影像的。點我聽故事！</div><div class="av" id="av1" title="點我聽故事"></div></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+  <h2><span class="num">1</span>拉莫爾進動：磁場越強，轉得越快</h2>
+  <p>質子在磁場中像傾斜的陀螺，繞著 B<sub>0</sub> 打轉。轉速由<b>拉莫爾方程（Larmor equation）</b>決定：</p>
+  <div class="formula">ω<sub>0</sub> = γ B<sub>0</sub>　⟺　<i>f</i><sub>0</sub> = γ̄ B<sub>0</sub>，　γ̄ = <span class="frac"><span>γ</span><span>2π</span></span> = 42.58 MHz/T（氫）</div>
+  <div class="two">
+    <div><canvas id="precCv" height="280" aria-label="質子進動動畫"></canvas></div>
+    <div>
+      <div class="ctrl"><label for="b0">磁場 B₀</label><input type="range" id="b0" min="0.2" max="7" step="0.1" value="1.5"><output id="b0O"></output></div>
+      <div class="btns"><button data-b="0.00005">地磁 50 μT</button><button data-b="1.5">臨床 1.5 T</button><button data-b="3">臨床 3 T</button><button data-b="7">研究 7 T</button></div>
+      <div class="formula" id="fSub"></div>
+      <div class="stats">
+        <div class="stat"><span>共振頻率 f₀</span><b id="f0O">—</b></div>
+        <div class="stat"><span>每百萬個質子多出幾個順向</span><b id="exO">—</b></div>
+      </div>
+      <div class="formula" id="exSub" style="font-size:.95rem"></div>
+    </div>
+  </div>
+  <p class="note">1.5 T 大約是地磁的 3 萬倍，共振頻率 64 MHz，正好落在 FM 廣播附近的無線電波段——所以 MRI 室要用銅網把外面的電台訊號擋掉。另外，順著磁場和逆著磁場的質子數量幾乎一樣多，在體溫下每一百萬個只多出幾個；MRI 訊號就來自這一點點差額，所以磁場越強、訊號越好。</p>
+  <p class="mute" style="font-size:.88rem">多出比例 ≈ γħB<sub>0</sub>/(2kT)，取 T = 310 K（體溫）；γ = 2.675×10⁸ rad/(s·T)，ħ = 1.055×10⁻³⁴ J·s，k = 1.381×10⁻²³ J/K。</p>
+</section>
+
+<!-- 2 -->
+<section class="card">
+  <h2><span class="num">2</span>共振：RF 脈衝把磁化向量「翻倒」</h2>
+  <p>所有質子加起來形成一個淨磁化向量 <b>M</b>，平常沿著 z 軸（B<sub>0</sub> 方向）。跟著質子一起轉的<b>旋轉座標</b>裡看，打一個頻率 = f<sub>0</sub> 的 RF 脈衝，M 會繞著 x′ 軸倒下來，倒下的角度叫<b>翻轉角（flip angle）</b>：</p>
+  <div class="formula">α = γ B<sub>1</sub> τ　　<span class="mute">（B<sub>1</sub>：RF 磁場強度，τ：脈衝時間；本頁設定每 1 ms 翻 90°）</span></div>
+  <div class="two">
+    <div><canvas id="rfCv" height="300" aria-label="旋轉座標中的磁化向量"></canvas></div>
+    <div>
+      <div class="ctrl"><label for="tau">脈衝時間 τ</label><input type="range" id="tau" min="0" max="4" step="0.05" value="1"><output id="tauO"></output></div>
+      <div class="ctrl"><label for="dfr">RF 頻率偏差</label><input type="range" id="dfr" min="-1500" max="1500" step="10" value="0"><output id="dfrO"></output></div>
+      <div class="btns"><button id="rfGo">⚡ 發射 RF 脈衝</button><button data-t="1">90° 脈衝</button><button data-t="2">180° 脈衝</button></div>
+      <div class="formula" id="rfSub"></div>
+      <canvas id="resCv" height="150" aria-label="共振曲線"></canvas>
+    </div>
+  </div>
+  <p class="note">把「RF 頻率偏差」拉離 0：M 不再乖乖倒下，而是繞著一個傾斜的軸轉圈、倒不下去——這就是「<b>共振</b>」：頻率要對上才推得動，就像盪鞦韆要配合節奏。90° 脈衝讓訊號最大（M 全部倒到橫向平面）；180° 脈衝把 M 整個倒過來。</p>
+  <p class="mute" style="font-size:.88rem">在旋轉座標中解 Bloch 方程（忽略弛豫）：M 繞有效場 (γB<sub>1</sub>, 0, 2πΔf) 旋轉。</p>
+</section>
+
+<!-- 3 -->
+<section class="card">
+  <h2><span class="num">3</span>弛豫：T1 恢復、T2 衰減</h2>
+  <p>90° 脈衝之後，M 會自己慢慢回去，分成兩件同時發生、但快慢不同的事：</p>
+  <div class="formula"><i>M<sub>z</sub></i>(<i>t</i>) = <i>M</i><sub>0</sub>(1 − e<sup>−<i>t</i>/T1</sup>)　<span class="mute">縱向恢復</span>　　　<i>M<sub>xy</sub></i>(<i>t</i>) = <i>M</i><sub>0</sub> e<sup>−<i>t</i>/T2</sup>　<span class="mute">橫向衰減</span></div>
+  <div class="btns" id="tisBtns"></div>
+  <div class="two">
+    <div><canvas id="relCv" height="300" aria-label="自旋去相位動畫"></canvas></div>
+    <div>
+      <div class="btns"><button id="relGo">▶ 90° 脈衝後播放</button></div>
+      <canvas id="fidCv" height="140" aria-label="自由感應衰減訊號"></canvas>
+      <canvas id="mzCv" height="150" aria-label="T1 與 T2 曲線"></canvas>
+      <div class="stats">
+        <div class="stat"><span>經過時間 t</span><b id="tO">0 ms</b></div>
+        <div class="stat"><span>M<sub>z</sub> ／ M<sub>xy</sub></span><b id="mO">—</b></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>T2</b>（自旋–自旋弛豫）：每個質子感受到的局部磁場略有不同，轉速快慢不一，原本整齊的「舞群」慢慢散開（<b>去相位，dephasing</b>），加總起來的橫向訊號就消失了。<b>T1</b>（自旋–晶格弛豫）：質子把能量交還給周圍環境，慢慢站回 z 軸。T2 一定比 T1 短。接收線圈量到的是橫向分量不斷旋轉所感應出的電壓，叫做<b>自由感應衰減（FID）</b>。</p>
+  <p class="mute" style="font-size:.88rem">T1、T2 為 1.5 T 下常見的近似值（依文獻與量測方法而異）。動畫中的轉速已大幅放慢。</p>
+</section>
+
+<!-- 4 -->
+<section class="card">
+  <h2><span class="num">4</span>對比從哪來？TR、TE 與加權影像</h2>
+  <p>實際掃描會重複送出脈衝。<b>TR</b>（重複時間）決定 M<sub>z</sub> 有多少時間恢復；<b>TE</b>（回波時間）決定等多久才收訊號。自旋迴訊（spin echo）的訊號近似為：</p>
+  <div class="formula"><i>S</i> ∝ PD · (1 − e<sup>−TR/T1</sup>) · e<sup>−TE/T2</sup>　　<span class="mute">（PD：質子密度）</span></div>
+  <div class="two">
+    <div style="display:flex;flex-direction:column;align-items:center"><canvas id="brCv" width="300" height="300" class="sq" style="cursor:crosshair" aria-label="模擬腦部 MRI"></canvas>
+      <div class="mute" id="brPick" style="font-size:.9rem;text-align:center;min-height:2.6em">點影像上任一組織看它的訊號計算</div></div>
+    <div>
+      <div class="btns" id="wBtns"></div>
+      <div class="ctrl"><label for="tr">TR</label><input type="range" id="tr" min="100" max="5000" step="50" value="500"><output id="trO"></output></div>
+      <div class="ctrl"><label for="te">TE</label><input type="range" id="te" min="5" max="200" step="1" value="15"><output id="teO"></output></div>
+      <div class="formula" id="wType" style="font-weight:600"></div>
+      <div class="bars" id="sBars"></div>
+    </div>
+  </div>
+  <p class="note"><b>T1 加權</b>（短 TR、短 TE）：T1 短的恢復得快 → 亮，所以<b>脂肪亮、腦脊髓液（水）暗</b>，白質比灰質亮，適合看解剖。<b>T2 加權</b>（長 TR、長 TE）：T2 長的還沒衰減完 → 亮，所以<b>水亮</b>；水腫、發炎、許多腫瘤含水多，在 T2 上特別亮，適合找病灶。<b>質子密度加權</b>（長 TR、短 TE）：把 T1、T2 的影響都壓低，主要反映「有多少氫」。頭骨幾乎沒有可偵測的氫訊號，所以是黑的。</p>
+</section>
+
+<!-- 5 -->
+<section class="card">
+  <h2><span class="num">5</span>勞特伯的關鍵點子：用梯度磁場把「位置」變成「頻率」</h2>
+  <p>如果磁場到處一樣，所有質子唱同一個音，只聽得出「有多少水」，不知道在哪裡。勞特伯在磁場上再疊一個隨位置線性變化的<b>梯度 G</b>：</p>
+  <div class="formula"><i>f</i>(<i>x</i>) = γ̄ (B<sub>0</sub> + G<sub>x</sub> · <i>x</i>)　⟹　Δ<i>f</i> = γ̄ G<sub>x</sub> <i>x</i>　　<span class="mute">頻譜的形狀 = 物體在這個方向的投影</span></div>
+  <div class="two">
+    <div style="display:flex;justify-content:center"><canvas id="gCv" width="300" height="300" class="sq" aria-label="兩支水管與梯度場"></canvas></div>
+    <div>
+      <div class="ctrl"><label for="gG">梯度 G</label><input type="range" id="gG" min="0" max="20" step="0.5" value="10"><output id="gGO"></output></div>
+      <div class="ctrl"><label for="gA">梯度方向</label><input type="range" id="gA" min="0" max="179" step="1" value="0"><output id="gAO"></output></div>
+      <canvas id="specCv" height="170" aria-label="訊號頻譜"></canvas>
+      <div class="formula" id="gSub" style="font-size:.95rem"></div>
+    </div>
+  </div>
+  <p style="margin:14px 0 6px"><b>旋轉梯度方向、收集多個投影，再像 CT 一樣反投影重建：</b></p>
+  <div class="two">
+    <div style="display:flex;justify-content:center"><canvas id="rcCv" width="300" height="300" class="sq" aria-label="由頻譜投影重建的影像"></canvas></div>
+    <div>
+      <div class="btns" id="pBtns"></div>
+      <div class="btns"><button id="pFilt" class="on">斜坡濾波：開</button></div>
+      <p class="note" style="margin-top:12px">勞特伯 1973 年的論文正是這樣做：用梯度從幾個方向取得投影，再重建出兩管水的影像。他稱之為由「誘發的局部交互作用」形成影像。只用少數幾個方向時，影像粗糙模糊——《自然》期刊起初就因為影像太模糊而退稿。</p>
+    </div>
+  </div>
+  <p class="note">現代 MRI 用三個方向的梯度（選層、相位編碼、頻率編碼），把訊號填進 <b>k 空間（k-space）</b>，再做<b>二維傅立葉轉換</b>就得到影像——這是英國的曼斯菲爾德（Peter Mansfield）等人發展的快速方法。兩人共同獲得 2003 年諾貝爾生理醫學獎。梯度線圈快速切換時的震動，就是 MRI 裡「咚咚咚」巨響的來源。</p>
+  <p class="mute" style="font-size:.88rem">模擬：視野 40 mm、64×64 格，γ̄ = 42.58 MHz/T；10 mT/m 的梯度相當於每毫米差 425.8 Hz。</p>
+</section>
+
+<!-- 6 -->
+<section class="card">
+  <h2><span class="num">6</span>觀念小測驗</h2>
+  <div class="qgrid">
+    <div><div id="quiz"></div><div id="score"></div><button id="again" style="display:none">↻ 再做一次</button></div>
+    <div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+  </div>
+</section>
+
+<footer>磁振造影互動教學 ・ 單一 HTML 檔，可離線開啟</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+function fitCanvas(c){const r=window.devicePixelRatio||1;c.style.width='0px';const pe=c.parentElement,ps=getComputedStyle(pe);const w=Math.floor(pe.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight));c.style.width=w+'px';
+  if(!c.dataset.h)c.dataset.h=c.getAttribute('height');const h=+c.dataset.h;c.width=Math.round(w*r);c.height=Math.round(h*r);c.style.height=h+'px';
+  const g=c.getContext('2d');g.setTransform(r,0,0,r,0,0);return {g,w,h};}
+function getG(c){if(!c._g){const o=fitCanvas(c);c._g=o.g;c._w=o.w;c._h=o.h;}return [c._g,c._w,c._h];}
+const GB=42.58; // MHz/T
+function arrow(g,x0,y0,x1,y1,col,wd){g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wd||2.5;g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.stroke();
+  const a=Math.atan2(y1-y0,x1-x0),s=8+(wd||2.5);g.beginPath();g.moveTo(x1,y1);g.lineTo(x1-s*Math.cos(a-.4),y1-s*Math.sin(a-.4));g.lineTo(x1-s*Math.cos(a+.4),y1-s*Math.sin(a+.4));g.fill();}
+// simple 3D projection: x' toward viewer-left, y' right, z up
+function P3(cx,cy,R,x,y,z){return [cx+R*(y*0.95-x*0.55),cy-R*(z*0.95-x*0.32-y*0.0)];}
+function axes3(g,cx,cy,R,lab){g.font='12px sans-serif';g.textAlign='center';
+  [[1,0,0,lab[0]],[0,1,0,lab[1]],[0,0,1,lab[2]]].forEach(([x,y,z,t])=>{const [a,b]=P3(cx,cy,R,0,0,0),[c,d]=P3(cx,cy,R*1.15,x,y,z);g.strokeStyle=cv('mute');g.lineWidth=1;g.setLineDash([4,3]);g.beginPath();g.moveTo(a,b);g.lineTo(c,d);g.stroke();g.setLineDash([]);g.fillStyle=cv('mute');g.fillText(t,c+(x?-10:y?12:0),d+(z?-6:4));});}
+function ellipseXY(g,cx,cy,R,z,col){g.strokeStyle=col;g.lineWidth=1;g.beginPath();for(let i=0;i<=60;i++){const a=i/60*2*Math.PI,r=Math.sqrt(Math.max(0,1-z*z));const [x,y]=P3(cx,cy,R,r*Math.cos(a),r*Math.sin(a),z);i?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();}
+
+/* ===== 1: precession ===== */
+let phi1=0,last1=0;
+function upd1(){const B=+$('b0').value;const f=GB*B;$('b0O').textContent=B<0.01?(B*1e6).toFixed(0)+' μT':B.toFixed(1)+' T';
+  $('f0O').textContent=f<0.01?(f*1e6).toFixed(0)+' Hz':f.toFixed(1)+' MHz';
+  $('fSub').innerHTML='f₀ = 42.58 MHz/T × '+(B<0.01?B.toExponential(1):B.toFixed(1))+' T = <b>'+$('f0O').textContent+'</b>';
+  const ex=2.675e8*1.0546e-34*B/(2*1.381e-23*310);$('exO').textContent=ex*1e6<0.01?(ex*1e6).toExponential(1):(ex*1e6).toFixed(2);
+  $('exSub').innerHTML='<span class="frac"><span>ΔN</span><span>N</span></span> ≈ <span class="frac"><span>γħB₀</span><span>2kT</span></span> = '+ex.toExponential(2)+' ≈ 百萬分之 '+$('exO').textContent;}
+function precFrame(ts){const [g,w,h]=getG($('precCv'));const dt=Math.min(50,ts-(last1||ts));last1=ts;const B=+$('b0').value;
+  phi1+=dt*0.0012*Math.max(0.15,B);g.clearRect(0,0,w,h);const cx=w*0.42,cy=h*0.62,R=Math.min(w*0.32,h*0.45);
+  // B0 arrow
+  arrow(g,w*0.86,h*0.9,w*0.86,h*0.12,cv('acc'),3+B*0.6);g.fillStyle=cv('acc');g.font='bold 14px sans-serif';g.textAlign='center';g.fillText('B₀',w*0.86,h*0.08);
+  // cone
+  const tilt=0.5;ellipseXY(g,cx,cy,R,Math.cos(tilt),cv('line'));
+  const [ox,oy]=P3(cx,cy,R,0,0,0);
+  // proton sphere
+  g.fillStyle=cv('org');g.globalAlpha=.25;g.beginPath();g.arc(ox,oy,16,0,7);g.fill();g.globalAlpha=1;
+  const [tx,ty]=P3(cx,cy,R,Math.sin(tilt)*Math.cos(phi1),Math.sin(tilt)*Math.sin(phi1),Math.cos(tilt));
+  // trail
+  g.strokeStyle=cv('xr');g.globalAlpha=.5;g.lineWidth=2;g.beginPath();for(let k=0;k<40;k++){const a=phi1-k*0.06;const [x,y]=P3(cx,cy,R,Math.sin(tilt)*Math.cos(a),Math.sin(tilt)*Math.sin(a),Math.cos(tilt));k?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();g.globalAlpha=1;
+  arrow(g,ox,oy,tx,ty,cv('xr'),4);g.fillStyle=cv('ink');g.font='12px sans-serif';g.textAlign='left';g.fillText('質子的磁矩 μ',8,18);
+  g.fillStyle=cv('mute');g.fillText('（轉速已放慢約 10⁸ 倍）',8,h-8);
+  requestAnimationFrame(precFrame);}
+$('b0').oninput=upd1;document.querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>{$('b0').value=Math.max(0.2,+b.dataset.b);upd1();if(+b.dataset.b<0.2){const f=GB*+b.dataset.b;$('b0O').textContent='50 μT';$('f0O').textContent=(f*1e6).toFixed(0)+' Hz';$('fSub').innerHTML='f₀ = 42.58 MHz/T × 5×10⁻⁵ T ≈ <b>2129 Hz</b>（地磁下的 NMR 頻率是可聽見的音高！）';const ex=2.675e8*1.0546e-34*5e-5/(2*1.381e-23*310);$('exO').textContent=(ex*1e6).toExponential(1);$('exSub').innerHTML='ΔN/N ≈ '+ex.toExponential(2);}});
+
+/* ===== 2: RF rotating frame ===== */
+const W1=Math.PI/2/1e-3; // rad/s for 90° per ms
+function rotMat(n,ang){const [x,y,z]=n,c=Math.cos(ang),s=Math.sin(ang),C=1-c;return [[c+x*x*C,x*y*C-z*s,x*z*C+y*s],[y*x*C+z*s,c+y*y*C,y*z*C-x*s],[z*x*C-y*s,z*y*C+x*s,c+z*z*C]];}
+function applyRF(tau_ms,df){const dw=2*Math.PI*df;const Om=Math.hypot(W1,dw);if(Om===0)return [0,0,1];const n=[W1/Om,0,dw/Om];
+  // rotation about x' (B1 along x') rotates M from z toward -y'? choose toward +y' for display
+  const R=rotMat(n,-Om*tau_ms*1e-3);return [R[0][2],R[1][2],R[2][2]];}
+let rfAnim=null,rfT=null;
+function upd2(tShow){const tau=+$('tau').value,df=+$('dfr').value;$('tauO').textContent=tau.toFixed(2)+' ms';$('dfrO').textContent=df+' Hz';
+  const t=tShow===undefined?tau:tShow;const [g,w,h]=getG($('rfCv'));g.clearRect(0,0,w,h);const cx=w*0.48,cy=h*0.56,R=Math.min(w*0.34,h*0.4);
+  axes3(g,cx,cy,R,['x′','y′','z（B₀）']);ellipseXY(g,cx,cy,R,0,cv('line'));
+  // trajectory
+  g.strokeStyle=cv('org');g.lineWidth=1.5;g.beginPath();for(let k=0;k<=80;k++){const m=applyRF(t*k/80,df);const [x,y]=P3(cx,cy,R,...m);k?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();
+  const m=applyRF(t,df);const [ox,oy]=P3(cx,cy,R,0,0,0),[mx,my]=P3(cx,cy,R,...m);
+  // B1 arrow along x'
+  const [bx,by]=P3(cx,cy,R*0.6,1,0,0);arrow(g,ox,oy,bx,by,cv('acc'),2);g.fillStyle=cv('acc');g.font='12px sans-serif';g.fillText('B₁',bx-12,by+14);
+  // projection onto xy
+  const [px,py]=P3(cx,cy,R,m[0],m[1],0);g.strokeStyle=cv('mute');g.setLineDash([3,3]);g.beginPath();g.moveTo(mx,my);g.lineTo(px,py);g.stroke();g.setLineDash([]);
+  arrow(g,ox,oy,mx,my,cv('xr'),4);g.fillStyle=cv('xr');g.font='bold 14px sans-serif';g.fillText('M',mx+12,my-6);
+  const alpha=Math.acos(Math.max(-1,Math.min(1,m[2])))*180/Math.PI,mxy=Math.hypot(m[0],m[1]);
+  $('rfSub').innerHTML='理想翻轉角 α = 90°/ms × '+tau.toFixed(2)+' ms = '+(90*tau).toFixed(0)+'°<br>實際：M<sub>z</sub> = '+m[2].toFixed(2)+'，M<sub>xy</sub> = <b>'+mxy.toFixed(2)+'</b>（倒下 '+alpha.toFixed(0)+'°）';
+  drawRes(tau,df);}
+function drawRes(tau,df){const [g,w,h]=(()=>{const o=fitCanvas($('resCv'));return [o.g,o.w,o.h];})();const L=34,R=w-8,T=10,B=h-26;const X=f=>L+(f+1500)/3000*(R-L),Y=v=>B-v*(B-T);
+  g.strokeStyle=cv('line');g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='center';for(let f=-1500;f<=1500;f+=500){g.beginPath();g.moveTo(X(f),T);g.lineTo(X(f),B);g.stroke();g.textAlign=f===1500?'right':f===-1500?'left':'center';g.fillText(f,f===1500?R:f===-1500?L-6:X(f),B+13);}g.textAlign='center';
+  g.fillText('RF 頻率偏差（Hz）→ 脈衝後的 M_xy',(L+R)/2,h-2);g.textAlign='right';g.fillText('1',L-4,T+6);g.fillText('0',L-4,B);
+  g.strokeStyle=cv('xr');g.lineWidth=2;g.beginPath();for(let i=0;i<=240;i++){const f=-1500+i/240*3000;const m=applyRF(tau,f);const y=Y(Math.hypot(m[0],m[1]));i?g.lineTo(X(f),y):g.moveTo(X(f),y);}g.stroke();
+  const m=applyRF(tau,df);g.fillStyle=cv('org');g.beginPath();g.arc(X(df),Y(Math.hypot(m[0],m[1])),5,0,7);g.fill();}
+['tau','dfr'].forEach(id=>$(id).addEventListener('input',()=>upd2()));
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{$('tau').value=b.dataset.t;$('dfr').value=0;upd2();});
+$('rfGo').onclick=()=>{if(rfT)return;const tau=+$('tau').value;let k=0;rfT=setInterval(()=>{k++;upd2(tau*k/40);if(k>=40){clearInterval(rfT);rfT=null;}},30);};
+
+/* ===== tissues ===== */
+const TIS={fat:{n:'脂肪',pd:.9,t1:260,t2:80,col:'#e6b422'},wm:{n:'白質',pd:.7,t1:650,t2:80,col:'#9aa3b5'},gm:{n:'灰質',pd:.8,t1:1000,t2:100,col:'#6f7a8f'},csf:{n:'腦脊髓液',pd:1,t1:4000,t2:2000,col:'#2f6fdf'},les:{n:'水腫病灶',pd:.9,t1:1200,t2:200,col:'#d6334f'}};
+
+/* ===== 3: relaxation ===== */
+let TK='wm',relT=0,relOn=false,relLast=0;const SPINS=[...Array(14)].map((_,i)=>(i-6.5)/6.5);
+Object.entries(TIS).forEach(([k,t])=>{const b=document.createElement('button');b.textContent=t.n+'（T1 '+t.t1+'／T2 '+t.t2+' ms）';b.dataset.k=k;if(k===TK)b.classList.add('on');b.onclick=()=>{TK=k;document.querySelectorAll('#tisBtns button').forEach(x=>x.classList.toggle('on',x===b));relT=0;relOn=true;drawCurves();};$('tisBtns').appendChild(b);});
+function relFrame(ts){const dt=Math.min(50,ts-(relLast||ts));relLast=ts;const t=TIS[TK];if(relOn){relT+=dt*(relT<600?0.35:2.2);if(relT>Math.max(3000,t.t1*3)){relOn=false;}}
+  const [g,w,h]=getG($('relCv'));g.clearRect(0,0,w,h);const cx=w*0.48,cy=h*0.6,R=Math.min(w*0.34,h*0.42);axes3(g,cx,cy,R,['x','y','z（B₀）']);ellipseXY(g,cx,cy,R,0,cv('line'));
+  const mxy=Math.exp(-relT/t.t2),mz=1-Math.exp(-relT/t.t1);const base=relT*0.012; // slowed precession phase
+  const spread=Math.min(Math.PI*1.2,relT/t.t2*1.6);const [ox,oy]=P3(cx,cy,R,0,0,0);
+  SPINS.forEach(s=>{const a=base+s*spread;const [x,y]=P3(cx,cy,R*0.9,Math.cos(a),Math.sin(a),0);g.strokeStyle=cv('acc');g.globalAlpha=.45;g.lineWidth=1.5;g.beginPath();g.moveTo(ox,oy);g.lineTo(x,y);g.stroke();g.globalAlpha=1;});
+  const [mx,my]=P3(cx,cy,R,mxy*Math.cos(base),mxy*Math.sin(base),mz);arrow(g,ox,oy,mx,my,cv('xr'),4);
+  g.fillStyle=cv('ink');g.font='12px sans-serif';g.textAlign='left';g.fillText('紫：淨磁化 M　藍：各個自旋（散開 = 去相位）',8,16);
+  $('tO').textContent=Math.round(relT)+' ms';$('mO').textContent=mz.toFixed(2)+' ／ '+mxy.toFixed(2);
+  drawFID();drawCurves();requestAnimationFrame(relFrame);}
+function drawFID(){const [g,w,h]=getG($('fidCv'));g.clearRect(0,0,w,h);const t=TIS[TK];const L=10,R=w-8,mid=h/2-6,A=h*0.38,tmax=300;
+  g.strokeStyle=cv('line');g.beginPath();g.moveTo(L,mid);g.lineTo(R,mid);g.stroke();
+  g.strokeStyle=cv('xr');g.lineWidth=1.4;g.beginPath();const tl=Math.min(relT,tmax);
+  for(let px=L;px<=L+(R-L)*tl/tmax;px++){const tt=(px-L)/(R-L)*tmax;const v=Math.exp(-tt/Math.min(t.t2,60))*Math.cos(tt*0.6);px===L?g.moveTo(px,mid-A*v):g.lineTo(px,mid-A*v);}g.stroke();
+  g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='center';g.fillText('線圈收到的 FID（0–300 ms，實際衰減受磁場不均勻影響更快：T2*）',w/2,h-3);}
+function drawCurves(){const [g,w,h]=getG($('mzCv'));g.clearRect(0,0,w,h);const L=30,R=w-8,T=10,B=h-26,tmax=5000;const X=t=>L+t/tmax*(R-L),Y=v=>B-v*(B-T);
+  g.strokeStyle=cv('line');g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='center';for(let t=0;t<=5000;t+=1000){g.beginPath();g.moveTo(X(t),T);g.lineTo(X(t),B);g.stroke();g.textAlign=t===5000?'right':'center';g.fillText(t,t===5000?R:X(t),B+13);}g.textAlign='center';
+  g.fillText('時間（ms）　實線 M_z（T1 恢復）、虛線 M_xy（T2 衰減）',(L+R)/2,h-2);
+  Object.entries(TIS).forEach(([k,t])=>{const on=k===TK;g.strokeStyle=t.col;g.globalAlpha=on?1:.25;g.lineWidth=on?2.4:1.2;
+    g.beginPath();for(let i=0;i<=200;i++){const tt=i/200*tmax;const y=Y(1-Math.exp(-tt/t.t1));i?g.lineTo(X(tt),y):g.moveTo(X(tt),y);}g.stroke();
+    g.setLineDash([4,3]);g.beginPath();for(let i=0;i<=400;i++){const tt=i/400*tmax;const y=Y(Math.exp(-tt/t.t2));i?g.lineTo(X(tt),y):g.moveTo(X(tt),y);}g.stroke();g.setLineDash([]);g.globalAlpha=1;});
+  const xc=X(Math.min(relT,tmax));g.strokeStyle=cv('org');g.lineWidth=1.5;g.beginPath();g.moveTo(xc,T);g.lineTo(xc,B);g.stroke();}
+$('relGo').onclick=()=>{relT=0;relOn=true;};
+
+/* ===== 4: TR/TE brain phantom ===== */
+const N=128,C0=(N-1)/2;
+const BRAIN=[[0,0,.74,.94,0,'fat'],[0,0,.68,.88,0,'bone'],[0,-.01,.65,.85,0,'csf'],[0,-.01,.62,.82,0,'gm'],[0,-.01,.52,.72,0,'wm'],
+ [.15,.08,.07,.24,-14,'csf'],[-.15,.08,.07,.24,14,'csf'],[.18,-.32,.06,.1,0,'csf'],[-.18,-.32,.06,.1,0,'csf'],
+ [-.3,.38,.13,.11,20,'les'],[0,-.68,.12,.06,0,'csf']];
+const LAB=new Array(N*N).fill('air');
+for(let r=0;r<N;r++)for(let c=0;c<N;c++){const u=(c-C0)/(N/2),v=(C0-r)/(N/2);for(const [cx,cy,a,b,ang,k] of BRAIN){const t=ang*Math.PI/180,x=u-cx,y=v-cy;const xr=x*Math.cos(t)+y*Math.sin(t),yr=-x*Math.sin(t)+y*Math.cos(t);if((xr/a)**2+(yr/b)**2<=1)LAB[r*N+c]=k;}}
+const NZ=(s=>()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;})(5);const NOISE=Float32Array.from({length:N*N},()=>{const u=NZ()||1e-9,v=NZ();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);});
+const sig=(t,TR,TE)=>t.pd*(1-Math.exp(-TR/t.t1))*Math.exp(-TE/t.t2);
+const WTS=[['T1 加權',500,15],['T2 加權',4000,100],['質子密度加權',3000,15]];
+WTS.forEach(([n,tr,te],i)=>{const b=document.createElement('button');b.textContent=n+'（TR '+tr+'／TE '+te+'）';if(!i)b.classList.add('on');b.onclick=()=>{$('tr').value=tr;$('te').value=te;document.querySelectorAll('#wBtns button').forEach(x=>x.classList.toggle('on',x===b));upd4();};$('wBtns').appendChild(b);});
+let pickK=null;
+function upd4(){const TR=+$('tr').value,TE=+$('te').value;$('trO').textContent=TR+' ms';$('teO').textContent=TE+' ms';
+  const S={};let mx=0;for(const k in TIS){S[k]=sig(TIS[k],TR,TE);mx=Math.max(mx,S[k]);}
+  const c=$('brCv'),g=c.getContext('2d');const tmp=document.createElement('canvas');tmp.width=N;tmp.height=N;const tg=tmp.getContext('2d');const img=tg.createImageData(N,N);
+  for(let i=0;i<N*N;i++){const k=LAB[i];const s=(k in S?S[k]/mx:0);const v=Math.max(0,Math.min(1,s+NOISE[i]*0.025));const p=Math.round(Math.sqrt(v*v)*255);img.data[i*4]=img.data[i*4+1]=img.data[i*4+2]=p;img.data[i*4+3]=255;}
+  tg.putImageData(img,0,0);g.imageSmoothingEnabled=true;g.drawImage(tmp,0,0,c.width,c.height);
+  let ty;if(TR<=900&&TE<=30)ty='→ 這是 <span class="c-org">T1 加權</span>影像：脂肪亮、水暗';else if(TR>=2000&&TE>=70)ty='→ 這是 <span class="c-acc">T2 加權</span>影像：水亮、病灶亮';else if(TR>=2000&&TE<=30)ty='→ 這是 <span class="c-xr">質子密度加權</span>影像';else ty='→ 混合加權（對比不典型）';$('wType').innerHTML=ty;
+  $('sBars').innerHTML=Object.entries(TIS).map(([k,t])=>'<div class="bar"><span>'+t.n+'</span><div class="track"><div class="fill" style="width:'+(S[k]/mx*100).toFixed(1)+'%;background:'+t.col+'"></div></div><em>'+(S[k]/mx).toFixed(2)+'</em></div>').join('');
+  if(pickK)showPick(pickK);}
+function showPick(k){const TR=+$('tr').value,TE=+$('te').value;if(!(k in TIS)){$('brPick').innerHTML=k==='bone'?'頭骨：幾乎沒有可偵測的 MRI 訊號（黑）':'空氣：沒有質子，沒有訊號';return;}const t=TIS[k];
+  $('brPick').innerHTML='<b>'+t.n+'</b>：S = '+t.pd+' × (1 − e<sup>−'+TR+'/'+t.t1+'</sup>) × e<sup>−'+TE+'/'+t.t2+'</sup> = <b>'+sig(t,TR,TE).toFixed(3)+'</b>';}
+['tr','te'].forEach(id=>$(id).addEventListener('input',()=>{document.querySelectorAll('#wBtns button').forEach(x=>x.classList.remove('on'));upd4();}));
+$('brCv').addEventListener('click',e=>{const r=e.target.getBoundingClientRect();const col=Math.floor((e.clientX-r.left)/r.width*N),row=Math.floor((e.clientY-r.top)/r.height*N);pickK=LAB[row*N+col];showPick(pickK);});
+
+/* ===== 5: gradient encoding ===== */
+const M=64,MC=(M-1)/2,FOVmm=40,DXmm=FOVmm/M;
+const TUBES=[[-.38,.05,.22],[.34,-.15,.14]];
+const RHO=new Float32Array(M*M);for(let r=0;r<M;r++)for(let c=0;c<M;c++){const u=(c-MC)/(M/2),v=(MC-r)/(M/2);for(const [x,y,rad] of TUBES)if(Math.hypot(u-x,v-y)<=rad)RHO[r*M+c]=1;}
+function samp(x,y){const fc=x+MC,fr=MC-y,c0=Math.floor(fc),r0=Math.floor(fr);if(c0<0||r0<0||c0>=M-1||r0>=M-1)return 0;const a=fc-c0,b=fr-r0;return RHO[r0*M+c0]*(1-a)*(1-b)+RHO[r0*M+c0+1]*a*(1-b)+RHO[(r0+1)*M+c0]*(1-a)*b+RHO[(r0+1)*M+c0+1]*a*b;}
+function proj(th){const ct=Math.cos(th),st=Math.sin(th),p=new Float32Array(M);for(let j=0;j<M;j++){const s=j-MC;let sum=0;for(let t=-M*0.72;t<=M*0.72;t+=0.5)sum+=samp(s*ct-t*st,s*st+t*ct);p[j]=sum*0.5;}return p;}
+const NP=180,PROJ=[...Array(NP)].map((_,k)=>proj(k*Math.PI/NP));
+const HR=new Float32Array(2*M-1);for(let n=-(M-1);n<=M-1;n++)HR[n+M-1]=n===0?0.25:(n%2?-1/(Math.PI*Math.PI*n*n):0);
+const PF=PROJ.map(p=>{const q=new Float32Array(M);for(let j=0;j<M;j++){let s=0;for(let m=0;m<M;m++)s+=p[m]*HR[j-m+M-1];q[j]=s;}return q;});
+let gPhase=0,gLast=0;
+function gFrame(ts){const dt=Math.min(50,ts-(gLast||ts));gLast=ts;gPhase+=dt*0.001;
+  const c=$('gCv'),g=c.getContext('2d'),W=c.width;const G=+$('gG').value,th=+$('gA').value*Math.PI/180,ct=Math.cos(th),st=Math.sin(th);
+  // background field shading
+  const img=g.createImageData(W,W);for(let y=0;y<W;y++)for(let x=0;x<W;x++){const u=(x-W/2)/(W/2),v=(W/2-y)/(W/2);const s=u*ct+v*st;const sh=G/20*s;const i=(y*W+x)*4;
+    const rr=Math.floor(MC+(-v)*(M/2)),cc=Math.floor(MC+u*(M/2));const wat=rr>=0&&cc>=0&&rr<M&&cc<M?RHO[rr*M+cc]:0;
+    img.data[i]=30+(sh>0?sh*90:0)+wat*120;img.data[i+1]=30+wat*150;img.data[i+2]=30+(sh<0?-sh*110:0)+wat*200;img.data[i+3]=255;}
+  g.putImageData(img,0,0);
+  // spin arrows grid
+  for(let a=-3;a<=3;a++)for(let b=-3;b<=3;b++){const u=a/3.6,v=b/3.6;const x=W/2+u*W/2,y=W/2-v*W/2;const s=u*ct+v*st;const ph=gPhase*(4+G*0.6*s*2.2);
+    g.strokeStyle='rgba(255,255,255,.75)';g.lineWidth=1.6;g.beginPath();g.moveTo(x,y);g.lineTo(x+11*Math.cos(ph),y-11*Math.sin(ph));g.stroke();g.fillStyle='#fff';g.beginPath();g.arc(x,y,1.8,0,7);g.fill();}
+  arrow(g,W/2-ct*W*0.42,W/2+st*W*0.42,W/2+ct*W*0.42,W/2-st*W*0.42,'#ffb000',2);g.fillStyle='#ffb000';g.font='12px sans-serif';g.fillText('梯度方向（磁場漸強）',8,16);
+  g.fillStyle='#fff';g.fillText('白色小指針：各處質子的轉速',8,W-8);
+  requestAnimationFrame(gFrame);}
+function upd5(){const G=+$('gG').value,a=+$('gA').value;$('gGO').textContent=G+' mT/m';$('gAO').textContent=a+'°';
+  const [g,w,h]=(()=>{const o=fitCanvas($('specCv'));return [o.g,o.w,o.h];})();const L=36,R=w-8,T=10,B=h-28;
+  const hzmm=GB*1e6*G*1e-3/1000; // Hz per mm
+  const fmax=Math.max(1,hzmm*FOVmm/2);const X=f=>L+(f+12000)/24000*(R-L);
+  g.strokeStyle=cv('line');g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='center';for(let f=-12000;f<=12000;f+=4000){g.beginPath();g.moveTo(X(f),T);g.lineTo(X(f),B);g.stroke();g.fillText((f/1000)+'k',X(f),B+13);}
+  g.fillText('相對於 f₀ 的頻率偏移 Δf（Hz）',(L+R)/2,h-2);
+  const p=PROJ[Math.round(a)%NP];const k=Math.round(a)%NP;
+  g.strokeStyle=cv('xr');g.lineWidth=2;g.beginPath();
+  if(G===0){const tot=p.reduce((s,v)=>s+v,0);g.moveTo(L,B);g.lineTo(X(-150),B);g.lineTo(X(0),T);g.lineTo(X(150),B);g.lineTo(R,B);g.stroke();
+    $('gSub').innerHTML='G = 0：所有質子同一頻率，只有一根尖峰——<b>分不出位置</b>';return;}
+  const mx=Math.max(...p);g.moveTo(L,B);for(let j=0;j<M;j++){const smm=(j-MC)*DXmm;const f=hzmm*smm;g.lineTo(X(f),B-p[j]/mx*(B-T)*0.95);}g.lineTo(R,B);g.stroke();
+  $('gSub').innerHTML='γ̄G = 42.58 MHz/T × '+G+' mT/m = <b>'+hzmm.toFixed(1)+' Hz/mm</b>；視野 ±20 mm → Δf ±'+(hzmm*20/1000).toFixed(2)+' kHz';}
+['gG','gA'].forEach(id=>$(id).addEventListener('input',upd5));
+let NPU=4,PFON=true;
+[1,2,4,8,16,45,180].forEach(n=>{const b=document.createElement('button');b.textContent=n+' 個方向';if(n===NPU)b.classList.add('on');b.onclick=()=>{NPU=n;document.querySelectorAll('#pBtns button').forEach(x=>x.classList.toggle('on',x===b));recon5();};$('pBtns').appendChild(b);});
+$('pFilt').onclick=()=>{PFON=!PFON;$('pFilt').textContent='斜坡濾波：'+(PFON?'開':'關');$('pFilt').classList.toggle('on',PFON);recon5();};
+function recon5(){const rows=PFON?PF:PROJ;const f=new Float32Array(M*M);for(let i=0;i<NPU;i++){const k=Math.round(i*NP/NPU)%NP,th=k*Math.PI/NP,ct=Math.cos(th),st=Math.sin(th),q=rows[k];
+    for(let r=0;r<M;r++){const y=MC-r;for(let c=0;c<M;c++){const s=(c-MC)*ct+y*st+MC,j=Math.floor(s);if(j<0||j>=M-1)continue;const a=s-j;f[r*M+c]+=q[j]*(1-a)+q[j+1]*a;}}}
+  let mn=Infinity,mx=-Infinity;for(const v of f){mn=Math.min(mn,v);mx=Math.max(mx,v);}if(PFON)mn=Math.max(mn,0);
+  const c=$('rcCv'),g=c.getContext('2d');const tmp=document.createElement('canvas');tmp.width=M;tmp.height=M;const tg=tmp.getContext('2d');const img=tg.createImageData(M,M);
+  for(let i=0;i<M*M;i++){const v=Math.max(0,Math.min(255,(f[i]-mn)/(mx-mn)*255));img.data[i*4]=img.data[i*4+1]=img.data[i*4+2]=v;img.data[i*4+3]=255;}
+  tg.putImageData(img,0,0);g.imageSmoothingEnabled=true;g.drawImage(tmp,0,0,c.width,c.height);g.fillStyle='#ffb000';g.font='12px sans-serif';g.fillText(NPU+' 個投影方向',8,16);}
+
+/* ===== Avatar: Lauterbur ===== */
+const LA_SVG=`<svg viewBox="0 0 200 230" aria-label="勞特伯老師動畫">
+ <g class="bodyg">
+  <path d="M8 232 Q12 176 70 162 L100 180 L130 162 Q188 176 192 232 Z" fill="#26282e"/>
+  <path d="M70 162 L96 228 L100 184 Z M130 162 L104 228 L100 184 Z" fill="#33363d"/>
+  <path d="M78 158 L100 186 L122 158 L114 152 L100 172 L86 152 Z" fill="#f4f4f0"/>
+  <path d="M95 174 L105 174 L108 222 L100 230 L92 222 Z" fill="#1b1c20"/>
+  <rect x="86" y="134" width="28" height="28" rx="10" fill="#dcaa8e"/>
+  <ellipse cx="63" cy="104" rx="7" ry="12" fill="#e2b096"/><ellipse cx="137" cy="104" rx="7" ry="12" fill="#e2b096"/>
+  <path d="M64 96 Q62 142 100 150 Q138 142 136 96 Q136 52 100 50 Q64 52 64 96 Z" fill="#f0c4a8"/>
+  <path d="M74 60 Q100 46 126 60" stroke="#e3ad92" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <g class="hairL"><path d="M64 98 Q58 82 62 68 Q66 60 72 62 Q68 74 70 92 Z" fill="#dcdad4"/></g>
+  <g class="hairR"><path d="M136 98 Q142 82 138 68 Q134 60 128 62 Q132 74 130 92 Z" fill="#dcdad4"/></g>
+  <path d="M86 52 Q94 46 104 48 Q96 50 92 54 Z" fill="#dcdad4"/>
+  <ellipse class="blush" cx="78" cy="110" rx="7" ry="4.5" fill="#f08080"/>
+  <ellipse class="blush" cx="122" cy="110" rx="7" ry="4.5" fill="#f08080"/>
+  <path d="M66 104 Q64 136 80 152 Q92 162 100 162 Q108 162 120 152 Q136 136 134 104 Q130 120 122 126 Q112 120 100 121 Q88 120 78 126 Q70 120 66 104 Z" fill="#e6e4de"/>
+  <path d="M74 132 Q80 146 90 154 M126 132 Q120 146 110 154 M100 146 L100 158 M86 140 Q90 150 96 156 M114 140 Q110 150 104 156" stroke="#c4c1b8" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  <path class="mo n" d="M88 130 Q100 140 112 130 Q100 134 88 130 Z" fill="#7a3428" stroke="#6e3428" stroke-width="1.2"/>
+  <path class="mo n" d="M91 131 Q100 134 109 131 L108 133 Q100 135 92 133 Z" fill="#fff"/>
+  <path class="mo s" d="M85 128 Q100 146 115 128 Q100 133 85 128 Z" fill="#7a3428" stroke="#6e3428" stroke-width="1.2"/>
+  <path class="mo s" d="M88 129 Q100 133 112 129 L110 132 Q100 135 90 132 Z" fill="#fff"/>
+  <path class="mo f" d="M90 136 Q100 128 110 136" stroke="#6e3428" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path d="M80 126 Q88 118 100 122 Q112 118 120 126 Q112 129 106 126 Q100 124 94 126 Q88 129 80 126 Z" fill="#dcdad4"/>
+  <path class="brow browL" d="M74 82 Q83 77 94 81" stroke="#b9b5ab" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+  <path class="brow browR" d="M106 81 Q117 77 126 82" stroke="#b9b5ab" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+  <g class="eyes"><path d="M79 95 Q85 90 91 95 Q85 97 79 95 Z" fill="#3a2e26"/><path d="M109 95 Q115 90 121 95 Q115 97 109 95 Z" fill="#3a2e26"/>
+   <circle cx="86" cy="93.4" r=".8" fill="#fff"/><circle cx="116" cy="93.4" r=".8" fill="#fff"/></g>
+  <path d="M78 100 Q85 103 92 100 M108 100 Q115 103 122 100" stroke="#cf9a80" stroke-width="1.2" fill="none"/>
+  <rect x="70" y="84" width="27" height="21" rx="5" fill="rgba(220,235,245,.25)" stroke="#8a8f99" stroke-width="2.6"/>
+  <rect x="103" y="84" width="27" height="21" rx="5" fill="rgba(220,235,245,.25)" stroke="#8a8f99" stroke-width="2.6"/>
+  <path d="M97 88 Q100 85 103 88 M70 87 L62 90 M130 87 L138 90" stroke="#8a8f99" stroke-width="2.2" fill="none"/>
+  <path d="M100 98 Q97 108 95 114 Q100 119 106 115" stroke="#c48a70" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path class="sweat" d="M142 68 Q147 78 142 82 Q137 78 142 68 Z" fill="#7cc3f0"/>
+  <text class="spark" x="30" y="44" font-size="18" fill="#f0b400">✦</text>
+  <text class="spark" x="160" y="40" font-size="14" fill="#f0b400">✦</text>
+  <text class="spark" x="170" y="96" font-size="11" fill="#f0b400">✦</text>
+ </g></svg>`;
+function makeAvatar(el,bubble){el.innerHTML=LA_SVG;let tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold)tm=setTimeout(()=>{el.classList.remove('smile','frown');bubble.className='bubble';},3200);}};}
+var AV1=makeAvatar($('av1'),$('bub1')),AV2=makeAvatar($('av2'),$('bub2'));
+const QUOTES=[
+ '我 1929 年出生在美國俄亥俄州的西德尼。高中時就在爸媽家的地下室蓋了自己的實驗室！',
+ '我在陸軍服役時就開始操作早期的 NMR 儀器，退伍前已經發表了四篇論文。',
+ '1971 年，我在匹茲堡附近一家 Big Boy 餐廳裡突然想通：加上梯度磁場，就能知道訊號來自哪裡！第一個構想就畫在餐巾紙上。',
+ '我把論文投到《自然》（Nature），編輯嫌影像太模糊而退稿。我請他們重新審查，1973 年終於刊出。',
+ '最早的影像包括女兒撿來的小蛤蜊、青椒，還有兩管水：重水和一般水。當時沒有其他影像技術分得出這兩種水！',
+ '這些研究是我在紐約州立大學石溪分校完成的。2003 年，我和曼斯菲爾德（Peter Mansfield）共同獲得諾貝爾生理醫學獎。'];
+let qi=0;$('av1').onclick=()=>AV1.mood('smile',QUOTES[qi++%QUOTES.length]);
+
+/* ===== Quiz ===== */
+const QZ=[
+ {q:'MRI 主要偵測的是什麼？',o:['體內氫原子核（質子）在磁場中的共振訊號','穿過身體的 X 光','反射回來的超音波','放射性同位素發出的 γ 射線'],a:0,e:'人體水分多，氫質子在 B₀ 中共振並發出無線電訊號。',h:'回想第 0 節：「核」指的是哪種原子核？'},
+ {q:'3 T 的 MRI，氫的共振頻率約為？',o:['128 MHz','64 MHz','42.58 Hz','3 GHz'],a:0,e:'f₀ = 42.58 MHz/T × 3 T ≈ 127.7 MHz。',h:'用第 1 節的拉莫爾方程代入。'},
+ {q:'RF 脈衝的頻率偏離拉莫爾頻率很多時，會怎樣？',o:['磁化向量幾乎翻不倒（不共振）','翻得更快','翻轉角變成 180°','磁場變強'],a:0,e:'只有頻率對上時 RF 才能有效推動 M，這就是共振。',h:'第 2 節把頻率偏差拉大看看。'},
+ {q:'T2 衰減的主要原因是？',o:['各個自旋轉速略有差異，逐漸去相位、散開','質子跑出身體','RF 線圈過熱','X 光被吸收'],a:0,e:'自旋–自旋交互作用讓相位散開，橫向分量加總後變小。',h:'第 3 節動畫中藍色的自旋怎麼了？'},
+ {q:'在 T1 加權影像中，腦脊髓液（水）通常是？',o:['暗的','最亮的','和脂肪一樣亮','看不到頭骨以外的東西'],a:0,e:'水的 T1 很長，短 TR 時來不及恢復 → 訊號弱 → 暗。',h:'第 4 節選 T1 加權，看藍色那條。'},
+ {q:'想讓水腫病灶最明顯，應該用？',o:['長 TR、長 TE 的 T2 加權','短 TR、短 TE 的 T1 加權','TE 越短越好','把 B₀ 關掉'],a:0,e:'水腫 T2 長，長 TE 時其他組織已衰減、它還很亮。',h:'第 4 節點病灶，比較 T1 和 T2 加權的數字。'},
+ {q:'勞特伯讓 NMR 能「成像」的關鍵點子是？',o:['加上梯度磁場，讓頻率對應到位置','改用 X 光','把磁場加到 100 T','用超音波探頭接收'],a:0,e:'f(x) = γ̄(B₀ + Gx)：頻率就是位置的「編碼」。',h:'第 5 節把梯度 G 拉到 0 會怎樣？'},
+ {q:'MRI 和 CT 相比，下列何者正確？',o:['MRI 沒有游離輻射，軟組織對比佳','MRI 使用 X 光','MRI 看骨頭最清楚','MRI 不需要磁場'],a:0,e:'MRI 用磁場與無線電波；軟組織之間的 T1、T2 差異大，對比佳。',h:'回想第 0 節最後一段。'}];
+const PRAISE=['Great！完全正確！','漂亮！共振成功！','答對了，訊號清清楚楚！','正確！這比我在餐巾紙上畫的還清楚。'];
+let score=0,done=0,streak=0;
+function buildQuiz(){score=0;done=0;streak=0;$('score').textContent='';$('again').style.display='none';const box=$('quiz');box.innerHTML='';
+  QZ.forEach((z,n)=>{const d=document.createElement('div');d.className='q';d.innerHTML='<div class="qt">'+(n+1)+'. '+z.q+'</div><div class="opts"></div><div class="ex"></div>';
+    const ord=z.o.map((_,i)=>i).sort(()=>Math.random()-.5);const op=d.querySelector('.opts');
+    ord.forEach(i=>{const b=document.createElement('button');b.textContent=z.o[i];b.onclick=()=>{if(d.dataset.done)return;d.dataset.done=1;done++;
+      const ok=i===z.a;op.querySelectorAll('button').forEach((bb,k)=>{if(ord[k]===z.a)bb.classList.add('right');});if(!ok)b.classList.add('wrong');
+      const ex=d.querySelector('.ex');ex.className='ex '+(ok?'ok':'no');ex.textContent=(ok?'✔ 正確！':'✘ ')+z.e;
+      if(ok){score++;streak++;AV2.mood('smile',streak>=3?'連對 '+streak+' 題！你和質子一樣共振了！':PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+      else{streak=0;AV2.mood('frown',z.h);}
+      if(done===QZ.length){$('score').textContent='得分：'+score+' / '+QZ.length;$('again').style.display='inline-block';
+        setTimeout(()=>{const r=score/QZ.length;AV2.mood(r>=.85?'smile':r>=.6?'':'frown',
+          r>=.85?'太棒了！進動、共振、弛豫到空間編碼，你都懂了！':r>=.6?'不錯！再去第 4 節玩玩 TR、TE，會更有感覺。':'別灰心，我的論文也被退過稿。建議從第 1 節的拉莫爾方程重新看起！',true);},3300);}};
+      op.appendChild(b);});box.appendChild(d);});}
+$('again').onclick=()=>{buildQuiz();AV2.mood('','新的一輪！選項順序已經打亂囉。');};
+
+/* ===== init ===== */
+function redrawAll(){['precCv','rfCv','relCv','fidCv','mzCv'].forEach(id=>{$(id)._g=null;});upd1();upd2();drawCurves();upd4();upd5();recon5();}
+buildQuiz();redrawAll();relOn=true;
+requestAnimationFrame(precFrame);requestAnimationFrame(relFrame);requestAnimationFrame(gFrame);
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(redrawAll,120);});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawAll);
+</script>
+</body>
+</html>

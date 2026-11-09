@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>X 射線原理互動教學</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;
+ --acc:#2f6fdf;--org:#e07a1f;--xr:#7a4fe0;--soft:#e8a07a;--bone:#cfc6a8;--metal:#9aa3b5;--glow:#ffcc33;--code:#1b1f2a;--chip:#f1efe8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --acc:#6fa0ff;--org:#ffa24d;--xr:#a98bff;--soft:#f0a983;--bone:#e2d8b4;--metal:#b7bfcf;--glow:#ffd75a;--code:#10131a;--chip:#262b37}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --acc:#6fa0ff;--org:#ffa24d;--xr:#a98bff;--soft:#f0a983;--bone:#e2d8b4;--metal:#b7bfcf;--glow:#ffd75a;--code:#10131a;--chip:#262b37}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:clamp(1.5rem,3.4vw,2.2rem)}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:20px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card h2{margin:0 0 12px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+.num{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--xr);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.formula{background:var(--chip);border-radius:10px;padding:10px 14px;margin:10px 0;font-size:1.08rem;text-align:center;overflow-x:auto}
+.note{background:var(--chip);border-left:4px solid var(--xr);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:.95rem}
+.two{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+.two>*{min-width:0}
+@media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
+canvas{display:block;width:100%;border-radius:12px;background:var(--chip)}
+.ctrl{display:grid;grid-template-columns:auto minmax(0,1fr) 5.2em;gap:6px 10px;align-items:center;margin:8px 0}
+.ctrl label{font-size:.95rem;white-space:nowrap}
+.ctrl output{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--xr)}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--xr)}
+button.on{background:var(--xr);color:#fff;border-color:var(--xr)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.stat{background:var(--chip);border-radius:10px;padding:8px 12px}
+.stat b{display:block;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.85rem;color:var(--mute)}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.15;margin:0 2px}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 3px}
+.c-xr{color:var(--xr);font-weight:600}.c-acc{color:var(--acc);font-weight:600}.c-org{color:var(--org);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.9rem;margin:6px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.steps3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.steps3>div{background:var(--chip);border-radius:12px;padding:10px 12px}
+.steps3 b{color:var(--xr)}
+@media (max-width:600px){.steps3{grid-template-columns:minmax(0,1fr)}}
+.bars{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.bar{display:grid;grid-template-columns:8.5em minmax(0,1fr) 6.8em;gap:8px;align-items:center;font-size:.92rem}
+.bar .track{height:14px;background:var(--chip);border-radius:7px;overflow:hidden}
+.bar .fill{height:100%;background:var(--xr);border-radius:7px}
+.bar em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
+/* quiz */
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0}
+.q .qt{font-weight:600;margin-bottom:8px}
+.q .opts{display:grid;gap:6px}
+.q .opts button{text-align:left}
+.q .opts button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--card))}
+.q .opts button.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--card))}
+.q .ex{margin-top:8px;font-size:.95rem}
+.q .ex.ok{color:var(--ok)}.q .ex.no{color:var(--bad)}
+#score{font-size:1.15rem;font-weight:700;margin:10px 0}
+footer{text-align:center;color:var(--mute);font-size:.9rem;margin-top:30px}
+/* avatar */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:bottom center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:bottom center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+</style>
+<style id="pu-badge-style">
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line,#e3e1da);border-radius:12px;background:var(--card,var(--surface,#fff));color:var(--ink,#1d2330);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif}
+.pu-badge img{width:58px;height:58px;display:block}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute,var(--muted,#667085))}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main"><h1>X 射線（X-Ray）的原理</h1>
+  <p>智慧醫療 ・ 互動教學：X 射線的產生、穿透衰減與醫學成像</p></div>
+  <div class="pu-badge"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+  <h2><span class="num">0</span>一句話直覺：X 射線是「看得穿身體」的高能光</h2>
+  <div class="intro">
+    <div>
+      <p><b>X 射線（X-ray）</b>和可見光一樣是<b>電磁波（electromagnetic wave）</b>，只是波長短得多（約 0.01–10 nm），每個<b>光子（photon）</b>帶的能量大上萬倍。能量高，所以能穿過軟組織；但遇到<b>骨頭、金屬</b>會被吸收得比較多，在偵測器上留下「影子」——這就是 X 光片。</p>
+      <div class="steps3">
+        <div><b>① 產生</b><br>X 光管：高速電子撞上鎢靶，突然減速而放出 X 光（第 2 節）。</div>
+        <div><b>② 衰減</b><br>穿過物質時依 <i>I</i> = <i>I</i><sub>0</sub>e<sup>−μx</sup> 指數變弱（第 3 節）。</div>
+        <div><b>③ 成像</b><br>不同組織吸收不同，偵測器記錄的就是一張「陰影圖」（第 4 節）。</div>
+      </div>
+    </div>
+    <div class="avwrap"><div class="bubble" id="bub1">Guten Tag！我是倫琴（Wilhelm Röntgen）。這種神秘射線是我在 1895 年發現的。點我聽故事！</div><div class="av" id="av1" title="點我聽故事"></div></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+  <h2><span class="num">1</span>X 射線在電磁波譜的哪裡？波長越短，光子能量越大</h2>
+  <p>拖動滑桿改變波長 λ，看看光子能量怎麼變。光子能量與波長成反比：</p>
+  <div class="formula"><i>E</i> = <span class="frac"><span><i>hc</i></span><span>λ</span></span> ≈ <span class="frac"><span>1.24</span><span>λ（nm）</span></span> keV　　<span class="mute">（h：普朗克常數，c：光速）</span></div>
+  <canvas id="specCv" height="150" aria-label="電磁波譜"></canvas>
+  <div class="ctrl"><label for="lam">波長 λ</label><input type="range" id="lam" min="-3" max="6" step="0.01" value="-1.6"><output id="lamO"></output></div>
+  <div class="btns">
+    <button data-l="550">綠光 550 nm</button>
+    <button data-l="0.0207">胸部 X 光（約 60 keV）</button>
+    <button data-l="0.0177">牙科 X 光（約 70 keV）</button>
+    <button data-l="0.0124">CT（約 100 keV）</button>
+    <button data-l="1e6">紅外線 1 mm</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><span>所在波段</span><b id="bandO">—</b></div>
+    <div class="stat"><span>光子能量 E</span><b id="eO">—</b></div>
+    <div class="stat"><span>是綠光光子的幾倍</span><b id="ratioO">—</b></div>
+  </div>
+  <div class="formula" id="eSub"></div>
+  <p class="note">醫學診斷用的 X 光，光子能量大約 20–150 keV。X 射線和伽瑪射線（gamma ray）的波長範圍其實有重疊：兩者的區別主要在<b>來源</b>——X 光來自電子（原子外的），伽瑪射線來自原子核。</p>
+</section>
+
+<!-- 2 -->
+<section class="card">
+  <h2><span class="num">2</span>X 光怎麼產生？X 光管與能譜</h2>
+  <div class="two">
+    <div>
+      <canvas id="tubeCv" height="260" aria-label="X 光管動畫"></canvas>
+      <div class="legend"><span><i style="background:var(--acc)"></i>電子（從陰極加速）</span><span><i style="background:var(--xr)"></i>X 光光子</span><span><i style="background:var(--org)"></i>變成熱</span></div>
+    </div>
+    <div>
+      <ol style="margin-top:0;padding-left:1.2em">
+        <li><b>陰極（cathode）</b>：燈絲加熱放出電子，<b>管電流 mA</b> 決定電子「有多少」。</li>
+        <li><b>管電壓 kVp</b>：把電子加速，電子到達陽極時動能 = e × V，例如 80 kV → 80 keV。</li>
+        <li><b>陽極鎢靶（tungsten, Z = 74）</b>：電子被原子核的電場拉彎、急煞車，放出<b>制動輻射（Bremsstrahlung）</b>；若把鎢原子內層 K 殼電子打掉，還會放出<b>特徵輻射（characteristic X-ray）</b>。</li>
+      </ol>
+      <div class="ctrl"><label for="kvp">管電壓</label><input type="range" id="kvp" min="40" max="120" step="1" value="80"><output id="kvpO"></output></div>
+      <div class="ctrl"><label for="ma">管電流</label><input type="range" id="ma" min="50" max="400" step="10" value="200"><output id="maO"></output></div>
+      <div class="ctrl"><label for="al">鋁濾片</label><input type="range" id="al" min="0.5" max="5" step="0.1" value="2.5"><output id="alO"></output></div>
+    </div>
+  </div>
+  <canvas id="spCv" height="260" aria-label="X 光能譜"></canvas>
+  <div class="stats">
+    <div class="stat"><span>最大光子能量（= kVp）</span><b id="emaxO">—</b></div>
+    <div class="stat"><span>平均光子能量</span><b id="emeanO">—</b></div>
+    <div class="stat"><span>鎢 K 特徵線</span><b id="kO">—</b></div>
+    <div class="stat"><span>電能 → X 光的效率</span><b id="effO">—</b></div>
+  </div>
+  <div class="formula" id="effSub"></div>
+  <p class="note">觀察重點：① 提高 kVp，能譜<b>右端</b>往右延伸、光子更「硬」更會穿透；② 提高 mA，整條曲線<b>等比例</b>變高（光子變多，但能量分布不變）；③ 濾片吃掉沒用的低能光子（它們只會被皮膚吸收）；④ kVp 超過 69.5 kV，才打得掉鎢的 K 殼電子，出現 59、67 keV 的尖峰；⑤ 99% 以上的能量變成熱，所以陽極要旋轉散熱。</p>
+  <p class="mute" style="font-size:.88rem">能譜用 Kramers 近似 N(E) ∝ Z(E<sub>max</sub> − E)/E 乘上鋁濾片衰減 e<sup>−μ<sub>Al</sub>x</sup> 計算（μ 取自 NIST 表），特徵線高度為示意。</p>
+</section>
+
+<!-- 3 -->
+<section class="card">
+  <h2><span class="num">3</span>穿透與衰減：Beer–Lambert 定律</h2>
+  <p>每通過一小段厚度 d<i>x</i>，就有固定比例 μ·d<i>x</i> 的光子被吸收或散射掉：</p>
+  <div class="formula"><span class="frac"><span>d<i>I</i></span><span>d<i>x</i></span></span> = −μ <i>I</i>　⟹　<i>I</i>(<i>x</i>) = <i>I</i><sub>0</sub> e<sup>−μ<i>x</i></sup>　　半值層 HVL = <span class="frac"><span>ln 2</span><span>μ</span></span></div>
+  <div class="two">
+    <div>
+      <canvas id="attCv" height="230" aria-label="光子穿透動畫"></canvas>
+    </div>
+    <div>
+      <div class="btns" id="matBtns"></div>
+      <div class="ctrl"><label for="thk">厚度 x</label><input type="range" id="thk" min="0" max="10" step="0.1" value="3"><output id="thkO"></output></div>
+      <div class="ctrl"><label for="en">光子能量</label><input type="range" id="en" min="20" max="100" step="1" value="60"><output id="enO"></output></div>
+      <div class="formula" id="attSub"></div>
+      <div class="stats">
+        <div class="stat"><span>線性衰減係數 μ</span><b id="muO">—</b></div>
+        <div class="stat"><span>半值層 HVL</span><b id="hvlO">—</b></div>
+      </div>
+    </div>
+  </div>
+  <canvas id="tcCv" height="230" aria-label="透射率對厚度"></canvas>
+  <p class="note">同樣 60 keV，骨頭的 μ 約是軟組織的 3 倍——骨頭含鈣（Z = 20），原子序高、密度大。而且<b>能量越低，差距越大</b>（光電效應 ∝ Z³/E³）。試試把能量拉到 30 keV 和 100 keV 比較；也注意鉛在 88 keV 突然變得更會吸收，那是鉛的 <b>K 吸收邊（K-edge）</b>。</p>
+  <p class="mute" style="font-size:.88rem">μ/ρ 取自 NIST X-ray Mass Attenuation Coefficients（水、ICRU 脂肪、ICRU 皮質骨、鉛），依對數內插；密度：水 1.00、脂肪 0.95、皮質骨 1.92、鉛 11.35 g/cm³。</p>
+</section>
+
+<!-- 4 -->
+<section class="card">
+  <h2><span class="num">4</span>X 光片是怎麼形成的？一張「手」的模擬投影</h2>
+  <p>倫琴拍下的第一批 X 光片中，最有名的是他妻子的手（還戴著戒指）。這裡用電腦模擬：每個像素都是一條光線，算出它穿過多少軟組織、骨頭、金屬，再用第 2 節的能譜與第 3 節的 μ 求出透射率。</p>
+  <div class="formula"><i>T</i>(像素) = <span class="frac"><span>Σ<sub><i>E</i></sub> <i>N</i>(<i>E</i>)·<i>E</i>·e<sup>−[μ<sub>軟</sub>(<i>E</i>)<i>x</i><sub>軟</sub> + μ<sub>骨</sub>(<i>E</i>)<i>x</i><sub>骨</sub> + μ<sub>金屬</sub>(<i>E</i>)<i>x</i><sub>金屬</sub>]</sup></span><span>Σ<sub><i>E</i></sub> <i>N</i>(<i>E</i>)·<i>E</i></span></span></div>
+  <div class="two">
+    <div style="display:flex;justify-content:center"><canvas id="handCv" width="250" height="400" style="max-width:300px;background:#000;cursor:crosshair" aria-label="模擬手部 X 光片"></canvas></div>
+    <div>
+      <div class="ctrl"><label for="hk">管電壓</label><input type="range" id="hk" min="40" max="120" step="1" value="55"><output id="hkO"></output></div>
+      <div class="btns"><button id="ringB" class="on">💍 戴戒指</button><button id="invB">反轉明暗</button></div>
+      <p class="mute" style="margin:4px 0">在影像上點一下（或拖曳），選擇要看的水平剖面線。</p>
+      <canvas id="profCv" height="200" aria-label="剖面線透射率"></canvas>
+      <div class="stats">
+        <div class="stat"><span>骨與軟組織對比度</span><b id="conO">—</b></div>
+        <div class="stat"><span>穿過中指指骨的透射率</span><b id="tO">—</b></div>
+      </div>
+    </div>
+  </div>
+  <p class="note">X 光片的明暗是「反過來」的：偵測器收到越多 X 光就越<b>黑</b>（空氣），被擋越多就越<b>白</b>（骨頭、戒指）。拉高 kVp，整張變灰、骨頭與軟組織的<b>對比度下降</b>；但穿透力上升，病人吸收的劑量較少——臨床就是在「對比」與「劑量」之間取捨。仔細看：骨頭邊緣比中間更白，因為光線斜切過管狀的<b>皮質骨</b>時路徑最長。</p>
+  <p class="mute" style="font-size:.88rem">對比度 C = (T<sub>軟組織</sub> − T<sub>骨</sub>) / T<sub>軟組織</sub>，取中指近節指骨中心那條光線，與「同一路徑全換成軟組織」比較。手的形狀是簡化的幾何模型，不是真實解剖。</p>
+</section>
+
+<!-- 5 -->
+<section class="card">
+  <h2><span class="num">5</span>輻射防護：時間、距離、屏蔽</h2>
+  <p>X 光是<b>游離輻射（ionizing radiation）</b>，能打斷 DNA 等分子，因此遵守 <b>ALARA</b>（As Low As Reasonably Achievable，合理抑低）原則。三個工具都能用公式說明：</p>
+  <div class="formula">劑量 ∝ <span class="c-acc">時間 t</span> × <span class="frac"><span>1</span><span class="c-org"><i>d</i>²</span></span> × <span class="c-xr">e<sup>−μ<sub>鉛</sub><i>x</i></sup></span>　　<span class="mute">（點光源的平方反比定律 × 屏蔽衰減）</span></div>
+  <div class="two">
+    <div><canvas id="protCv" height="210" aria-label="距離與屏蔽示意"></canvas></div>
+    <div>
+      <div class="ctrl"><label for="dist">距離 d</label><input type="range" id="dist" min="0.5" max="4" step="0.1" value="1"><output id="distO"></output></div>
+      <div class="ctrl"><label for="tm">時間 t</label><input type="range" id="tm" min="1" max="10" step="1" value="1"><output id="tmO"></output></div>
+      <div class="btns" id="apronBtns"><button data-pb="0" class="on">無鉛衣</button><button data-pb="0.25">鉛衣 0.25 mm</button><button data-pb="0.5">鉛衣 0.5 mm</button></div>
+      <div class="formula" id="protSub"></div>
+    </div>
+  </div>
+  <h3 style="margin:16px 0 4px;font-size:1.05rem">常見檢查的有效劑量（對數尺度）</h3>
+  <div class="bars" id="doseBars"></div>
+  <p class="mute" style="font-size:.88rem">劑量為成人典型值，資料來源 RadiologyInfo.org（RSNA／ACR）；實際劑量依體型與設備而異。散射線能量以約 50 keV 估算鉛衣衰減。</p>
+</section>
+
+<!-- 6 -->
+<section class="card">
+  <h2><span class="num">6</span>觀念小測驗</h2>
+  <div class="qgrid">
+    <div><div id="quiz"></div><div id="score"></div><button id="again" style="display:none">↻ 再做一次</button></div>
+    <div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+  </div>
+</section>
+
+<footer>X 射線原理互動教學 ・ 單一 HTML 檔，可離線開啟</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+const fmt=(x,d=2)=>Number(x).toFixed(d);
+function fitCanvas(c){const r=window.devicePixelRatio||1;c.style.width='0px';const pe=c.parentElement,ps=getComputedStyle(pe);const w=Math.floor(pe.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight));c.style.width=w+'px';
+  if(!c.dataset.h)c.dataset.h=c.getAttribute('height');const h=+c.dataset.h;c.width=Math.round(w*r);c.height=Math.round(h*r);c.style.height=h+'px';
+  const g=c.getContext('2d');g.setTransform(r,0,0,r,0,0);return {g,w,h};}
+
+/* ===== NIST μ/ρ (cm²/g), E in keV ===== */
+const MU={
+  water:{rho:1.00,name:'軟組織（水）',pts:[[20,.8096],[30,.3756],[40,.2683],[50,.2269],[60,.2059],[80,.1837],[100,.1707]]},
+  fat:{rho:0.95,name:'脂肪',pts:[[20,.5677],[30,.3063],[40,.2396],[50,.2123],[60,.1974],[80,.1800],[100,.1688]]},
+  bone:{rho:1.92,name:'骨頭（皮質骨）',pts:[[20,4.001],[30,1.331],[40,.6655],[50,.4242],[60,.3148],[80,.2229],[100,.1855]]},
+  lead:{rho:11.35,name:'鉛',pts:[[20,86.36],[30,30.32],[40,14.36],[50,8.041],[60,5.021],[80,2.419],[88,1.910],[88.0001,7.683],[100,5.549]]},
+  al:{rho:2.699,name:'鋁',pts:[[15,7.955],[20,3.441],[30,1.128],[40,.5685],[50,.3681],[60,.2778],[80,.2018],[100,.1704],[150,.1378]]}
+};
+function mu(m,E){const p=MU[m].pts;let i=0;
+  if(E<=p[0][0]) i=0; else if(E>=p[p.length-1][0]) i=p.length-2; else while(!(E>=p[i][0]&&E<=p[i+1][0]))i++;
+  if(m==='lead'&&E>=88&&E<88.0001) return p[7][1]*MU[m].rho;
+  const [x0,y0]=p[i],[x1,y1]=p[i+1];const s=Math.log(y1/y0)/Math.log(x1/x0);
+  return y0*Math.pow(E/x0,s)*MU[m].rho;}
+
+/* ===== Spectrum model ===== */
+const KL=[[57.98,.58],[59.32,1],[67.24,.33]];
+function spectrum(kvp,alMM,ma){const E=[],N=[];
+  for(let e=10;e<kvp;e+=1){const n=(kvp-e)/e*Math.exp(-mu('al',e)*alMM/10);E.push(e);N.push(n*ma);}
+  if(kvp>69.5){const a=Math.pow((kvp-69.5)/69.5,1.63)*40;
+    for(const [le,w] of KL){const k=Math.round(le)-10;if(k>=0&&k<N.length){N[k]+=a*w*Math.exp(-mu('al',le)*alMM/10)*ma*0.06;}}}
+  return {E,N};}
+
+/* ===== Section 1: EM spectrum ===== */
+const BANDS=[[-3,-2,'伽瑪射線','#b05cff'],[-2,1,'X 射線','#7a4fe0'],[1,2.602,'紫外線','#4a6cff'],[2.602,2.845,'可見光',null],[2.845,6,'紅外線','#d9534f']];
+function bandOf(l){if(l<0.01)return '伽瑪射線';if(l<=10)return 'X 射線';if(l<400)return '紫外線';if(l<=700)return '可見光';return '紅外線';}
+function drawSpec(){const c=$('specCv');const {g,w,h}=fitCanvas(c);const L=+$('lam').value;
+  const X=v=>12+(v+3)/9*(w-24);
+  g.font='12px sans-serif';g.textAlign='center';
+  for(const [a,b,name,col] of BANDS){const x0=X(a),x1=X(b);
+    if(col){g.fillStyle=col;g.globalAlpha=.75;g.fillRect(x0,40,x1-x0,40);g.globalAlpha=1;}
+    else{const gr=g.createLinearGradient(x0,0,x1,0);['#7f00ff','#0050ff','#00c060','#ffe000','#ff8000','#ff0000'].forEach((cc,i)=>gr.addColorStop(i/5,cc));g.fillStyle=gr;g.fillRect(x0,40,x1-x0,40);}
+    g.fillStyle=cv('ink');if(x1-x0>40)g.fillText(name,(x0+x1)/2,32);}
+  g.fillText('可見光',X(2.72),98);
+  g.strokeStyle=cv('mute');g.fillStyle=cv('mute');g.font='11px sans-serif';
+  for(let v=-3;v<=6;v++){const x=X(v);g.beginPath();g.moveTo(x,80);g.lineTo(x,86);g.stroke();
+        const lab=v===1?'10':v===0?'1':v<0?'10'+['⁻³','⁻²','⁻¹'][v+3]:'10'+['','','²','³','⁴','⁵','⁶'][v];
+    if(w>420||v%2===1)g.fillText(lab,x,116);}
+  g.fillText('波長 λ（nm）',w/2,140);
+  // medical band 20-150 keV
+  const m0=X(Math.log10(1.24/150)),m1=X(Math.log10(1.24/20));g.strokeStyle=cv('org');g.lineWidth=2;g.setLineDash([4,3]);g.strokeRect(m0,37,m1-m0,46);g.setLineDash([]);
+  g.fillStyle=cv('org');g.textAlign='left';g.fillText('醫用',m1+3,92);
+  const x=X(L);g.strokeStyle=cv('ink');g.lineWidth=3;g.beginPath();g.moveTo(x,20);g.lineTo(x,88);g.stroke();
+  g.fillStyle=cv('ink');g.beginPath();g.moveTo(x-7,12);g.lineTo(x+7,12);g.lineTo(x,22);g.fill();
+  const lam=Math.pow(10,L),E=1.24/lam; // keV
+  $('lamO').textContent=lam<1?lam.toPrecision(2)+' nm':lam<1000?lam.toFixed(0)+' nm':(lam/1e6>=0.1?(lam/1e6).toPrecision(2)+' mm':(lam/1000).toPrecision(3)+' μm');
+  $('bandO').textContent=bandOf(lam);
+  $('eO').textContent=E>=1?E.toPrecision(3)+' keV':(E*1000>=1?(E*1000).toPrecision(3)+' eV':(E*1e6).toPrecision(3)+' meV');
+  const r=E/(1.24/550);$('ratioO').textContent=r>=1?Math.round(r).toLocaleString()+' 倍':'1/'+Math.round(1/r).toLocaleString();
+  $('eSub').innerHTML='代入：E ≈ <span class="frac"><span>1.24</span><span>'+lam.toPrecision(3)+'</span></span> = '+$('eO').textContent;}
+$('lam').oninput=drawSpec;
+document.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{$('lam').value=Math.log10(+b.dataset.l);drawSpec();});
+
+/* ===== Section 2: tube + spectrum ===== */
+let tubeParts=[],tubePh=[],tubeGlow=0,tubeAcc=0,tubeLast=0;
+function drawSpectrum(){const c=$('spCv');const {g,w,h}=fitCanvas(c);
+  const kvp=+$('kvp').value,ma=+$('ma').value,al=+$('al').value;
+  $('kvpO').textContent=kvp+' kV';$('maO').textContent=ma+' mA';$('alO').textContent=al.toFixed(1)+' mm';
+  const s=spectrum(kvp,al,ma);const r=spectrum(80,2.5,200);const L=46,R=w-14,T=14,B=h-36;
+  const top=Math.max(...r.N,...s.N.map((v,i)=>s.E[i]<56||s.E[i]>68?v:0))*1.15;
+  const X=e=>L+(e-0)/125*(R-L),Y=n=>B-n/top*(B-T);
+  g.strokeStyle=cv('line');g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='center';
+  for(let e=0;e<=120;e+=20){g.beginPath();g.moveTo(X(e),T);g.lineTo(X(e),B);g.stroke();if(e!==80)g.fillText(e,X(e),B+14);}
+  g.fillText('光子能量（keV）',(L+R)/2,h-4);
+  g.save();g.translate(12,(T+B)/2);g.rotate(-Math.PI/2);g.fillText('光子數（相對）',0,0);g.restore();
+  // ghost: reference 80 kVp, 200mA, 2.5mm
+  g.strokeStyle=cv('mute');g.setLineDash([4,4]);g.lineWidth=1.2;g.beginPath();
+  r.E.forEach((e,i)=>{const y=Math.max(T,Y(r.N[i]));i?g.lineTo(X(e),y):g.moveTo(X(e),y);});g.lineTo(X(80),B);g.stroke();g.setLineDash([]);
+  g.fillStyle=cv('mute');g.textAlign='left';g.fillText('虛線：80 kV、200 mA、2.5 mm Al',L+6,T+12);
+  // fill
+  g.beginPath();g.moveTo(X(10),B);s.E.forEach((e,i)=>g.lineTo(X(e),Math.max(T,Y(s.N[i]))));g.lineTo(X(kvp),B);g.closePath();
+  g.fillStyle=cv('xr');g.globalAlpha=.25;g.fill();g.globalAlpha=1;g.strokeStyle=cv('xr');g.lineWidth=2;g.stroke();
+  // kvp marker
+  g.strokeStyle=cv('org');g.setLineDash([3,3]);g.beginPath();g.moveTo(X(kvp),T);g.lineTo(X(kvp),B);g.stroke();g.setLineDash([]);
+  g.fillStyle=cv('org');g.textAlign='right';g.fillText('E_max = '+kvp+' keV',X(kvp)-4,T+28);
+  // K edge marker
+  g.strokeStyle=cv('mute');g.setLineDash([2,4]);g.beginPath();g.moveTo(X(69.5),B);g.lineTo(X(69.5),B+6);g.stroke();g.setLineDash([]);
+  g.fillStyle=cv('mute');g.textAlign='center';g.fillText('▲',X(69.5),B+15);g.textAlign='left';g.fillText('鎢 K 殼 69.5 keV',X(69.5)+8,B+15);
+  if(kvp>69.5){g.fillStyle=cv('xr');g.fillText('Kα',X(59),Math.max(T+10,Y(s.N[49])-6));g.fillText('Kβ',X(67.2),Math.max(T+10,Y(s.N[57])-6));}
+  // stats
+  let sn=0,se=0;s.E.forEach((e,i)=>{sn+=s.N[i];se+=s.N[i]*e;});
+  $('emaxO').textContent=kvp+' keV';$('emeanO').textContent=(se/sn).toFixed(1)+' keV';
+  $('kO').textContent=kvp>69.5?'出現（59、67 keV）':'沒有（kVp < 69.5）';
+  const eff=1e-9*74*kvp*1000;$('effO').textContent=(eff*100).toFixed(2)+' %';
+  $('effSub').innerHTML='效率 η ≈ k·Z·V = 1×10<sup>−9</sup> × 74 × '+(kvp*1000).toLocaleString()+' V ≈ <b>'+(eff*100).toFixed(2)+' %</b>　→ 其餘 '+(100-eff*100).toFixed(1)+' % 變成熱';}
+function tubeFrame(ts){const c=$('tubeCv');if(!c._g){const o=fitCanvas(c);c._g=o.g;c._w=o.w;c._h=o.h;}
+  const g=c._g,w=c._w,h=c._h;const dt=Math.min(50,ts-(tubeLast||ts));tubeLast=ts;
+  const kvp=+$('kvp').value,ma=+$('ma').value;
+  const cx0=w*0.17,cx1=w*0.74,cy=h*0.42;
+  g.clearRect(0,0,w,h);
+  // glass envelope
+  g.strokeStyle=cv('mute');g.lineWidth=2;g.beginPath();g.roundRect?g.roundRect(w*0.05,h*0.14,w*0.9,h*0.56,40):g.rect(w*0.05,h*0.14,w*0.9,h*0.56);g.stroke();
+  g.fillStyle=cv('mute');g.font='12px sans-serif';g.textAlign='center';g.fillText('真空玻璃管',w*0.5,h*0.11);
+  // cathode
+  g.fillStyle=cv('metal');g.fillRect(cx0-28,cy-26,14,52);
+  g.strokeStyle=cv('org');g.lineWidth=2;g.beginPath();for(let i=0;i<=8;i++){const y=cy-14+i*3.5;g.lineTo(cx0-8+(i%2?6:0),y);}g.stroke();
+  g.fillStyle=cv('ink');g.fillText('陰極 −',cx0-14,h*0.82);g.fillText('（燈絲）',cx0-14,h*0.82+16);
+  // anode (angled target)
+  g.fillStyle=cv('metal');g.beginPath();g.moveTo(cx1,cy-34);g.lineTo(cx1+40,cy-34);g.lineTo(cx1+40,cy+34);g.lineTo(cx1+14,cy+34);g.closePath();g.fill();
+  g.fillStyle=cv('ink');g.fillText('陽極 +（鎢靶）',cx1+20,h*0.82);
+  // glow heat
+  tubeGlow=tubeGlow*0.96;g.fillStyle=cv('org');g.globalAlpha=Math.min(.8,tubeGlow);g.beginPath();g.arc(cx1+9,cy,16,0,7);g.fill();g.globalAlpha=1;
+  // HV label
+  g.fillStyle=cv('acc');g.fillText(kvp+' kV 加速 →',(cx0+cx1)/2,cy-40);
+  // window
+  g.strokeStyle=cv('xr');g.setLineDash([4,3]);g.beginPath();g.moveTo(cx1-50,h*0.70);g.lineTo(cx1+10,h*0.70);g.stroke();g.setLineDash([]);
+  g.fillStyle=cv('xr');g.fillText('出射窗',cx1-20,h*0.70+14);
+  // spawn electrons
+  tubeAcc+=dt*ma/4000;while(tubeAcc>1){tubeAcc--;tubeParts.push({x:cx0,y:cy+(Math.random()-.5)*14,v:0});}
+  const acc=kvp/80*0.009*w/600;
+  g.fillStyle=cv('acc');
+  tubeParts=tubeParts.filter(p=>{p.v+=acc*dt;p.x+=p.v*dt/16;const tx=cx1+((p.y-(cy-34))/68)*14;
+    if(p.x>=tx){tubeGlow+=0.05;if(Math.random()<0.18+kvp/600){const ang=Math.PI*(0.5+Math.random()*0.22);tubePh.push({x:tx,y:p.y,a:ang,s:0});}return false;}
+    g.beginPath();g.arc(p.x,p.y,2.6,0,7);g.fill();return true;});
+  // photons: wavy lines
+  g.strokeStyle=cv('xr');g.lineWidth=2;
+  tubePh=tubePh.filter(p=>{p.s+=dt*0.22*(0.6+kvp/120);if(p.s>h)return false;
+    const dx=Math.cos(p.a),dy=Math.sin(p.a);const px=-dy,py=dx;g.beginPath();
+    for(let k=0;k<18;k++){const d=p.s-k*1.6;if(d<0)break;const amp=3*Math.sin((d)*0.6);g.lineTo(p.x+dx*d+px*amp,p.y+dy*d+py*amp);}g.stroke();return true;});
+  requestAnimationFrame(tubeFrame);}
+['kvp','ma','al'].forEach(id=>$(id).addEventListener('input',drawSpectrum));
+
+/* ===== Section 3: attenuation ===== */
+let MAT='water',attPh=[],attLast=0,attAcc=0;
+const MATS=['fat','water','bone','lead'];
+MATS.forEach(m=>{const b=document.createElement('button');b.textContent=MU[m].name;b.dataset.m=m;if(m===MAT)b.classList.add('on');
+  b.onclick=()=>{MAT=m;document.querySelectorAll('#matBtns button').forEach(x=>x.classList.toggle('on',x===b));
+    const t=$('thk');if(m==='lead'){t.max=0.5;t.step=0.005;t.value=0.05;}else{t.max=10;t.step=0.1;if(+t.value<0.2||+t.value>10)t.value=3;}updAtt();};$('matBtns').appendChild(b);});
+function updAtt(){const x=+$('thk').value,E=+$('en').value,m=mu(MAT,E),T=Math.exp(-m*x);
+  $('thkO').textContent=MAT==='lead'?(x*10).toFixed(2)+' mm':x.toFixed(1)+' cm';$('enO').textContent=E+' keV';
+  $('muO').textContent=m.toFixed(3)+' cm⁻¹';const hv=Math.log(2)/m;$('hvlO').textContent=hv<0.1?(hv*10).toFixed(3)+' mm':hv.toFixed(2)+' cm';
+  $('attSub').innerHTML='<span class="frac"><span>I</span><span>I<sub>0</sub></span></span> = e<sup>−('+m.toFixed(3)+')('+x.toFixed(MAT==='lead'?3:1)+')</sup> = e<sup>−'+(m*x).toFixed(3)+'</sup> = <b>'+(T*100).toFixed(T<0.01?3:1)+' %</b>';
+  drawTC();}
+function drawTC(){const c=$('tcCv');const {g,w,h}=fitCanvas(c);const E=+$('en').value;const L=46,R=w-120,T0=14,B=h-34;
+  const xs=10,X=x=>L+x/xs*(R-L),Y=t=>B-t*(B-T0);
+  g.strokeStyle=cv('line');g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='center';
+  for(let x=0;x<=10;x+=2){g.beginPath();g.moveTo(X(x),T0);g.lineTo(X(x),B);g.stroke();g.fillText(x,X(x),B+14);}
+  g.textAlign='right';for(let t=0;t<=1;t+=0.25){g.beginPath();g.moveTo(L,Y(t));g.lineTo(R,Y(t));g.stroke();g.fillText((t*100)+'%',L-4,Y(t)+4);}
+  g.textAlign='center';g.fillText('厚度 x（cm）　能量 '+E+' keV',(L+R)/2,h-4);
+  const cols={fat:'#e6b422',water:cv('soft'),bone:cv('bone'),lead:cv('metal')};
+  MATS.forEach((m,k)=>{const mm=mu(m,E);g.strokeStyle=cols[m];g.lineWidth=m===MAT?3.5:1.8;g.beginPath();
+    for(let i=0;i<=200;i++){const x=i/200*xs;const y=Y(Math.exp(-mm*x));i?g.lineTo(X(x),y):g.moveTo(X(x),y);}g.stroke();
+    g.fillStyle=cols[m];g.fillRect(R+12,T0+8+k*22,12,12);g.fillStyle=cv('ink');g.textAlign='left';g.fillText(MU[m].name.replace('（皮質骨）','').replace('（水）',''),R+30,T0+18+k*22);});
+  const x=MAT==='lead'?+$('thk').value:+$('thk').value;if(MAT!=='lead'){const t=Math.exp(-mu(MAT,E)*x);g.fillStyle=cv('ink');g.beginPath();g.arc(X(x),Y(t),5,0,7);g.fill();}}
+function attFrame(ts){const c=$('attCv');if(!c._g){const o=fitCanvas(c);c._g=o.g;c._w=o.w;c._h=o.h;}
+  const g=c._g,w=c._w,h=c._h;const dt=Math.min(50,ts-(attLast||ts));attLast=ts;g.clearRect(0,0,w,h);
+  const x=+$('thk').value,E=+$('en').value,m=mu(MAT,E);const vis=MAT==='lead'?x*10/0.5*(w*0.12):x/10*(w*0.35);
+  const bx=w*0.42,bw=Math.max(2,vis);
+  const col={fat:'#e6b422',water:cv('soft'),bone:cv('bone'),lead:cv('metal')}[MAT];
+  g.fillStyle=col;g.globalAlpha=.8;g.fillRect(bx,22,bw,h-60);g.globalAlpha=1;
+  g.fillStyle=cv('ink');g.font='12px sans-serif';g.textAlign='center';g.fillText(MU[MAT].name,bx+bw/2,16);
+  g.fillText('X 光源',30,h-18);g.fillText('偵測器',w-30,h-18);
+  g.fillStyle=cv('xr');g.fillRect(4,22,10,h-60);g.fillStyle=cv('mute');g.fillRect(w-14,22,10,h-60);
+  attAcc+=dt*0.12;while(attAcc>1){attAcc--;const depth=-Math.log(Math.random())/m; // where it interacts
+    attPh.push({x:14,y:26+Math.random()*(h-68),stop:depth<x?bx+depth/x*bw:null,a:1});}
+  let pass=0,tot=0;
+  attPh=attPh.filter(p=>{if(p.stop!==null&&p.x>=p.stop){p.a-=dt*0.004;g.fillStyle=cv('bad');g.globalAlpha=Math.max(0,p.a);g.beginPath();g.arc(p.x,p.y,3,0,7);g.fill();g.globalAlpha=1;return p.a>0;}
+    p.x+=dt*0.25;if(p.x>w-14)return false;g.fillStyle=cv('xr');g.beginPath();g.arc(p.x,p.y,2.6,0,7);g.fill();return true;});
+  const T=Math.exp(-m*x);g.fillStyle=cv('ink');g.textAlign='left';g.fillText('約 '+(T*100).toFixed(T<0.01?2:0)+'% 穿過',bx+bw+8,h-18);
+  requestAnimationFrame(attFrame);}
+$('thk').oninput=updAtt;$('en').oninput=updAtt;
+
+/* ===== Section 4: hand phantom ===== */
+const HW=250,HH=400,SC=25; // px per cm → 10cm × 16cm
+const HG=(()=>{ // geometry in cm
+  const fingers=[ // [baseX,baseY,len,angle(rad from vertical),radius]
+    [3.25,7.2,6.3,-0.10,0.82],[4.75,6.8,7.0,-0.02,0.88],[6.2,7.0,6.6,0.06,0.84],[7.55,7.6,5.3,0.15,0.74]];
+  const caps=[],bones=[];const carp=[5.2,13.0];
+  fingers.forEach((f,i)=>{const [bx,by,L,a,r]=f;const dx=Math.sin(a),dy=-Math.cos(a);const tx=bx+dx*L,ty=by+dy*L;
+    caps.push({ax:bx,ay:by+0.6,bx:tx,by:ty,r});
+    // metacarpal
+    const mx=carp[0]-1.6+i*1.05,my=12.0;bones.push({ax:mx,ay:my,bx:bx,by:by+0.2,r:0.46,cap:0});
+    const seg=[0.42,0.30,0.22];let s=0.25;const br=[0.42,0.37,0.32];
+    seg.forEach((q,k)=>{const l0=s,l1=s+q*(L-0.6)-0.15;bones.push({ax:bx+dx*l0,ay:by+dy*l0,bx:bx+dx*l1,by:by+dy*l1,r:br[k]*r/0.85});s=l1+0.15;});
+  });
+  // thumb
+  const th=[[2.6,11.4],[1.55,9.6],[0.95,8.3],[0.55,6.9]];
+  caps.push({ax:3.2,ay:12.0,bx:0.5,by:6.6,r:0.95});
+  bones.push({ax:th[0][0]+0.5,ay:th[0][1]+0.4,bx:th[1][0],by:th[1][1],r:0.5});
+  bones.push({ax:th[1][0]-0.1,ay:th[1][1]-0.25,bx:th[2][0],by:th[2][1],r:0.42});
+  bones.push({ax:th[2][0]-0.05,ay:th[2][1]-0.25,bx:th[3][0]+0.05,by:th[3][1]+0.2,r:0.36});
+  // forearm bones
+  bones.push({ax:4.1,ay:17,bx:4.1,by:13.9,r:0.85});bones.push({ax:6.6,ay:17,bx:6.6,by:13.9,r:0.55});
+  const carpals=[[3.9,13.0,.5],[5.0,13.1,.48],[6.0,13.1,.45],[6.75,12.9,.4],[3.7,12.2,.42],[4.6,12.3,.45],[5.5,12.3,.45],[6.4,12.2,.42]];
+  return {caps,bones,carpals,ring:{f:2,y0:null}};})();
+function chord(r,d){return d<r?2*Math.sqrt(r*r-d*d):0;}
+function segDist(px,py,s){const vx=s.bx-s.ax,vy=s.by-s.ay,wx=px-s.ax,wy=py-s.ay;let t=(vx*wx+vy*wy)/(vx*vx+vy*vy);t=Math.max(0,Math.min(1,t));const dx=px-(s.ax+t*vx),dy=py-(s.ay+t*vy);return Math.hypot(dx,dy);}
+let HMAP=null;
+function buildHand(){HMAP={soft:new Float32Array(HW*HH),bone:new Float32Array(HW*HH),metal:new Float32Array(HW*HH)};
+  const rf=HG.caps[2];const rdx=rf.bx-rf.ax,rdy=rf.by-rf.ay,rl=Math.hypot(rdx,rdy);const ringT=1.7; // cm from base along finger
+  for(let j=0;j<HH;j++)for(let i=0;i<HW;i++){const x=(i+.5)/SC,y=(j+.5)/SC;let soft=0;
+    // palm: superellipse slab
+    const u=(x-5.2)/3.15,v=(y-10.2)/3.3;const q=Math.pow(Math.abs(u),3)+Math.pow(Math.abs(v),3);if(q<1)soft=Math.max(soft,2.9*Math.sqrt(1-q));
+    // wrist/forearm
+    if(y>12.6){const hw=2.25+Math.max(0,(y-14))*0.05;const d=Math.abs(x-5.3);if(d<hw)soft=Math.max(soft,3.6*Math.sqrt(1-(d/hw)**2)*Math.min(1,(y-12.6)/1.0+0.6));}
+    for(const c of HG.caps)soft=Math.max(soft,chord(c.r,segDist(x,y,c)));
+    let bone=0;for(const b of HG.bones){const d=segDist(x,y,b);bone+=chord(b.r,d)-chord(b.r*0.55,d);}
+    for(const [cx,cy,r] of HG.carpals){const d=Math.hypot(x-cx,y-cy);bone+=(chord(r,d)-chord(r*0.6,d))*0.9;}
+    // ring
+    let metal=0;const t=((x-rf.ax)*rdx+(y-rf.ay)*rdy)/rl;const perp=Math.abs((x-rf.ax)*rdy-(y-rf.ay)*rdx)/rl;
+    if(Math.abs(t-ringT)<0.16)metal=chord(rf.r+0.14,perp)-chord(rf.r,perp);
+    bone=Math.min(bone,soft);HMAP.soft[j*HW+i]=Math.max(0,soft-bone);HMAP.bone[j*HW+i]=bone;HMAP.metal[j*HW+i]=metal;}}
+let ringOn=true,invOn=false,profY=280,Tcache=null;
+function handSpec(kvp){const s=spectrum(kvp,2.5,1);const bins=[];for(let k=0;k<s.E.length;k+=2){const E=s.E[k]+0.5;bins.push({E,w:s.N[k]*E,ms:mu('water',E),mb:mu('bone',E),mm:mu('lead',E)});}
+  const W=bins.reduce((a,b)=>a+b.w,0);bins.forEach(b=>b.w/=W);return bins;}
+function trans(bins,s,b,m){let T=0;for(const q of bins)T+=q.w*Math.exp(-(q.ms*s+q.mb*b+q.mm*m));return T;}
+function renderHand(){if(!HMAP)buildHand();const kvp=+$('hk').value;$('hkO').textContent=kvp+' kV';
+  const bins=handSpec(kvp);const c=$('handCv'),g=c.getContext('2d');const img=g.createImageData(HW,HH);Tcache=new Float32Array(HW*HH);
+  for(let p=0;p<HW*HH;p++){const s=HMAP.soft[p],b=HMAP.bone[p],m=ringOn?HMAP.metal[p]:0;let T=1;if(s>0||b>0||m>0)T=trans(bins,s,b,m);Tcache[p]=T;
+    let v=Math.pow(1-T,0.75)*255;if(invOn)v=255-v;img.data[p*4]=img.data[p*4+1]=img.data[p*4+2]=v;img.data[p*4+3]=255;}
+  g.putImageData(img,0,0);
+  g.strokeStyle='#ffb000';g.lineWidth=1;g.setLineDash([5,4]);g.beginPath();g.moveTo(0,profY+.5);g.lineTo(HW,profY+.5);g.stroke();g.setLineDash([]);
+  g.fillStyle='#ffb000';g.font='11px sans-serif';g.fillText('L',4,profY-4);g.fillText('R',HW-10,profY-4);
+  // contrast: middle-finger proximal phalanx centre; compare with same path filled by soft tissue
+  const pb=HG.bones[5];const ci=Math.round((pb.ax+pb.bx)/2*SC-.5),cj=Math.round((pb.ay+pb.by)/2*SC-.5),pp=cj*HW+ci;
+  const s0=HMAP.soft[pp],b0=HMAP.bone[pp];const tb=trans(bins,s0,b0,0),ts=trans(bins,s0+b0,0,0);
+  const C=(ts-tb)/ts;$('conO').textContent=(C*100).toFixed(1)+' %';$('tO').textContent=(tb*100).toFixed(1)+' %';
+  drawProfile();}
+function drawProfile(){const c=$('profCv');const {g,w,h}=fitCanvas(c);if(!Tcache)return;const L=40,R=w-10,T0=12,B=h-30;
+  g.strokeStyle=cv('line');g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='right';
+  for(let t=0;t<=1;t+=.25){g.beginPath();g.moveTo(L,B-t*(B-T0));g.lineTo(R,B-t*(B-T0));g.stroke();g.fillText((t*100)+'%',L-4,B-t*(B-T0)+4);}
+  g.textAlign='center';g.fillText('剖面線上的透射率 T（左 → 右）',(L+R)/2,h-8);
+  g.strokeStyle=cv('xr');g.lineWidth=2;g.beginPath();
+  for(let i=0;i<HW;i++){const t=Tcache[profY*HW+i];const x=L+i/(HW-1)*(R-L),y=B-t*(B-T0);i?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();
+  // shade bone regions
+  g.fillStyle=cv('bone');g.globalAlpha=.35;for(let i=0;i<HW;i++){if(HMAP.bone[profY*HW+i]>0.05){const x=L+i/(HW-1)*(R-L);g.fillRect(x,T0,(R-L)/HW+0.5,B-T0);}}g.globalAlpha=1;
+  g.fillStyle=cv('mute');g.textAlign='left';g.fillText('米色底 = 有骨頭',L+4,T0+12);}
+(function(){const c=$('handCv');let down=false;const set=e=>{const r=c.getBoundingClientRect();const p=e.touches?e.touches[0]:e;profY=Math.max(0,Math.min(HH-1,Math.round((p.clientY-r.top)/r.height*HH)));renderHand();};
+  c.addEventListener('mousedown',e=>{down=true;set(e);});window.addEventListener('mouseup',()=>down=false);c.addEventListener('mousemove',e=>{if(down)set(e);});
+  c.addEventListener('touchstart',e=>{set(e);e.preventDefault();},{passive:false});c.addEventListener('touchmove',e=>{set(e);e.preventDefault();},{passive:false});})();
+$('hk').oninput=renderHand;
+$('ringB').onclick=()=>{ringOn=!ringOn;$('ringB').classList.toggle('on',ringOn);renderHand();};
+$('invB').onclick=()=>{invOn=!invOn;$('invB').classList.toggle('on',invOn);renderHand();};
+
+/* ===== Section 5: protection ===== */
+let PB=0;
+document.querySelectorAll('#apronBtns button').forEach(b=>b.onclick=()=>{PB=+b.dataset.pb;document.querySelectorAll('#apronBtns button').forEach(x=>x.classList.toggle('on',x===b));drawProt();});
+function drawProt(){const c=$('protCv');const {g,w,h}=fitCanvas(c);const d=+$('dist').value,t=+$('tm').value;
+  $('distO').textContent=d.toFixed(1)+' m';$('tmO').textContent=t+' 單位';
+  const muPb=mu('lead',50);const sh=Math.exp(-muPb*PB/10);const D=100*t/(d*d)*sh;
+  const sx=36,X=v=>sx+v/4.2*(w-sx-40);
+  g.fillStyle=cv('xr');g.beginPath();g.arc(sx,h/2-10,12,0,7);g.fill();g.fillStyle=cv('ink');g.font='12px sans-serif';g.textAlign='center';g.fillText('散射源',sx,h/2+20);
+  // rays spreading
+  g.strokeStyle=cv('xr');g.globalAlpha=.25;for(let k=-4;k<=4;k++){g.beginPath();g.moveTo(sx,h/2-10);g.lineTo(w,h/2-10+k*22*(w/300));g.stroke();}g.globalAlpha=1;
+  // area squares at 1m and d
+  const px=X(d);g.fillStyle=cv('ink');
+  // person icon
+  g.beginPath();g.arc(px,h/2-46,10,0,7);g.fill();g.fillRect(px-8,h/2-34,16,40);g.fillRect(px-8,h/2+6,6,30);g.fillRect(px+2,h/2+6,6,30);
+  if(PB>0){g.fillStyle=cv('metal');g.globalAlpha=.9;g.fillRect(px-12,h/2-32,6,44);g.globalAlpha=1;}
+  g.strokeStyle=cv('mute');g.beginPath();g.moveTo(sx,h-24);g.lineTo(px,h-24);g.stroke();g.fillStyle=cv('mute');g.fillText(d.toFixed(1)+' m',(sx+px)/2,h-8);
+  // dose meter
+  g.fillStyle=cv('ink');g.textAlign='right';g.font='bold 15px sans-serif';g.fillText('相對劑量 '+(D<1?D.toFixed(2):D.toFixed(1)),w-8,22);
+  const bw=Math.min(1,D/400);g.fillStyle=cv('chip');g.fillRect(w-150,30,142,10);g.fillStyle=D>100?cv('bad'):cv('ok');g.fillRect(w-150,30,142*bw,10);
+  $('protSub').innerHTML='劑量 = 100 × '+t+' × <span class="frac"><span>1</span><span>'+d.toFixed(1)+'²</span></span> × e<sup>−'+muPb.toFixed(1)+'×'+(PB/10).toFixed(3)+'</sup> = <b>'+(D<1?D.toFixed(2):D.toFixed(1))+'</b><br><span class="mute" style="font-size:.9rem">（以「1 m、1 單位時間、無鉛衣」為 100；鉛衣擋掉 '+((1-sh)*100).toFixed(1)+' %）</span>';}
+$('dist').oninput=drawProt;$('tm').oninput=drawProt;
+const DOSES=[['手部 X 光',0.001,'<0.001'],['胸部 X 光',0.1,'0.1'],['乳房攝影',0.28,'0.28'],['頭部 CT',1.6,'1.6'],['年背景輻射（美）',3,'約 3'],['胸部 CT',6.1,'6.1']];
+(function(){const lo=Math.log10(0.0005),hi=Math.log10(10);$('doseBars').innerHTML=DOSES.map(([n,v,s])=>'<div class="bar"><span>'+n+'</span><div class="track"><div class="fill" style="width:'+((Math.log10(v)-lo)/(hi-lo)*100).toFixed(1)+'%"></div></div><em>'+s+' mSv</em></div>').join('');})();
+
+/* ===== Avatar: Röntgen ===== */
+const RO_SVG=`<svg viewBox="0 0 200 230" aria-label="倫琴老師動畫">
+ <g class="bodyg">
+  <path d="M8 232 Q12 176 70 160 L100 176 L130 160 Q188 176 192 232 Z" fill="#2f3238"/>
+  <path d="M70 160 L100 230 L130 160 L118 158 L100 200 L82 158 Z" fill="#3a3d44"/>
+  <path d="M74 161 L98 228 M126 161 L102 228" stroke="#8a8f99" stroke-width="1.6" fill="none"/>
+  <path d="M76 158 L100 200 L124 158 Z" fill="#f4f2ec"/>
+  <path d="M112 176 Q120 168 126 172 Q126 182 116 182 Z M88 176 Q80 168 74 172 Q74 182 84 182 Z" fill="#1c1d21"/>
+  <circle cx="100" cy="206" r="2" fill="#555a63"/><circle cx="100" cy="218" r="2" fill="#555a63"/>
+  <path d="M104 212 Q112 220 108 230" stroke="#c9c3b0" stroke-width="1.6" fill="none" stroke-dasharray="2 1.5"/>
+  <rect x="86" y="132" width="28" height="30" rx="10" fill="#d9ab8f"/>
+  <ellipse cx="100" cy="74" rx="36" ry="30" fill="#5a4e44"/>
+  <ellipse cx="68" cy="104" rx="6" ry="10" fill="#e0b498"/><ellipse cx="132" cy="104" rx="6" ry="10" fill="#e0b498"/>
+  <ellipse cx="100" cy="100" rx="31" ry="40" fill="#efc7ab"/>
+  <ellipse class="blush" cx="80" cy="112" rx="6" ry="4" fill="#f08080"/>
+  <ellipse class="blush" cx="120" cy="112" rx="6" ry="4" fill="#f08080"/>
+  <path d="M66 98 Q58 78 62 62 Q60 46 72 40 Q76 26 92 26 Q102 18 114 24 Q130 24 134 38 Q146 46 140 62 Q144 80 134 98 Q134 80 128 72 Q118 62 100 62 Q82 62 72 72 Q66 80 66 98 Z" fill="#5a4e44"/>
+  <path d="M72 58 Q84 40 104 38 M80 66 Q96 50 120 52 M96 34 Q114 30 128 42 M66 74 Q68 60 76 52 M134 74 Q134 58 126 50" stroke="#86786a" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <g class="hairL"><path d="M66 70 Q56 66 58 54 Q64 60 70 58 Z" fill="#5a4e44"/></g>
+  <g class="hairR"><path d="M134 70 Q144 66 142 54 Q136 60 130 58 Z" fill="#5a4e44"/></g>
+  <path d="M68 100 Q64 134 76 160 Q88 186 100 196 Q112 186 124 160 Q136 134 132 100 Q128 118 120 124 Q110 120 100 121 Q90 120 80 124 Q72 118 68 102 Z" fill="#342c26"/>
+  <path d="M80 140 Q86 160 96 176 M92 136 Q96 160 100 184 M108 136 Q106 160 104 182 M120 140 Q114 160 106 176 M74 126 Q76 140 82 152 M126 126 Q124 140 118 152" stroke="#4a4037" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <ellipse cx="100" cy="133" rx="10" ry="4.5" fill="#c98e78"/>
+  <path class="mo n" d="M92 133 Q100 136 108 133" stroke="#6e3428" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path class="mo s" d="M90 131 Q100 143 110 131 Q100 135 90 131 Z" fill="#9b3a2c" stroke="#6e3428" stroke-width="1.4" stroke-linejoin="round"/>
+  <path class="mo f" d="M92 136 Q100 130 108 136" stroke="#6e3428" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M78 126 Q88 118 100 123 Q112 118 122 126 Q112 131 100 128 Q88 131 78 126 Z" fill="#342c26"/>
+  <path class="brow browL" d="M74 87 Q83 81 95 86" stroke="#3a3029" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path class="brow browR" d="M105 86 Q117 81 126 87" stroke="#3a3029" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <g class="eyes"><ellipse cx="85" cy="95" rx="4.6" ry="2.7" fill="#fff"/><ellipse cx="115" cy="95" rx="4.6" ry="2.7" fill="#fff"/>
+   <circle cx="83.5" cy="95.2" r="2.4" fill="#3a2e26"/><circle cx="113.5" cy="95.2" r="2.4" fill="#3a2e26"/>
+   <circle cx="84.3" cy="94.3" r=".8" fill="#fff"/><circle cx="114.3" cy="94.3" r=".8" fill="#fff"/></g>
+  <path d="M79 99 Q85 101 91 99 M109 99 Q115 101 121 99" stroke="#c99a80" stroke-width="1.2" fill="none"/>
+  <path d="M100 96 Q98 108 96 114 Q100 118 105 115" stroke="#c18f73" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path class="sweat" d="M138 70 Q143 80 138 84 Q133 80 138 70 Z" fill="#7cc3f0"/>
+  <text class="spark" x="30" y="44" font-size="18" fill="#f0b400">✦</text>
+  <text class="spark" x="160" y="40" font-size="14" fill="#f0b400">✦</text>
+  <text class="spark" x="170" y="96" font-size="11" fill="#f0b400">✦</text>
+ </g></svg>`;
+function makeAvatar(el,bubble){el.innerHTML=RO_SVG;let tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold)tm=setTimeout(()=>{el.classList.remove('smile','frown');bubble.className='bubble';},3200);}};}
+var AV1=makeAvatar($('av1'),$('bub1')),AV2=makeAvatar($('av2'),$('bub2'));
+const QUOTES=[
+ '1895 年 11 月 8 日，我在維爾茨堡大學用黑紙板包住陰極射線管做實驗，竟然看到旁邊塗了鉑氰化鋇的螢光屏在發光！',
+ '我不知道這是什麼射線，就借用數學裡代表「未知數」的 X 來命名。德語區到今天還叫它「倫琴射線」。',
+ '1895 年 12 月 22 日，我替妻子安娜・貝爾塔拍了手的照片：骨頭和戒指清清楚楚——就像第 4 節那張！',
+ '我把發現寫成〈論一種新的射線〉，在 1895 年 12 月 28 日送出。消息幾週之內就傳遍全世界。',
+ '1901 年，我得到第一屆諾貝爾物理學獎。我沒有替 X 光申請專利，希望大家都能自由使用它。',
+ '第 111 號元素「錀（Rg）」以我命名；每年 11 月 8 日，也就是我發現 X 光那天，是「國際放射學日」。'];
+let qi=0;$('av1').onclick=()=>AV1.mood('smile',QUOTES[qi++%QUOTES.length]);
+
+/* ===== Quiz ===== */
+const QZ=[
+ {q:'X 射線的本質是什麼？',o:['高能量的電磁波（光子）','高速電子束','放射性原子核','超音波'],a:0,e:'X 光和可見光同屬電磁波，只是波長短、光子能量高。',h:'回想第 1 節：它在電磁波譜上，跟可見光是親戚喔！'},
+ {q:'把 X 光管的管電壓從 70 kV 提高到 100 kV，最主要的改變是？',o:['最大光子能量變大，穿透力增強','只有光子數量變多，能量不變','X 光的速度變快','X 光變成可見光'],a:0,e:'電子動能 = eV，最大光子能量 = kVp；能譜往高能延伸。光子數量主要由 mA 決定。',h:'kVp 決定電子被「加速到多快」，mA 決定「有幾顆電子」。'},
+ {q:'為什麼 X 光片上的骨頭看起來是白色的？',o:['骨頭含鈣、原子序與密度較高，吸收較多 X 光，偵測器收到較少','骨頭會發出螢光','骨頭反射了 X 光','骨頭讓 X 光加速通過'],a:0,e:'μ 越大吸收越多；收到的 X 光越少，影像越白。',h:'X 光片的明暗是反的：收到越少 → 越白。'},
+ {q:'某組織厚度 x 時透射率是 50%。厚度變成 2x，透射率約為？',o:['25%','0%','50%','75%'],a:0,e:'e^{−μ(2x)} = (e^{−μx})² = 0.5² = 25%：指數衰減，不是線性減少。',h:'Beer–Lambert：每多一個半值層，就再「減半」一次。'},
+ {q:'提高 kVp 對骨頭與軟組織之間的影像對比度有什麼影響？',o:['對比度下降','對比度上升','完全不影響','骨頭變得比軟組織黑'],a:0,e:'高能時光電效應變弱，骨頭和軟組織的 μ 越來越接近，所以對比度下降（但劑量較低）。',h:'看第 4 節：拉高 kVp 時影像整體怎麼變？'},
+ {q:'管電壓只有 50 kV 時，能譜上會出現鎢的 K 特徵線（59、67 keV）嗎？',o:['不會，電子能量不夠打掉 K 殼電子（需 69.5 keV）','會，特徵線與電壓無關','會，而且更強','只會出現 Kβ'],a:0,e:'電子最多只有 50 keV，無法游離 69.5 keV 的 K 殼電子；何況 50 kVp 也產生不了 59 keV 的光子。',h:'特徵輻射要先把內層電子「打出去」，需要足夠能量。'},
+ {q:'工作人員與散射源的距離從 1 m 退到 2 m，劑量約變成原來的？',o:['1/4','1/2','2 倍','不變'],a:0,e:'平方反比定律：劑量 ∝ 1/d²，(1/2)² = 1/4。',h:'點光源的能量分散在越來越大的球面上。'},
+ {q:'倫琴最初是怎麼察覺到 X 射線的？',o:['被黑紙包住的陰極射線管，讓遠處的螢光屏發光','看到照片底片自己變黑後才注意到','在鈾礦石附近量到輻射','用顯微鏡看到射線'],a:0,e:'陰極射線本身出不了管子，螢光屏卻亮了 → 一定有一種新射線。（鈾的輻射是隔年貝克勒發現的。）',h:'點點第 0 節的倫琴老師，第一則故事就是答案！'}];
+const PRAISE=['Sehr gut！完全正確！','漂亮！你看穿了這一題！','答對了，這可是 X 光等級的洞察力！','正確！我當年也是這樣推理的。'];
+let score=0,done=0,streak=0;
+function buildQuiz(){score=0;done=0;streak=0;$('score').textContent='';$('again').style.display='none';const box=$('quiz');box.innerHTML='';
+  QZ.forEach((z,qi2)=>{const d=document.createElement('div');d.className='q';d.innerHTML='<div class="qt">'+(qi2+1)+'. '+z.q+'</div><div class="opts"></div><div class="ex"></div>';
+    const ord=z.o.map((_,i)=>i).sort(()=>Math.random()-.5);const op=d.querySelector('.opts');
+    ord.forEach(i=>{const b=document.createElement('button');b.textContent=z.o[i];b.onclick=()=>{if(d.dataset.done)return;d.dataset.done=1;done++;
+      const ok=i===z.a;op.querySelectorAll('button').forEach((bb,k)=>{if(ord[k]===z.a)bb.classList.add('right');});if(!ok)b.classList.add('wrong');
+      const ex=d.querySelector('.ex');ex.className='ex '+(ok?'ok':'no');ex.textContent=(ok?'✔ 正確！':'✘ ')+z.e;
+      if(ok){score++;streak++;AV2.mood('smile',streak>=3?'連對 '+streak+' 題！你已經是放射科高手了！':PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+      else{streak=0;AV2.mood('frown',z.h);}
+      if(done===QZ.length){$('score').textContent='得分：'+score+' / '+QZ.length;$('again').style.display='inline-block';
+        setTimeout(()=>{const r=score/QZ.length;AV2.mood(r>=.85?'smile':r>=.6?'':'frown',
+          r>=.85?'太棒了！X 光的產生、衰減與成像你都掌握了！':r>=.6?'不錯！再回去玩玩第 3、4 節的滑桿，會更有感覺。':'別灰心，我也是做了好幾週實驗才搞懂。建議從第 2 節的能譜重新看起！',true);},3300);}};
+      op.appendChild(b);});box.appendChild(d);});}
+$('again').onclick=()=>{buildQuiz();AV2.mood('','新的一輪！選項順序已經打亂囉。');};
+
+/* ===== init & resize ===== */
+function redrawAll(){drawSpec();drawSpectrum();updAtt();renderHand();drawProt();['tubeCv','attCv'].forEach(id=>{$(id)._g=null;});}
+buildQuiz();redrawAll();requestAnimationFrame(tubeFrame);requestAnimationFrame(attFrame);
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(redrawAll,120);});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawAll);
+</script>
+</body>
+</html>

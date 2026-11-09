@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CT 原理互動教學</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;
+ --acc:#2f6fdf;--org:#e07a1f;--xr:#7a4fe0;--soft:#e8a07a;--bone:#cfc6a8;--metal:#9aa3b5;--glow:#ffcc33;--code:#1b1f2a;--chip:#f1efe8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --acc:#6fa0ff;--org:#ffa24d;--xr:#a98bff;--soft:#f0a983;--bone:#e2d8b4;--metal:#b7bfcf;--glow:#ffd75a;--code:#10131a;--chip:#262b37}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --acc:#6fa0ff;--org:#ffa24d;--xr:#a98bff;--soft:#f0a983;--bone:#e2d8b4;--metal:#b7bfcf;--glow:#ffd75a;--code:#10131a;--chip:#262b37}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:clamp(1.5rem,3.4vw,2.2rem)}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:20px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card h2{margin:0 0 12px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+.num{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--xr);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.formula{background:var(--chip);border-radius:10px;padding:10px 14px;margin:10px 0;font-size:1.08rem;text-align:center;overflow-x:auto}
+.note{background:var(--chip);border-left:4px solid var(--xr);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:.95rem}
+.two{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+.two>*{min-width:0}
+@media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
+canvas{display:block;width:100%;border-radius:12px;background:var(--chip)}
+.ctrl{display:grid;grid-template-columns:auto minmax(0,1fr) 5.2em;gap:6px 10px;align-items:center;margin:8px 0}
+.ctrl label{font-size:.95rem;white-space:nowrap}
+.ctrl output{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--xr)}
+canvas.sq{max-width:300px;height:auto;aspect-ratio:1/1;background:#000}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--xr)}
+button.on{background:var(--xr);color:#fff;border-color:var(--xr)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.stat{background:var(--chip);border-radius:10px;padding:8px 12px}
+.stat b{display:block;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.85rem;color:var(--mute)}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.15;margin:0 2px}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 3px}
+.c-xr{color:var(--xr);font-weight:600}.c-acc{color:var(--acc);font-weight:600}.c-org{color:var(--org);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.9rem;margin:6px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.steps3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.steps3>div{background:var(--chip);border-radius:12px;padding:10px 12px}
+.steps3 b{color:var(--xr)}
+@media (max-width:600px){.steps3{grid-template-columns:minmax(0,1fr)}}
+.bars{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.bar{display:grid;grid-template-columns:8.5em minmax(0,1fr) 6.8em;gap:8px;align-items:center;font-size:.92rem}
+.bar .track{height:14px;background:var(--chip);border-radius:7px;overflow:hidden}
+.bar .fill{height:100%;background:var(--xr);border-radius:7px}
+.bar em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
+/* quiz */
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0}
+.q .qt{font-weight:600;margin-bottom:8px}
+.q .opts{display:grid;gap:6px}
+.q .opts button{text-align:left}
+.q .opts button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--card))}
+.q .opts button.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--card))}
+.q .ex{margin-top:8px;font-size:.95rem}
+.q .ex.ok{color:var(--ok)}.q .ex.no{color:var(--bad)}
+#score{font-size:1.15rem;font-weight:700;margin:10px 0}
+footer{text-align:center;color:var(--mute);font-size:.9rem;margin-top:30px}
+/* avatar */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:bottom center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:bottom center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+</style>
+<style id="pu-badge-style">
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line,#e3e1da);border-radius:12px;background:var(--card,var(--surface,#fff));color:var(--ink,#1d2330);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif}
+.pu-badge img{width:58px;height:58px;display:block}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute,var(--muted,#667085))}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main"><h1>電腦斷層攝影（CT）的原理</h1>
+  <p>智慧醫療 ・ 互動教學：線積分、正弦圖、濾波反投影與 CT 值</p></div>
+  <div class="pu-badge"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+  <h2><span class="num">0</span>一句話直覺：從四面八方拍 X 光，再用電腦「反推」切面</h2>
+  <div class="intro">
+    <div>
+      <p>一般 X 光片把立體的身體<b>壓扁成一張陰影</b>，前後重疊的器官全疊在一起。<b>電腦斷層（Computed Tomography, CT）</b>讓 X 光管和偵測器繞著病人轉一圈，從幾百個角度量測，再用數學把每一小格（<b>體素，voxel</b>）的衰減係數 μ 算回來，得到一張「切開來看」的橫切面。</p>
+      <div class="steps3">
+        <div><b>① 量測</b><br>每條射線量到的是 μ 沿路徑的<b>線積分</b>（第 1 節）。</div>
+        <div><b>② 收集</b><br>所有角度、所有射線排起來 = <b>正弦圖</b>（第 3 節）。</div>
+        <div><b>③ 重建</b><br>解方程（第 2 節）或<b>濾波反投影</b>（第 4 節），再換成 <b>CT 值</b>（第 5 節）。</div>
+      </div>
+    </div>
+    <div class="avwrap"><div class="bubble" id="bub1">Hello！我是高弗雷・豪斯費爾德（Godfrey Hounsfield），第一台 CT 是我做的。CT 值的單位 HU 也用了我的名字。點我聽故事！</div><div class="av" id="av1" title="點我聽故事"></div></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+  <h2><span class="num">1</span>一條射線量到什麼？衰減係數的線積分</h2>
+  <p>X 光的 Beer–Lambert 定律 <i>I</i> = <i>I</i><sub>0</sub>e<sup>−μx</sup>，在 μ 會隨位置改變時，要寫成積分。偵測器量到 I，取對數就得到「這條路上 μ 的總和」：</p>
+  <div class="formula"><i>I</i> = <i>I</i><sub>0</sub> exp(−∫<sub>L</sub> μ(<i>x</i>,<i>y</i>) d<i>l</i>)　⟹　<i>p</i> = −ln<span class="frac"><span><i>I</i></span><span><i>I</i><sub>0</sub></span></span> = ∫<sub>L</sub> μ d<i>l</i> ≈ Σ<sub>i</sub> μ<sub>i</sub> Δ<i>l</i></div>
+  <div class="two">
+    <div style="display:flex;justify-content:center"><canvas id="rayCv" width="300" height="300" class="sq" aria-label="頭部模型與一條射線"></canvas></div>
+    <div>
+      <div class="ctrl"><label for="rA">射線角度</label><input type="range" id="rA" min="0" max="179" step="1" value="30"><output id="rAO"></output></div>
+      <div class="ctrl"><label for="rS">偏移位置</label><input type="range" id="rS" min="-11" max="11" step="0.1" value="2"><output id="rSO"></output></div>
+      <canvas id="profCv" height="170" aria-label="沿射線的 μ"></canvas>
+      <div class="formula" id="raySub"></div>
+    </div>
+  </div>
+  <p class="note">重點：一條射線只告訴我們「總和」，不知道 μ 分布在路徑的哪裡——就像只知道一排數字的總和。所以必須從<b>很多角度</b>量，才能把每一格解出來。</p>
+</section>
+
+<!-- 2 -->
+<section class="card">
+  <h2><span class="num">2</span>豪斯費爾德的拼圖：用代數迭代解出每一格（ART）</h2>
+  <p>把切面想成 3×3 個未知數 μ<sub>ij</sub>。射線從橫、直、兩個斜方向穿過，量到 16 個總和。<b>代數重建技術（Algebraic Reconstruction Technique, ART）</b>一次處理一條射線：算出「量到的總和 − 目前猜的總和」，把差額<b>平均分給</b>這條射線經過的格子：</p>
+  <div class="formula">μ<sub>i</sub> ← μ<sub>i</sub> + <span class="frac"><span><i>p</i> − Σ<sub>j∈射線</sub> μ<sub>j</sub></span><span><i>n</i>（射線經過的格數）</span></span></div>
+  <div class="two">
+    <div style="display:flex;justify-content:center"><canvas id="artCv" width="320" height="320" class="sq" aria-label="3×3 代數重建拼圖"></canvas></div>
+    <div>
+      <div class="btns"><button id="artStep">下一條射線 ▶</button><button id="artRound">跑完一輪 ⏩</button><button id="artAuto">▶ 自動</button><button id="artReset">⟲ 重來</button><button id="artAns">👁 看答案</button></div>
+      <div class="note" id="artMsg" style="min-height:4.5em">從全部是 0 開始。按「下一條射線」。</div>
+      <div class="stats">
+        <div class="stat"><span>已處理射線</span><b id="artN">0</b></div>
+        <div class="stat"><span>與真實值的誤差（RMS）</span><b id="artE">—</b></div>
+      </div>
+      <canvas id="artConv" height="140" aria-label="誤差收斂曲線"></canvas>
+    </div>
+  </div>
+  <p class="note">早期 EMI 掃描器就是用這種「猜 → 比對 → 修正」的迭代法重建影像。一張 80×80 的影像有 6400 個未知數，在 1970 年代的電腦上要算很久；後來的商用機器大多改用更快的<b>濾波反投影</b>（第 4 節）。現在因為電腦夠快，迭代重建又回來了，可以用更低的劑量得到清楚的影像。</p>
+</section>
+
+<!-- 3 -->
+<section class="card">
+  <h2><span class="num">3</span>旋轉一圈：投影與正弦圖（sinogram）</h2>
+  <p>固定一個角度 θ，把所有平行射線的 <i>p</i> 排成一條曲線，叫做<b>投影（projection）</b>。把 0°–180° 的投影一列列疊起來，就是 CT 真正量到的原始資料——<b>正弦圖</b>。這個轉換在數學上叫<b>拉東轉換（Radon transform）</b>：</p>
+  <div class="formula"><i>p</i>(<i>s</i>, θ) = ∫∫ μ(<i>x</i>,<i>y</i>) δ(<i>x</i> cos θ + <i>y</i> sin θ − <i>s</i>) d<i>x</i> d<i>y</i></div>
+  <div class="btns"><button data-ph="head" class="on">頭部模型</button><button data-ph="dots">三個小點</button></div>
+  <div class="two">
+    <div style="display:flex;justify-content:center"><canvas id="gantCv" width="300" height="300" class="sq" aria-label="旋轉的 X 光管與偵測器"></canvas></div>
+    <div>
+      <div class="ctrl"><label for="gA">角度 θ</label><input type="range" id="gA" min="0" max="179" step="1" value="0"><output id="gAO"></output></div>
+      <div class="btns"><button id="spin">▶ 旋轉 180°</button></div>
+      <canvas id="projCv" height="150" aria-label="目前角度的投影"></canvas>
+      <canvas id="sinoCv" width="128" height="180" style="width:100%;height:170px;image-rendering:pixelated;background:#000;margin-top:8px" aria-label="正弦圖"></canvas>
+      <div class="mute" style="font-size:.85rem;text-align:center">正弦圖：橫軸 = 偵測器位置 s，縱軸 = 角度 θ（0° → 179°，由上往下）</div>
+    </div>
+  </div>
+  <p class="note">切到「三個小點」再轉一圈：每個點在正弦圖上畫出一條<b>正弦曲線</b> s = r cos(θ − φ)，離中心越遠（r 越大）擺幅越大——這就是「正弦圖」名字的由來。</p>
+</section>
+
+<!-- 4 -->
+<section class="card">
+  <h2><span class="num">4</span>反投影（back-projection）與濾波反投影（FBP）</h2>
+  <p>最直覺的重建：把每個角度的投影值<b>沿原路「塗」回去</b>，所有角度疊加起來。但這樣做影像會糊成一團（每個點都被拖出 1/r 的星狀光暈）。解法是先用<b>斜坡濾波器（ramp filter）</b>把投影「銳化」，再反投影：</p>
+  <div class="formula">μ(<i>x</i>,<i>y</i>) ≈ <span class="frac"><span>π</span><span><i>N</i><sub>θ</sub></span></span> Σ<sub>θ</sub> <i>q</i><sub>θ</sub>(<i>x</i> cos θ + <i>y</i> sin θ)，　<i>q</i><sub>θ</sub> = <i>p</i><sub>θ</sub> ∗ <i>h</i>，　<i>H</i>(ω) = |ω|</div>
+  <div class="two">
+    <div style="display:flex;flex-direction:column;align-items:center"><canvas id="recCv" width="300" height="300" class="sq" aria-label="重建影像"></canvas></div>
+    <div>
+      <p style="margin:0 0 4px"><b>使用幾個角度？</b></p>
+      <div class="btns" id="nBtns"></div>
+      <div class="btns"><button id="filtB">斜坡濾波：關</button><button id="accB">▶ 逐角度累加</button></div>
+      <canvas id="filtCv" height="170" aria-label="原始投影與濾波後投影"></canvas>
+      <div class="stats">
+        <div class="stat"><span>與真實模型的誤差（RMS）</span><b id="recE">—</b></div>
+      </div>
+    </div>
+  </div>
+  <p class="note">試試看：① 濾波「關」、角度 1 → 只有一條條直線；角度加到 180，輪廓出現了但整張霧濛濛。② 打開濾波——濾波後的投影在邊緣出現<b>負的「下凹」</b>，反投影時正好把光暈抵消，影像立刻清晰。③ 濾波開著但只用 8 或 16 個角度：會看到放射狀的<b>條紋偽影（streak artifact）</b>，角度不夠就重建不好。</p>
+  <p class="mute" style="font-size:.88rem">使用 Ram-Lak 斜坡濾波器（空間域 h(0) = 1/(4Δ²)，奇數 n 時 h(n) = −1/(π²n²Δ²)），平行射束幾何，128×128 格、視野 24 cm。</p>
+</section>
+
+<!-- 5 -->
+<section class="card">
+  <h2><span class="num">5</span>CT 值（Hounsfield Unit, HU）與窗寬窗位</h2>
+  <p>重建出來的 μ 會隨 X 光能量改變，不方便比較。豪斯費爾德把它換成以<b>水</b>為 0、<b>空氣</b>為 −1000 的相對刻度：</p>
+  <div class="formula">HU = 1000 × <span class="frac"><span>μ − μ<sub>水</sub></span><span>μ<sub>水</sub> − μ<sub>空氣</sub></span></span>　　<span class="mute">（本頁取 μ<sub>水</sub> = 0.190 cm⁻¹，μ<sub>空氣</sub> ≈ 0）</span></div>
+  <div class="two">
+    <div style="display:flex;flex-direction:column;align-items:center"><canvas id="huCv" width="300" height="300" class="sq" style="cursor:crosshair" aria-label="窗寬窗位調整後的 CT 影像"></canvas>
+      <div class="formula" id="huSub" style="width:100%;max-width:300px;font-size:.95rem">把滑鼠移到影像上（或點一下）讀 CT 值</div></div>
+    <div>
+      <div class="btns" id="winBtns"></div>
+      <div class="ctrl"><label for="wW">窗寬 W</label><input type="range" id="wW" min="20" max="2500" step="10" value="80"><output id="wWO"></output></div>
+      <div class="ctrl"><label for="wL">窗位 L</label><input type="range" id="wL" min="-1000" max="1000" step="5" value="40"><output id="wLO"></output></div>
+      <canvas id="winCv" height="120" aria-label="HU 到灰階的對應"></canvas>
+      <div class="bars" id="huBars"></div>
+    </div>
+  </div>
+  <p class="note">CT 值範圍約 −1000 到 +3000，但螢幕和人眼只分得出幾十階灰。<b>窗位 L</b> 是中間灰的 CT 值，<b>窗寬 W</b> 是被展開成「黑 → 白」的範圍：低於 L − W/2 全黑，高於 L + W/2 全白。<b>腦窗</b>（W 80、L 40）能看出 35 HU 的腦組織、5 HU 的腦脊髓液和 70 HU 的<b>出血</b>；換成<b>骨窗</b>，腦裡的差異全部消失，但頭骨細節清楚了。</p>
+  <p class="mute" style="font-size:.88rem">影像是第 4 節用 180 個角度、加一點量測雜訊後重建的結果。各組織 CT 值為常見的近似範圍。</p>
+</section>
+
+<!-- 6 -->
+<section class="card">
+  <h2><span class="num">6</span>觀念小測驗</h2>
+  <div class="qgrid">
+    <div><div id="quiz"></div><div id="score"></div><button id="again" style="display:none">↻ 再做一次</button></div>
+    <div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+  </div>
+</section>
+
+<footer>電腦斷層攝影互動教學 ・ 單一 HTML 檔，可離線開啟</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+function fitCanvas(c){const r=window.devicePixelRatio||1;c.style.width='0px';const pe=c.parentElement,ps=getComputedStyle(pe);const w=Math.floor(pe.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight));c.style.width=w+'px';
+  if(!c.dataset.h)c.dataset.h=c.getAttribute('height');const h=+c.dataset.h;c.width=Math.round(w*r);c.height=Math.round(h*r);c.style.height=h+'px';
+  const g=c.getContext('2d');g.setTransform(r,0,0,r,0,0);return {g,w,h};}
+
+/* ===== phantom ===== */
+const N=128,FOV=24,DX=FOV/N,MUW=0.19,C0=(N-1)/2;
+const HEAD=[ // [cx,cy,a,b,angle(deg),HU] painted in order; normalized coords, y up
+ [0,0,.72,.95,0,30],[0,0,.69,.92,0,1000],[0,-.0184,.6624,.874,0,35],
+ [0,.80,.09,.05,0,-1000],
+ [.22,0,.11,.31,-18,5],[-.22,0,.16,.41,18,5],
+ [0,.35,.21,.25,0,40],[0,.1,.046,.046,0,45],[0,-.1,.046,.046,0,45],
+ [-.08,-.605,.046,.023,0,50],[0,-.606,.023,.023,0,50],[.06,-.605,.023,.046,0,50],
+ [.33,-.40,.09,.07,25,70]];
+const DOTS=[[0,0,.69,.92,0,-1000],[.45,.3,.05,.05,0,1500],[-.2,-.5,.05,.05,0,1500],[0,0,.05,.05,0,1500]];
+function buildPhantom(list){const hu=new Float32Array(N*N).fill(-1000);
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){const u=(c-C0)/(N/2),v=(C0-r)/(N/2);
+    for(const [cx,cy,a,b,ang,h] of list){const t=ang*Math.PI/180,x=u-cx,y=v-cy;const xr=x*Math.cos(t)+y*Math.sin(t),yr=-x*Math.sin(t)+y*Math.cos(t);
+      if((xr/a)**2+(yr/b)**2<=1)hu[r*N+c]=h;}}
+  return hu;}
+const huToMu=h=>Math.max(0,MUW*(1+h/1000));
+const PH={head:buildPhantom(HEAD),dots:buildPhantom(DOTS)};
+const MU={};for(const k in PH){MU[k]=PH[k].map(huToMu);}
+function sampleMu(m,x,y){ // x,y in pixel units from centre (y up)
+  const fc=x+C0,fr=C0-y;const c0=Math.floor(fc),r0=Math.floor(fr);if(c0<0||r0<0||c0>=N-1||r0>=N-1)return 0;
+  const a=fc-c0,b=fr-r0;return m[r0*N+c0]*(1-a)*(1-b)+m[r0*N+c0+1]*a*(1-b)+m[(r0+1)*N+c0]*(1-a)*b+m[(r0+1)*N+c0+1]*a*b;}
+const NA=180,ND=N;
+function project(m,th){const ct=Math.cos(th),st=Math.sin(th),p=new Float32Array(ND);
+  for(let j=0;j<ND;j++){const s=j-C0;let sum=0;for(let t=-N*0.72;t<=N*0.72;t+=0.5)sum+=sampleMu(m,s*ct-t*st,s*st+t*ct);p[j]=sum*0.5*DX;}return p;}
+const SINO={};for(const k in MU){SINO[k]=[];for(let a=0;a<NA;a++)SINO[k].push(project(MU[k],a*Math.PI/NA));}
+// ramp filter
+const H=new Float32Array(2*ND-1);for(let n=-(ND-1);n<=ND-1;n++){H[n+ND-1]=n===0?1/(4*DX*DX):(n%2?-1/(Math.PI*Math.PI*n*n*DX*DX):0);}
+function rampFilter(p){const q=new Float32Array(ND);for(let j=0;j<ND;j++){let s=0;for(let m=0;m<ND;m++)s+=p[m]*H[j-m+ND-1];q[j]=s*DX;}return q;}
+const R0=(s=>()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;})(11);const gauss=()=>{const u=R0()||1e-9,v=R0();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+const FILT=SINO.head.map(rampFilter);
+const NOISY=SINO.head.map(p=>rampFilter(p.map(v=>v+gauss()*0.004)));
+function backproject(rows,idx,scale){const f=new Float32Array(N*N);
+  for(const k of idx){const th=k*Math.PI/NA,ct=Math.cos(th),st=Math.sin(th),q=rows[k];
+    for(let r=0;r<N;r++){const y=C0-r;for(let c=0;c<N;c++){const s=(c-C0)*ct+y*st+C0;const j=Math.floor(s);if(j<0||j>=ND-1)continue;const a=s-j;f[r*N+c]+=q[j]*(1-a)+q[j+1]*a;}}}
+  for(let i=0;i<N*N;i++)f[i]*=scale;return f;}
+function toCanvas(c,vals,lo,hi){const g=c.getContext('2d');const tmp=document.createElement('canvas');tmp.width=N;tmp.height=N;const tg=tmp.getContext('2d');const img=tg.createImageData(N,N);
+  for(let i=0;i<N*N;i++){const v=Math.max(0,Math.min(255,(vals[i]-lo)/(hi-lo)*255));img.data[i*4]=img.data[i*4+1]=img.data[i*4+2]=v;img.data[i*4+3]=255;}
+  tg.putImageData(img,0,0);g.imageSmoothingEnabled=true;g.clearRect(0,0,c.width,c.height);g.drawImage(tmp,0,0,c.width,c.height);}
+const HUmin=-200,HUmax=200; // display window for sec 1/3 (soft-ish so brain visible) — overridden below
+function showHead(c){toCanvas(c,PH.head,-150,250);}
+
+/* ===== 1: single ray ===== */
+function upd1(){const a=+$('rA').value,s=+$('rS').value;$('rAO').textContent=a+'°';$('rSO').textContent=s.toFixed(1)+' cm';
+  const c=$('rayCv'),g=c.getContext('2d');showHead(c);const W=c.width,sc=W/N,th=a*Math.PI/180,ct=Math.cos(th),st=Math.sin(th),sp=s/DX;
+  const P=(x,y)=>[W/2+x*sc,W/2-y*sc];const L=N*0.75;
+  const [x0,y0]=P(sp*ct+L*st,sp*st-L*ct),[x1,y1]=P(sp*ct-L*st,sp*st+L*ct);
+  g.strokeStyle='#ffb000';g.lineWidth=2.5;g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.stroke();
+  g.fillStyle='#ffb000';g.beginPath();g.arc(x0,y0,7,0,7);g.fill();g.fillStyle='#4fd19d';g.fillRect(x1-6,y1-6,12,12);
+  g.font='12px sans-serif';g.fillStyle='#fff';g.fillText('X 光',Math.min(W-30,Math.max(4,x0+8)),Math.min(W-6,Math.max(14,y0)));
+  // profile
+  const pc=$('profCv');const {g:pg,w,h}=fitCanvas(pc);const Lp=40,Rp=w-10,T=12,B=h-30;const tmax=N*0.6;const ts=[],ms=[];let sum=0;
+  for(let t=-tmax;t<=tmax;t+=0.5){const m=sampleMu(MU.head,sp*ct-t*st,sp*st+t*ct);ts.push(t*DX);ms.push(m);sum+=m*0.5*DX;}
+  const X=t=>Lp+(t+tmax*DX)/(2*tmax*DX)*(Rp-Lp),Y=m=>B-m/0.4*(B-T);
+  pg.strokeStyle=cv('line');pg.fillStyle=cv('mute');pg.font='11px sans-serif';pg.textAlign='right';
+  for(let m=0;m<=0.4;m+=0.1){pg.beginPath();pg.moveTo(Lp,Y(m));pg.lineTo(Rp,Y(m));pg.stroke();pg.fillText(m.toFixed(1),Lp-4,Y(m)+4);}
+  pg.textAlign='center';pg.fillText('沿射線位置 l（cm），縱軸 μ（cm⁻¹）　面積 = p',(Lp+Rp)/2,h-4);
+  pg.beginPath();pg.moveTo(X(ts[0]),B);ts.forEach((t,i)=>pg.lineTo(X(t),Y(ms[i])));pg.lineTo(X(ts[ts.length-1]),B);pg.closePath();pg.fillStyle=cv('xr');pg.globalAlpha=.3;pg.fill();pg.globalAlpha=1;
+  pg.strokeStyle=cv('xr');pg.lineWidth=1.8;pg.beginPath();ts.forEach((t,i)=>i?pg.lineTo(X(t),Y(ms[i])):pg.moveTo(X(t),Y(ms[i])));pg.stroke();
+  $('raySub').innerHTML='p = Σ μ<sub>i</sub>Δl = <b>'+sum.toFixed(3)+'</b>　→　<span class="frac"><span>I</span><span>I<sub>0</sub></span></span> = e<sup>−'+sum.toFixed(3)+'</sup> = <b>'+(Math.exp(-sum)*100).toFixed(2)+' %</b>';}
+$('rA').oninput=upd1;$('rS').oninput=upd1;
+
+/* ===== 2: ART 3x3 ===== */
+const TRUE=[2,2,2,2,9,2,2,2,4];
+const RAYS=[];
+for(let r=0;r<3;r++)RAYS.push({cells:[r*3,r*3+1,r*3+2],dir:'橫',lab:'第 '+(r+1)+' 列'});
+for(let c=0;c<3;c++)RAYS.push({cells:[c,c+3,c+6],dir:'直',lab:'第 '+(c+1)+' 行'});
+for(let d=-2;d<=2;d++){const cells=[];for(let r=0;r<3;r++){const c=r+d;if(c>=0&&c<3)cells.push(r*3+c);}RAYS.push({cells,dir:'↘',lab:'↘ 斜線'});}
+for(let d=0;d<=4;d++){const cells=[];for(let r=0;r<3;r++){const c=d-r;if(c>=0&&c<3)cells.push(r*3+c);}RAYS.push({cells,dir:'↙',lab:'↙ 斜線'});}
+RAYS.forEach(R=>R.p=R.cells.reduce((s,i)=>s+TRUE[i],0));
+let X3=new Array(9).fill(0),artK=0,artCur=-1,artAuto=null,artHist=[],showAns=false;
+const rms=()=>Math.sqrt(X3.reduce((s,v,i)=>s+(v-TRUE[i])**2,0)/9);
+function artDraw(){const c=$('artCv'),g=c.getContext('2d'),W=c.width;g.clearRect(0,0,W,W);const o=60,cs=(W-2*o)/3;
+  g.font='bold 20px sans-serif';g.textAlign='center';g.textBaseline='middle';
+  const cur=artCur>=0?RAYS[artCur].cells:[];
+  for(let i=0;i<9;i++){const r=Math.floor(i/3),cc=i%3,x=o+cc*cs,y=o+r*cs;const v=showAns?TRUE[i]:X3[i];
+    const t=Math.max(0,Math.min(1,v/9));g.fillStyle=`rgb(${Math.round(30+t*210)},${Math.round(30+t*210)},${Math.round(40+t*200)})`;g.fillRect(x,y,cs,cs);
+    g.strokeStyle=cur.includes(i)?'#ffb000':'#888';g.lineWidth=cur.includes(i)?4:1;g.strokeRect(x+2,y+2,cs-4,cs-4);
+    g.fillStyle=t>0.5?'#111':'#fff';g.fillText(v.toFixed(showAns?0:2),x+cs/2,y+cs/2);}
+  g.font='12px sans-serif';g.fillStyle=cv('ink');
+  RAYS.forEach((R,k)=>{if(k>=6)return;const x=k<3?W-o/2:o+(k-3)*cs+cs/2,y=k<3?o+k*cs+cs/2:W-o/2;
+    g.fillStyle=k===artCur?'#e07a1f':cv('mute');g.font=(k===artCur?'bold ':'')+'13px sans-serif';g.fillText(R.p,x,y);});
+  if(artCur>=6){const R=RAYS[artCur];const a=R.cells[0],b=R.cells[R.cells.length-1];const cxy=i=>[o+(i%3)*cs+cs/2,o+Math.floor(i/3)*cs+cs/2];
+    const [x0,y0]=cxy(a),[x1,y1]=cxy(b);const dx=artCur<11?cs*0.7:-cs*0.7,dy=cs*0.7;
+    g.strokeStyle='#e07a1f';g.lineWidth=3;g.setLineDash([6,4]);g.beginPath();g.moveTo(x0-dx,y0-dy);g.lineTo(x1+dx,y1+dy);g.stroke();g.setLineDash([]);
+    g.fillStyle='#e07a1f';g.font='bold 13px sans-serif';g.fillText('p='+R.p,x0-dx,y0-dy-8);}
+  g.fillStyle=cv('mute');g.font='11px sans-serif';g.fillText('右：各列總和　下：各行總和　斜線：處理時才顯示',W/2,12);
+  $('artN').textContent=artK;$('artE').textContent=rms().toFixed(3);drawConv();}
+function drawConv(){const c=$('artConv');const {g,w,h}=fitCanvas(c);const L=34,R=w-8,T=8,B=h-22;const n=Math.max(16,artHist.length);const e0=rms0;
+  g.strokeStyle=cv('line');g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='center';g.beginPath();g.moveTo(L,B);g.lineTo(R,B);g.moveTo(L,T);g.lineTo(L,B);g.stroke();
+  g.fillText('處理過的射線數',(L+R)/2,h-4);g.textAlign='right';g.fillText(e0.toFixed(1),L-3,T+8);g.fillText('0',L-3,B);
+  g.strokeStyle=cv('xr');g.lineWidth=2;g.beginPath();g.moveTo(L,T);artHist.forEach((e,i)=>g.lineTo(L+(i+1)/n*(R-L),B-e/e0*(B-T)));g.stroke();}
+const rms0=Math.sqrt(TRUE.reduce((s,v)=>s+v*v,0)/9);
+function artStep(){const k=artK%RAYS.length,R=RAYS[k];const cur=R.cells.reduce((s,i)=>s+X3[i],0);const d=(R.p-cur)/R.cells.length;
+  R.cells.forEach(i=>X3[i]+=d);artCur=k;artK++;artHist.push(rms());showAns=false;$('artAns').classList.remove('on');
+  $('artMsg').innerHTML='射線 <b>'+R.lab+'</b>（'+R.cells.length+' 格）：量到 p = '+R.p+'，目前猜的總和 = '+cur.toFixed(2)+'<br>每格修正 <span class="frac"><span>'+R.p+' − '+cur.toFixed(2)+'</span><span>'+R.cells.length+'</span></span> = <b>'+(d>=0?'+':'')+d.toFixed(2)+'</b>'+(artK%RAYS.length===0?'<br>✔ 完成第 '+(artK/RAYS.length)+' 輪（16 條射線）':'');
+  artDraw();}
+$('artStep').onclick=artStep;$('artRound').onclick=()=>{do artStep();while(artK%RAYS.length);};
+$('artAuto').onclick=()=>{if(artAuto){clearInterval(artAuto);artAuto=null;$('artAuto').textContent='▶ 自動';$('artAuto').classList.remove('on');return;}
+  $('artAuto').textContent='⏸ 暫停';$('artAuto').classList.add('on');artAuto=setInterval(()=>{artStep();if(artK>=RAYS.length*8){clearInterval(artAuto);artAuto=null;$('artAuto').textContent='▶ 自動';$('artAuto').classList.remove('on');}},350);};
+$('artReset').onclick=()=>{X3=new Array(9).fill(0);artK=0;artCur=-1;artHist=[];showAns=false;$('artMsg').textContent='從全部是 0 開始。按「下一條射線」。';artDraw();};
+$('artAns').onclick=()=>{showAns=!showAns;$('artAns').classList.toggle('on',showAns);artDraw();};
+
+/* ===== 3: gantry & sinogram ===== */
+let PHK='head',sinoFilled=0,spinT=null;
+function upd3(){const a=+$('gA').value;$('gAO').textContent=a+'°';const c=$('gantCv'),g=c.getContext('2d'),W=c.width;
+  toCanvas(c,PH[PHK],PHK==='head'?-150:-1000,PHK==='head'?250:1500);
+  const th=a*Math.PI/180,ct=Math.cos(th),st=Math.sin(th);const R=W*0.47;
+  // source on one side, detector on other: rays along direction (-st, ct)
+  const tube=[W/2+(-(-st))*R*-1,0];
+  const ux=-st,uy=ct; // ray direction in math coords
+  const sx=W/2-ux*R,sy=W/2+uy*R,dx=W/2+ux*R,dy=W/2-uy*R; // canvas (y flipped)
+  g.strokeStyle='rgba(255,176,0,.35)';g.lineWidth=1;
+  for(let k=-6;k<=6;k++){const o=k*W/14;const px=ct*o,py=-st*o;g.beginPath();g.moveTo(sx+px,sy+py);g.lineTo(dx+px,dy+py);g.stroke();}
+  g.save();g.translate(sx,sy);g.rotate(Math.atan2(dy-sy,dx-sx));g.fillStyle='#ffb000';g.fillRect(-10,-W*0.45,14,W*0.9);g.restore();
+  g.save();g.translate(dx,dy);g.rotate(Math.atan2(dy-sy,dx-sx));g.fillStyle='#4fd19d';g.fillRect(-4,-W*0.45,10,W*0.9);g.restore();
+  g.fillStyle='#fff';g.font='12px sans-serif';g.fillText('θ = '+a+'°',8,16);
+  // projection
+  const p=SINO[PHK][a];const pc=$('projCv');const {g:pg,w,h}=fitCanvas(pc);const L=36,Rr=w-8,T=10,B=h-24;const mx=PHK==='head'?4.8:1.2;
+  pg.strokeStyle=cv('line');pg.fillStyle=cv('mute');pg.font='11px sans-serif';pg.textAlign='right';for(let v=0;v<=mx;v+=mx/4){pg.beginPath();pg.moveTo(L,B-v/mx*(B-T));pg.lineTo(Rr,B-v/mx*(B-T));pg.stroke();pg.fillText(v.toFixed(1),L-3,B-v/mx*(B-T)+4);}
+  pg.textAlign='center';pg.fillText('偵測器位置 s　（投影 p(s, '+a+'°)）',(L+Rr)/2,h-4);
+  pg.strokeStyle='#e0a000';pg.lineWidth=2;pg.beginPath();for(let j=0;j<ND;j++){const x=L+j/(ND-1)*(Rr-L),y=B-p[j]/mx*(B-T);j?pg.lineTo(x,y):pg.moveTo(x,y);}pg.stroke();
+  sinoFilled=Math.max(sinoFilled,a+1);drawSino();}
+function drawSino(){const c=$('sinoCv'),g=c.getContext('2d');const img=g.createImageData(ND,NA);const mx=PHK==='head'?4.8:1.0;const cur=+$('gA').value;
+  for(let a=0;a<NA;a++)for(let j=0;j<ND;j++){const i=(a*ND+j)*4;const v=a<sinoFilled?Math.min(255,SINO[PHK][a][j]/mx*255):0;img.data[i]=img.data[i+1]=img.data[i+2]=v;if(a===cur){img.data[i]=Math.min(255,v+120);img.data[i+1]=Math.min(255,v+70);}img.data[i+3]=255;}
+  g.putImageData(img,0,0);}
+$('gA').oninput=upd3;
+document.querySelectorAll('[data-ph]').forEach(b=>b.onclick=()=>{PHK=b.dataset.ph;document.querySelectorAll('[data-ph]').forEach(x=>x.classList.toggle('on',x===b));sinoFilled=0;$('gA').value=0;upd3();});
+$('spin').onclick=()=>{if(spinT)return;sinoFilled=0;let a=0;spinT=setInterval(()=>{$('gA').value=a;upd3();a+=2;if(a>179){clearInterval(spinT);spinT=null;$('gA').value=179;upd3();}},30);};
+
+/* ===== 4: BP / FBP ===== */
+let NUSE=180,FILT_ON=false,accT=null;
+const NLIST=[1,2,4,8,16,32,180];
+NLIST.forEach(n=>{const b=document.createElement('button');b.textContent=n;b.dataset.n=n;if(n===NUSE)b.classList.add('on');b.onclick=()=>{NUSE=n;document.querySelectorAll('#nBtns button').forEach(x=>x.classList.toggle('on',x===b));upd4();};$('nBtns').appendChild(b);});
+const idxFor=n=>{const a=[];for(let i=0;i<n;i++)a.push(Math.round(i*NA/n)%NA);return a;};
+function showRecon(f,filtered){const c=$('recCv');if(filtered){toCanvas(c,f,0,0.30);}else{let mn=Infinity,mx=-Infinity;for(const v of f){if(v<mn)mn=v;if(v>mx)mx=v;}toCanvas(c,f,mn,mx);}
+  if(filtered){let e=0;for(let i=0;i<N*N;i++)e+=(f[i]-MU.head[i])**2;$('recE').textContent=Math.sqrt(e/(N*N)).toFixed(4)+' cm⁻¹';}else $('recE').textContent='（未濾波：數值尺度不對）';}
+function upd4(){const idx=idxFor(NUSE);const rows=FILT_ON?FILT:SINO.head;const f=backproject(rows,idx,Math.PI/idx.length);showRecon(f,FILT_ON);drawFilt();}
+function drawFilt(){const c=$('filtCv');const {g,w,h}=fitCanvas(c);const L=40,R=w-8,T=10,B=h-24;const p=SINO.head[0],q=FILT[0];
+  const pm=4.8,qm=Math.max(...q.map(Math.abs));const Y0=(T+B)/2;
+  g.strokeStyle=cv('line');g.beginPath();g.moveTo(L,Y0);g.lineTo(R,Y0);g.stroke();
+  g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='center';g.fillText('θ = 0° 的投影：原始 p（灰）與濾波後 q（紫，下凹為負值）',(L+R)/2,h-4);
+  g.strokeStyle=cv('mute');g.lineWidth=1.5;g.beginPath();for(let j=0;j<ND;j++){const x=L+j/(ND-1)*(R-L),y=Y0-p[j]/pm*(Y0-T);j?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();
+  g.strokeStyle=cv('xr');g.lineWidth=2;g.beginPath();for(let j=0;j<ND;j++){const x=L+j/(ND-1)*(R-L),y=Y0-q[j]/qm*(Y0-T)*0.95;j?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();}
+$('filtB').onclick=()=>{FILT_ON=!FILT_ON;$('filtB').textContent='斜坡濾波：'+(FILT_ON?'開':'關');$('filtB').classList.toggle('on',FILT_ON);upd4();};
+$('accB').onclick=()=>{if(accT)return;const idx=idxFor(NUSE);const rows=FILT_ON?FILT:SINO.head;const f=new Float32Array(N*N);let k=0;
+  accT=setInterval(()=>{const part=backproject(rows,[idx[k]],Math.PI/idx.length);for(let i=0;i<N*N;i++)f[i]+=part[i];k++;
+    const show=FILT_ON?f:f;showRecon(show,FILT_ON);$('accB').textContent='累加中 '+k+'/'+idx.length;
+    if(k>=idx.length){clearInterval(accT);accT=null;$('accB').textContent='▶ 逐角度累加';}},Math.max(15,600/idx.length));};
+
+/* ===== 5: HU window ===== */
+const RECON_HU=(()=>{const f=backproject(NOISY,idxFor(180),Math.PI/180);return f.map((m,i)=>{const r=Math.floor(i/N),c=i%N;return Math.hypot(c-C0,r-C0)>N/2-1?-1000:1000*(m-MUW)/MUW;});})();
+const WINS=[['腦窗',80,40],['軟組織窗',400,40],['骨窗',1800,400],['肺窗',1500,-600]];
+WINS.forEach(([n,W,L],i)=>{const b=document.createElement('button');b.textContent=n+'（W'+W+'／L'+L+'）';if(!i)b.classList.add('on');b.onclick=()=>{$('wW').value=W;$('wL').value=L;document.querySelectorAll('#winBtns button').forEach(x=>x.classList.toggle('on',x===b));upd5();};$('winBtns').appendChild(b);});
+const TISSUE=[['空氣',-1000],['肺',-700],['脂肪',-100],['水',0],['腦脊髓液',5],['腦白質/灰質',35],['血液（凝血）',70],['骨頭',1000]];
+function tissueName(h){if(h<-900)return '空氣';if(h<-200)return '（肺／氣體）';if(h<-30)return '脂肪範圍';if(h<20)return '水／腦脊髓液範圍';if(h<55)return '軟組織／腦';if(h<100)return '出血（凝血）範圍';if(h<300)return '高密度軟組織';return '骨頭';}
+function upd5(){const W=+$('wW').value,L=+$('wL').value;$('wWO').textContent=W;$('wLO').textContent=L;toCanvas($('huCv'),RECON_HU,L-W/2,L+W/2);
+  const c=$('winCv');const {g,w,h}=fitCanvas(c);const Lp=10,Rp=w-10,T=14,B=h-40;const X=v=>Lp+(v+1100)/2300*(Rp-Lp);const lo=L-W/2,hi=L+W/2;
+  for(let px=Lp;px<=Rp;px++){const v=-1100+(px-Lp)/(Rp-Lp)*2300;const t=Math.max(0,Math.min(1,(v-lo)/(hi-lo)));g.fillStyle=`rgb(${t*255|0},${t*255|0},${t*255|0})`;g.fillRect(px,T,1.5,B-T);}
+  g.strokeStyle=cv('xr');g.lineWidth=2;g.strokeRect(X(lo),T-3,Math.max(2,X(hi)-X(lo)),B-T+6);
+  g.fillStyle=cv('ink');g.font='11px sans-serif';g.textAlign='center';
+  TISSUE.forEach(([n,v],i)=>{g.fillStyle=cv('ink');g.beginPath();g.moveTo(X(v),B);g.lineTo(X(v),B+5);g.strokeStyle=cv('ink');g.lineWidth=1;g.stroke();if([0,3,7].includes(i))g.fillText(n+' '+v,X(v),B+17);});
+  g.fillStyle=cv('mute');g.textAlign='left';g.fillText('−1000',Lp,h-2);g.textAlign='right';g.fillText('+1200 HU',Rp,h-2);}
+['wW','wL'].forEach(id=>$(id).addEventListener('input',()=>{document.querySelectorAll('#winBtns button').forEach(x=>x.classList.remove('on'));upd5();}));
+(function(){const c=$('huCv');const rd=e=>{const r=c.getBoundingClientRect();const p=e.touches?e.touches[0]:e;const col=Math.floor((p.clientX-r.left)/r.width*N),row=Math.floor((p.clientY-r.top)/r.height*N);if(col<0||row<0||col>=N||row>=N)return;
+  const hu=RECON_HU[row*N+col];const mu=MUW*(1+hu/1000);$('huSub').innerHTML='μ = '+mu.toFixed(3)+' cm⁻¹ → HU = 1000 × <span class="frac"><span>'+mu.toFixed(3)+' − 0.190</span><span>0.190</span></span> = <b>'+Math.round(hu)+'</b><br><span class="mute">'+tissueName(hu)+'</span>';};
+  c.addEventListener('mousemove',rd);c.addEventListener('click',rd);c.addEventListener('touchstart',e=>{rd(e);},{passive:true});})();
+$('huBars').innerHTML='';
+
+/* ===== Avatar: Hounsfield ===== */
+const HO_SVG=`<svg viewBox="0 0 200 230" aria-label="豪斯費爾德老師動畫">
+ <g class="bodyg">
+  <path d="M10 232 Q14 176 72 162 L100 180 L128 162 Q186 176 190 232 Z" fill="#2b2d33"/>
+  <path d="M72 162 L96 226 L100 186 Z M128 162 L104 226 L100 186 Z" fill="#363940"/>
+  <path d="M80 158 L100 186 L120 158 L114 152 L100 172 L86 152 Z" fill="#f4f4f0"/>
+  <path d="M95 172 L105 172 L109 222 L100 230 L91 222 Z" fill="#1d1f24"/>
+  <path d="M94 166 L106 166 L105 175 L95 175 Z" fill="#1d1f24"/>
+  <g fill="#e8e8e8"><rect x="97" y="184" width="3" height="3" transform="rotate(45 98.5 185.5)"/><rect x="101" y="196" width="3" height="3" transform="rotate(45 102.5 197.5)"/><rect x="96" y="207" width="3" height="3" transform="rotate(45 97.5 208.5)"/><rect x="102" y="214" width="3" height="3" transform="rotate(45 103.5 215.5)"/><rect x="99" y="176" width="2.5" height="2.5" transform="rotate(45 100 177)"/></g>
+  <rect x="87" y="130" width="26" height="30" rx="10" fill="#dcaa8e"/>
+  <ellipse cx="68" cy="104" rx="7" ry="12" fill="#e2b096"/><ellipse cx="132" cy="104" rx="7" ry="12" fill="#e2b096"/>
+  <path d="M69 98 Q68 140 100 146 Q132 140 131 98 Q131 58 100 56 Q69 58 69 98 Z" fill="#efc2a6"/>
+  <ellipse class="blush" cx="81" cy="114" rx="7" ry="4.5" fill="#f08080"/>
+  <ellipse class="blush" cx="119" cy="114" rx="7" ry="4.5" fill="#f08080"/>
+  <path d="M68 98 Q62 70 72 54 Q82 38 102 38 Q124 36 134 52 Q140 64 134 82 Q132 92 131 98 Q128 84 126 74 Q124 64 118 60 Q110 56 100 58 Q92 54 84 60 Q78 60 76 66 Q72 76 72 98 Z" fill="#2f2924"/>
+  <path d="M80 54 Q96 42 118 46 M86 48 Q104 38 126 50" stroke="#4a4038" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <g class="hairL"><path d="M69 92 Q64 82 68 70 Q72 78 74 88 Z" fill="#8a847c"/></g>
+  <g class="hairR"><path d="M131 92 Q136 82 132 70 Q128 78 126 88 Z" fill="#8a847c"/></g>
+  <path class="brow browL" d="M75 85 Q84 80 94 84" stroke="#2f2924" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+  <path class="brow browR" d="M106 84 Q116 80 125 85" stroke="#2f2924" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+  <g class="eyes"><ellipse cx="85" cy="94" rx="4.4" ry="2.8" fill="#fff"/><ellipse cx="115" cy="94" rx="4.4" ry="2.8" fill="#fff"/>
+   <circle cx="85" cy="94.3" r="2.4" fill="#3a2e26"/><circle cx="115" cy="94.3" r="2.4" fill="#3a2e26"/>
+   <circle cx="85.8" cy="93.4" r=".8" fill="#fff"/><circle cx="115.8" cy="93.4" r=".8" fill="#fff"/></g>
+  <path d="M79 98 Q85 101 91 98 M109 98 Q115 101 121 98" stroke="#cf9a80" stroke-width="1.2" fill="none"/>
+  <path d="M100 94 Q98 106 95 114 Q100 119 107 115" stroke="#c48a70" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path class="mo n" d="M90 129 Q100 133 110 129" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+  <path class="mo s" d="M88 127 Q100 140 112 127 Q100 131 88 127 Z" fill="#9b3a2c" stroke="#8a4a3a" stroke-width="1.5" stroke-linejoin="round"/>
+  <path class="mo f" d="M90 132 Q100 125 110 132" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+  <path d="M82 125 Q86 116 100 119 Q114 116 118 125 Q114 128 108 124 Q100 122 92 124 Q86 128 82 125 Z" fill="#2f2924"/>
+  <path class="sweat" d="M138 70 Q143 80 138 84 Q133 80 138 70 Z" fill="#7cc3f0"/>
+  <text class="spark" x="30" y="44" font-size="18" fill="#f0b400">✦</text>
+  <text class="spark" x="160" y="40" font-size="14" fill="#f0b400">✦</text>
+  <text class="spark" x="170" y="96" font-size="11" fill="#f0b400">✦</text>
+ </g></svg>`;
+function makeAvatar(el,bubble){el.innerHTML=HO_SVG;let tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold)tm=setTimeout(()=>{el.classList.remove('smile','frown');bubble.className='bubble';},3200);}};}
+var AV1=makeAvatar($('av1'),$('bub1')),AV2=makeAvatar($('av2'),$('bub2'));
+const QUOTES=[
+ '我 1919 年出生在英格蘭諾丁漢郡的鄉下，在農場長大。我在學校的功課並不突出。',
+ '二戰前我自願加入英國皇家空軍的預備役，在那裡學會了電子學和雷達。',
+ '我沒有念大學，戰後在法拉第電機工程學院拿到文憑，1949 年進入 EMI 公司。',
+ '1958 年，我參與設計 EMIDEC 1100：英國第一台商用的全電晶體電腦。',
+ '有一次在鄉間郊遊時我想到：如果從所有角度讀取 X 光，就能知道物體裡面有什麼！我先試了保存的人腦、從肉店買的牛腦，最後掃描我自己。',
+ '1971 年 10 月 1 日，倫敦 Atkinson Morley 醫院用 CT 掃描了第一位病人，看到了腦中的囊腫。1979 年我和柯馬克（Allan Cormack）共同獲得諾貝爾生理醫學獎。'];
+let qi=0;$('av1').onclick=()=>AV1.mood('smile',QUOTES[qi++%QUOTES.length]);
+
+/* ===== Quiz ===== */
+const QZ=[
+ {q:'CT 和一般 X 光片最大的差別是？',o:['從很多角度量測，再用電腦重建出切面','用的是超音波','不需要 X 光','只拍一張但解析度更高'],a:0,e:'X 光片把立體壓成一張陰影；CT 繞一圈量測，再重建每個體素的 μ。',h:'回想第 0 節：「斷層」的意思是什麼？'},
+ {q:'一條射線的量測值 p = −ln(I/I₀) 代表什麼？',o:['μ 沿著射線路徑的線積分（總和）','射線上最大的 μ','射線中點的 μ','X 光的波長'],a:0,e:'p = ∫μ dl：只知道總和，不知道分布位置，所以需要很多角度。',h:'看第 1 節：p 是曲線下的「面積」。'},
+ {q:'ART 每處理一條射線時做什麼？',o:['把「量到 − 猜的」總和差額平均分給這條射線經過的格子','把所有格子設成平均值','只修正最大的那格','隨機猜一個新答案'],a:0,e:'這就是 Kaczmarz 迭代：一次滿足一條方程式，一輪輪逼近答案。',h:'第 2 節的「每格修正」公式。'},
+ {q:'正弦圖（sinogram）中，一個小點會畫出什麼形狀？',o:['一條正弦曲線','一條直線','一個圓','一個點'],a:0,e:'點 (r, φ) 在角度 θ 的投影位置 s = r cos(θ − φ)，隨 θ 變化是正弦曲線。',h:'第 3 節切到「三個小點」轉一圈。'},
+ {q:'只做反投影、不加濾波，影像會？',o:['整體模糊，像蒙了一層霧','完全正確','變成負片','只剩下骨頭'],a:0,e:'簡單反投影等於原影像和 1/r 卷積，斜坡濾波器 |ω| 正好把它補回來。',h:'第 4 節把濾波關掉、用 180 個角度看看。'},
+ {q:'用太少的投影角度做 FBP，最典型的問題是？',o:['放射狀的條紋偽影','影像變彩色','CT 值全部變 0','病人劑量變高'],a:0,e:'角度不足時，每條反投影的直線沒被其他角度抵消，留下條紋。',h:'第 4 節試試 8 或 16 個角度。'},
+ {q:'水和空氣的 CT 值分別是？',o:['0 HU 和 −1000 HU','100 HU 和 0 HU','1000 HU 和 0 HU','−1000 HU 和 0 HU'],a:0,e:'HU = 1000(μ − μ水)/(μ水 − μ空氣)：水 → 0，空氣 → −1000。',h:'把 μ = μ水 和 μ = 0 代進第 5 節的公式。'},
+ {q:'想看清楚腦內 35 HU 和 70 HU（出血）的差別，窗寬應該？',o:['窄（例如 W = 80）','寬（例如 W = 2000）','窗寬不影響','設成 0'],a:0,e:'窄窗寬把小範圍的 HU 展開成全黑到全白，對比最好；寬窗適合看骨頭。',h:'第 5 節比較腦窗和骨窗。'}];
+const PRAISE=['Splendid！完全正確！','漂亮！重建成功！','答對了，影像清清楚楚！','正確！這就是 CT 的精神。'];
+let score=0,done=0,streak=0;
+function buildQuiz(){score=0;done=0;streak=0;$('score').textContent='';$('again').style.display='none';const box=$('quiz');box.innerHTML='';
+  QZ.forEach((z,n)=>{const d=document.createElement('div');d.className='q';d.innerHTML='<div class="qt">'+(n+1)+'. '+z.q+'</div><div class="opts"></div><div class="ex"></div>';
+    const ord=z.o.map((_,i)=>i).sort(()=>Math.random()-.5);const op=d.querySelector('.opts');
+    ord.forEach(i=>{const b=document.createElement('button');b.textContent=z.o[i];b.onclick=()=>{if(d.dataset.done)return;d.dataset.done=1;done++;
+      const ok=i===z.a;op.querySelectorAll('button').forEach((bb,k)=>{if(ord[k]===z.a)bb.classList.add('right');});if(!ok)b.classList.add('wrong');
+      const ex=d.querySelector('.ex');ex.className='ex '+(ok?'ok':'no');ex.textContent=(ok?'✔ 正確！':'✘ ')+z.e;
+      if(ok){score++;streak++;AV2.mood('smile',streak>=3?'連對 '+streak+' 題！你的腦袋就是一台重建電腦！':PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+      else{streak=0;AV2.mood('frown',z.h);}
+      if(done===QZ.length){$('score').textContent='得分：'+score+' / '+QZ.length;$('again').style.display='inline-block';
+        setTimeout(()=>{const r=score/QZ.length;AV2.mood(r>=.85?'smile':r>=.6?'':'frown',
+          r>=.85?'太棒了！從線積分到 CT 值，你都掌握了！':r>=.6?'不錯！再回第 3、4 節轉一圈、開關濾波，會更有感覺。':'別灰心，我也是在鄉間散步時才想通的。建議從第 1 節的線積分重新看起！',true);},3300);}};
+      op.appendChild(b);});box.appendChild(d);});}
+$('again').onclick=()=>{buildQuiz();AV2.mood('','新的一輪！選項順序已經打亂囉。');};
+
+/* ===== init ===== */
+function redrawAll(){upd1();artDraw();upd3();upd4();upd5();}
+buildQuiz();redrawAll();
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(redrawAll,120);});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawAll);
+</script>
+</body>
+</html>

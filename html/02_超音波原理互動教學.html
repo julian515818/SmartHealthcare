@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>醫用超音波原理互動教學</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;
+ --acc:#2f6fdf;--org:#e07a1f;--xr:#7a4fe0;--soft:#e8a07a;--bone:#cfc6a8;--metal:#9aa3b5;--glow:#ffcc33;--code:#1b1f2a;--chip:#f1efe8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --acc:#6fa0ff;--org:#ffa24d;--xr:#a98bff;--soft:#f0a983;--bone:#e2d8b4;--metal:#b7bfcf;--glow:#ffd75a;--code:#10131a;--chip:#262b37}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;
+ --acc:#6fa0ff;--org:#ffa24d;--xr:#a98bff;--soft:#f0a983;--bone:#e2d8b4;--metal:#b7bfcf;--glow:#ffd75a;--code:#10131a;--chip:#262b37}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:clamp(1.5rem,3.4vw,2.2rem)}
+header p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:20px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card h2{margin:0 0 12px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+.num{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--xr);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.formula{background:var(--chip);border-radius:10px;padding:10px 14px;margin:10px 0;font-size:1.08rem;text-align:center;overflow-x:auto}
+.note{background:var(--chip);border-left:4px solid var(--xr);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:.95rem}
+.two{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+.two>*{min-width:0}
+@media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
+canvas{display:block;width:100%;border-radius:12px;background:var(--chip)}
+.ctrl{display:grid;grid-template-columns:auto minmax(0,1fr) 5.2em;gap:6px 10px;align-items:center;margin:8px 0}
+.ctrl label{font-size:.95rem;white-space:nowrap}
+.ctrl output{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--xr)}
+select{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:100%}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--xr)}
+button.on{background:var(--xr);color:#fff;border-color:var(--xr)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.stat{background:var(--chip);border-radius:10px;padding:8px 12px}
+.stat b{display:block;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.85rem;color:var(--mute)}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.15;margin:0 2px}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 3px}
+.c-xr{color:var(--xr);font-weight:600}.c-acc{color:var(--acc);font-weight:600}.c-org{color:var(--org);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.9rem;margin:6px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.steps3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.steps3>div{background:var(--chip);border-radius:12px;padding:10px 12px}
+.steps3 b{color:var(--xr)}
+@media (max-width:600px){.steps3{grid-template-columns:minmax(0,1fr)}}
+.bars{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.bar{display:grid;grid-template-columns:8.5em minmax(0,1fr) 6.8em;gap:8px;align-items:center;font-size:.92rem}
+.bar .track{height:14px;background:var(--chip);border-radius:7px;overflow:hidden}
+.bar .fill{height:100%;background:var(--xr);border-radius:7px}
+.bar em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
+/* quiz */
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0}
+.q .qt{font-weight:600;margin-bottom:8px}
+.q .opts{display:grid;gap:6px}
+.q .opts button{text-align:left}
+.q .opts button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--card))}
+.q .opts button.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--card))}
+.q .ex{margin-top:8px;font-size:.95rem}
+.q .ex.ok{color:var(--ok)}.q .ex.no{color:var(--bad)}
+#score{font-size:1.15rem;font-weight:700;margin:10px 0}
+footer{text-align:center;color:var(--mute);font-size:.9rem;margin-top:30px}
+/* avatar */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:bottom center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:bottom center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+</style>
+<style id="pu-badge-style">
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line,#e3e1da);border-radius:12px;background:var(--card,var(--surface,#fff));color:var(--ink,#1d2330);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif}
+.pu-badge img{width:58px;height:58px;display:block}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute,var(--muted,#667085))}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main"><h1>診斷用醫用超音波的原理</h1>
+  <p>智慧醫療 ・ 互動教學：超音波的脈衝回波、聲阻抗、B-mode 成像與都卜勒</p></div>
+  <div class="pu-badge"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+  <h2><span class="num">0</span>一句話直覺：對身體「喊一聲」，聽回音算距離</h2>
+  <div class="intro">
+    <div>
+      <p><b>超音波（ultrasound）</b>是頻率高於人耳上限 20 kHz 的<b>聲波</b>；診斷用的頻率約 <b>2–15 MHz</b>。它和 X 光最大的不同：超音波是<b>機械波</b>，要靠介質（組織）的分子推擠傳遞，<b>不是游離輻射</b>，所以能安全地用在孕婦與胎兒身上。</p>
+      <p>原理就像蝙蝠與潛艇聲納：探頭發出一個短短的聲音脈衝，遇到組織交界就反彈一部分回來。只要量到回音的<b>時間</b>，就知道交界有多<b>深</b>；回音有多<b>強</b>，就決定畫面上那一點有多<b>亮</b>。</p>
+      <div class="steps3">
+        <div><b>① 何時回來？</b><br>深度 d = <span class="frac"><span>c·t</span><span>2</span></span>（第 2 節）</div>
+        <div><b>② 回來多少？</b><br>由兩邊的聲阻抗 Z 決定（第 3 節）</div>
+        <div><b>③ 拼成影像</b><br>很多條回音線排起來 = B-mode（第 4 節）</div>
+      </div>
+    </div>
+    <div class="avwrap"><div class="bubble" id="bub1">Hello！我是約翰・懷爾德（John J. Wild），大家叫我「醫用超音波之父」。點我聽故事！</div><div class="av" id="av1" title="點我聽故事"></div></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+  <h2><span class="num">1</span>頻率的取捨：看得清楚 vs. 看得深</h2>
+  <p>軟組織的平均聲速約 <b>c = 1540 m/s</b>。頻率 f 越高，波長越短 → 解析度越好；但組織對高頻的<b>衰減</b>也越強 → 照不深。</p>
+  <div class="formula">λ = <span class="frac"><span>c</span><span>f</span></span>　　　衰減（dB）≈ α · f · (2d)，　α ≈ 0.5 <span class="frac"><span>dB</span><span>cm·MHz</span></span>　<span class="mute">（2d：一去一回）</span></div>
+  <div class="two">
+    <div><canvas id="waveCv" height="250" aria-label="不同頻率的聲波在組織中傳遞"></canvas></div>
+    <div>
+      <div class="ctrl"><label for="f1">頻率 f</label><input type="range" id="f1" min="1" max="15" step="0.5" value="3.5"><output id="f1O"></output></div>
+      <div class="btns">
+        <button data-f="2.5">心臟 2.5 MHz</button><button data-f="3.5">腹部 3.5 MHz</button><button data-f="7.5">血管 7.5 MHz</button><button data-f="12">甲狀腺・乳房 12 MHz</button>
+      </div>
+      <div class="formula" id="lamSub"></div>
+      <div class="stats">
+        <div class="stat"><span>軸向解析度（約 1 個 λ）</span><b id="resO">—</b></div>
+        <div class="stat"><span>可看深度（60 dB 預算）</span><b id="depO">—</b></div>
+      </div>
+    </div>
+  </div>
+  <canvas id="tradeCv" height="220" aria-label="解析度與穿透深度對頻率"></canvas>
+  <p class="note">軸向解析度約等於脈衝長度的一半：一個脈衝約 2 個週期 → 2λ/2 = λ。可看深度用「探頭能分辨 60 dB 的衰減」來估計：d<sub>max</sub> = <span class="frac"><span>60</span><span>2 × 0.5 × f</span></span> = <span class="frac"><span>60</span><span>f</span></span> cm。所以<b>腹部（深）用低頻，甲狀腺、乳房（淺）用高頻</b>。</p>
+</section>
+
+<!-- 2 -->
+<section class="card">
+  <h2><span class="num">2</span>脈衝回波測距：A-mode（振幅模式）</h2>
+  <p>探頭裡的<b>壓電晶體（piezoelectric crystal）</b>通電會振動、發出聲波；收到回音時又把振動轉回電壓。它大部分時間在「聽」：每秒發射數千次短脈衝。</p>
+  <div class="formula">深度 <i>d</i> = <span class="frac"><span><i>c</i> · <i>t</i></span><span>2</span></span>　⟺　<i>t</i> = <span class="frac"><span>2<i>d</i></span><span><i>c</i></span></span>　　<span class="mute">（≈ 13 μs 對應 1 cm 深）</span></div>
+  <div class="two">
+    <div><canvas id="aCv" height="360" aria-label="A-mode 脈衝回波動畫"></canvas></div>
+    <div>
+      <div class="ctrl"><label for="tgt">腫塊深度</label><input type="range" id="tgt" min="4" max="14" step="0.5" value="8"><output id="tgtO"></output></div>
+      <div class="btns"><button id="fire">⚡ 發射脈衝</button><button id="autoFire">▶ 連續發射</button></div>
+      <canvas id="aTrace" height="190" aria-label="A-mode 回音波形"></canvas>
+      <div class="formula" id="aSub"></div>
+      <div class="stats">
+        <div class="stat"><span>最大脈衝重複頻率（看到 15 cm）</span><b id="prfO">—</b></div>
+      </div>
+    </div>
+  </div>
+  <p class="note">每個交界都會產生一個回音尖峰，越深的回音越晚回來、也越弱（衰減）。最大脈衝重複頻率 PRF<sub>max</sub> = <span class="frac"><span>c</span><span>2 d<sub>max</sub></span></span>：上一個脈衝的回音還沒全部回來，就不能發下一個——這就是為什麼看得越深，影像更新越慢。</p>
+</section>
+
+<!-- 3 -->
+<section class="card">
+  <h2><span class="num">3</span>回音從哪來？聲阻抗（acoustic impedance）與反射</h2>
+  <p>每種組織有自己的<b>聲阻抗 Z = ρ c</b>（密度 × 聲速，單位 MRayl）。聲波垂直打到兩種組織的交界時，反射的能量比例是：</p>
+  <div class="formula"><i>R</i> = <span class="frac"><span>(<i>Z</i><sub>2</sub> − <i>Z</i><sub>1</sub>)²</span><span>(<i>Z</i><sub>2</sub> + <i>Z</i><sub>1</sub>)²</span></span>　　　<i>T</i> = 1 − <i>R</i></div>
+  <div class="two">
+    <div><canvas id="zCv" height="250" aria-label="交界反射與穿透"></canvas></div>
+    <div>
+      <div class="ctrl"><label for="z1">介質 1</label><select id="z1"></select><span></span></div>
+      <div class="ctrl"><label for="z2">介質 2</label><select id="z2"></select><span></span></div>
+      <div class="btns">
+        <button data-p="fat,muscle">脂肪 → 肌肉</button><button data-p="liver,blood">肝 → 血液</button><button data-p="muscle,bone">肌肉 → 骨頭</button><button data-p="air,muscle">空氣 → 皮膚</button>
+      </div>
+      <div class="formula" id="zSub"></div>
+      <div class="stats">
+        <div class="stat"><span>反射 R</span><b id="rO">—</b></div>
+        <div class="stat"><span>穿透 T</span><b id="tO2">—</b></div>
+      </div>
+    </div>
+  </div>
+  <div class="bars" id="zBars"></div>
+  <p class="note">軟組織之間 Z 很接近，只反射不到 1%，大部分聲波繼續往深處走——這正是能看到深層器官的原因。<b>空氣</b>幾乎全反射（約 99.9%），所以檢查時要塗<b>耦合凝膠（gel）</b>把探頭和皮膚之間的空氣趕走，也因此超音波看不穿肺和腸氣。<b>骨頭</b>反射與吸收都很強，後方會留下黑黑的<b>聲影（acoustic shadow）</b>。</p>
+  <p class="mute" style="font-size:.88rem">Z 值為教科書常用的近似值（MRayl = 10⁶ kg/(m²·s)）。</p>
+</section>
+
+<!-- 4 -->
+<section class="card">
+  <h2><span class="num">4</span>B-mode（亮度模式）影像：一條一條掃出來</h2>
+  <p>把 A-mode 的回音強度換成<b>亮度</b>，探頭左右排列上百個晶體，一條條掃描線並排起來，就是一張灰階影像。按「逐線掃描」看看它怎麼長出來；再調整頻率與<b>時間增益補償（TGC, Time Gain Compensation）</b>。</p>
+  <div class="formula">亮度 ∝ 20 log<sub>10</sub>(回音振幅) + 增益 + TGC(<i>d</i>)　　<span class="mute">理想 TGC(<i>d</i>) ≈ α·f·2<i>d</i>，把衰減補回來（本機最多 60 dB）</span></div>
+  <div class="two">
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <canvas id="bCv" width="200" height="400" style="max-width:300px;background:#000" aria-label="模擬 B-mode 影像"></canvas>
+      <div class="legend" style="justify-content:center"><span>① 囊腫（液體）</span><span>② 結石</span><span>③ 高回音區</span><span>④ 點目標</span></div>
+    </div>
+    <div>
+      <div class="ctrl"><label for="bf">頻率 f</label><input type="range" id="bf" min="2" max="12" step="0.5" value="3.5"><output id="bfO"></output></div>
+      <div class="ctrl"><label for="gain">整體增益</label><input type="range" id="gain" min="-20" max="30" step="1" value="0"><output id="gainO"></output></div>
+      <p style="margin:10px 0 2px"><b>TGC（各深度的增益）</b></p>
+      <div class="ctrl"><label for="tg0">0–3 cm</label><input type="range" id="tg0" min="0" max="120" step="1" value="0"><output id="tg0O"></output></div>
+      <div class="ctrl"><label for="tg1">3–6 cm</label><input type="range" id="tg1" min="0" max="120" step="1" value="0"><output id="tg1O"></output></div>
+      <div class="ctrl"><label for="tg2">6–9 cm</label><input type="range" id="tg2" min="0" max="120" step="1" value="0"><output id="tg2O"></output></div>
+      <div class="ctrl"><label for="tg3">9–12 cm</label><input type="range" id="tg3" min="0" max="120" step="1" value="0"><output id="tg3O"></output></div>
+      <div class="btns"><button id="autoTgc">✨ 自動 TGC</button><button id="zeroTgc">TGC 歸零</button><button id="scanB">▶ 逐線掃描</button></div>
+      <canvas id="lineCv" height="150" aria-label="目前掃描線的回音"></canvas>
+    </div>
+  </div>
+  <p class="note">試試看：① 先把 TGC 歸零——深處越來越暗，這就是衰減；按「自動 TGC」補回來。② 把頻率拉到 10 MHz 以上——上方的斑點（speckle）變細、點目標變小，但深處被雜訊淹沒。③ 找找看三種典型偽影：<b>囊腫</b>內部全黑（無回音），後方反而變亮（<b>後方增強</b>，因為液體幾乎不衰減）；<b>結石</b>表面很亮、後方一條黑影（<b>聲影</b>）。</p>
+  <p class="mute" style="font-size:.88rem">影像以簡化物理模型即時計算：隨機散射體 × 依波長大小的點擴散函數（產生斑點）× 一去一回的衰減，再加上固定的電子雜訊，最後做對數壓縮（動態範圍 50 dB）。不是真實病人影像。</p>
+</section>
+
+<!-- 5 -->
+<section class="card">
+  <h2><span class="num">5</span>都卜勒（Doppler）：聽血流的速度</h2>
+  <p>聲波打到<b>移動中的紅血球</b>，回音頻率會改變：朝探頭流 → 頻率升高；遠離 → 降低。量到頻率差 Δf 就能算出血流速度：</p>
+  <div class="formula">Δ<i>f</i> = <span class="frac"><span>2 <i>f</i><sub>0</sub> <i>v</i> cos θ</span><span><i>c</i></span></span>　⟺　<i>v</i> = <span class="frac"><span><i>c</i> · Δ<i>f</i></span><span>2 <i>f</i><sub>0</sub> cos θ</span></span></div>
+  <div class="two">
+    <div><canvas id="dCv" height="250" aria-label="都卜勒血流示意"></canvas></div>
+    <div>
+      <div class="ctrl"><label for="df0">發射頻率 f₀</label><input type="range" id="df0" min="2" max="10" step="0.5" value="5"><output id="df0O"></output></div>
+      <div class="ctrl"><label for="dv">血流速度 v</label><input type="range" id="dv" min="-150" max="150" step="5" value="60"><output id="dvO"></output></div>
+      <div class="ctrl"><label for="dth">夾角 θ</label><input type="range" id="dth" min="0" max="90" step="1" value="60"><output id="dthO"></output></div>
+      <div class="formula" id="dSub"></div>
+      <div class="stats">
+        <div class="stat"><span>頻率差 Δf</span><b id="dfO">—</b></div>
+        <div class="stat"><span>若 θ 估錯 5°，速度誤差</span><b id="errO">—</b></div>
+      </div>
+      <div class="btns"><button id="beep">🔊 聽 Δf 的聲音</button></div>
+    </div>
+  </div>
+  <p class="note">神奇的是：Δf 落在<b>數百 Hz 到數 kHz</b>，剛好是人耳聽得到的範圍，所以都卜勒機器可以直接把它「播出來」——就是產檢時聽到的「咻咻」胎心血流聲。彩色都卜勒慣例是 <b>BART</b>：Blue Away, Red Toward（遠離藍、朝向紅）。θ 接近 90° 時 cos θ → 0，量不到訊號，而且角度一點小誤差就會讓速度估計大錯，臨床上通常讓 θ ≤ 60°。</p>
+</section>
+
+<!-- 6 -->
+<section class="card">
+  <h2><span class="num">6</span>觀念小測驗</h2>
+  <div class="qgrid">
+    <div><div id="quiz"></div><div id="score"></div><button id="again" style="display:none">↻ 再做一次</button></div>
+    <div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+  </div>
+</section>
+
+<footer>診斷用醫用超音波互動教學 ・ 單一 HTML 檔，可離線開啟</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+function fitCanvas(c){const r=window.devicePixelRatio||1;c.style.width='0px';const pe=c.parentElement,ps=getComputedStyle(pe);const w=Math.floor(pe.clientWidth-parseFloat(ps.paddingLeft)-parseFloat(ps.paddingRight));c.style.width=w+'px';
+  if(!c.dataset.h)c.dataset.h=c.getAttribute('height');const h=+c.dataset.h;c.width=Math.round(w*r);c.height=Math.round(h*r);c.style.height=h+'px';
+  const g=c.getContext('2d');g.setTransform(r,0,0,r,0,0);return {g,w,h};}
+const C=1540,ALPHA=0.5;
+
+/* ===== 1: frequency trade-off ===== */
+let wPhase=0,wLast=0;
+function upd1(){const f=+$('f1').value;$('f1O').textContent=f+' MHz';const lam=1.54/f; // mm
+  $('lamSub').innerHTML='λ = <span class="frac"><span>1540 m/s</span><span>'+f+' × 10⁶ Hz</span></span> = <b>'+lam.toFixed(3)+' mm</b>';
+  $('resO').textContent=lam.toFixed(2)+' mm';$('depO').textContent=(60/f).toFixed(1)+' cm';drawTrade();}
+function waveFrame(ts){const c=$('waveCv');if(!c._g){const o=fitCanvas(c);c._g=o.g;c._w=o.w;c._h=o.h;}
+  const g=c._g,w=c._w,h=c._h,dt=Math.min(50,ts-(wLast||ts));wLast=ts;const f=+$('f1').value;wPhase+=dt*0.004;
+  g.clearRect(0,0,w,h);const D=20,L=56,R=w-12,T=26,B=h-30;const X=d=>L+d/D*(R-L);
+  g.fillStyle=cv('soft');g.globalAlpha=.18;g.fillRect(L,T,R-L,B-T);g.globalAlpha=1;
+  g.fillStyle=cv('ink');g.font='12px sans-serif';g.textAlign='center';g.fillText('探頭',24,h/2-34);
+  g.fillStyle=cv('acc');g.fillRect(14,h/2-26,22,52);
+  // wave: display wavelength scaled ×40 so it is visible
+  const mid=(T+B)/2,amp=(B-T)*0.42;g.strokeStyle=cv('acc');g.lineWidth=2;g.beginPath();
+  for(let px=L;px<=R;px++){const d=(px-L)/(R-L)*D;const att=Math.pow(10,-ALPHA*f*d/20);const k=2*Math.PI*f/3.5*3;
+    const y=mid-amp*att*Math.sin(k*d/2-wPhase*f);px===L?g.moveTo(px,y):g.lineTo(px,y);}g.stroke();
+  // envelope
+  g.strokeStyle=cv('org');g.setLineDash([4,4]);g.lineWidth=1.5;g.beginPath();for(let px=L;px<=R;px++){const d=(px-L)/(R-L)*D;const y=mid-amp*Math.pow(10,-ALPHA*f*d/20);px===L?g.moveTo(px,y):g.lineTo(px,y);}g.stroke();g.setLineDash([]);
+  // dmax marker (round trip 60 dB)
+  const dm=60/f;if(dm<D){g.strokeStyle=cv('bad');g.beginPath();g.moveTo(X(dm),T);g.lineTo(X(dm),B);g.stroke();g.fillStyle=cv('bad');g.textAlign='left';g.fillText('可看深度 '+dm.toFixed(1)+' cm',Math.min(X(dm)+4,R-180),T+30);}
+  g.fillStyle=cv('mute');g.textAlign='center';for(let d=0;d<=D;d+=5){g.textAlign=d===D?'right':'center';g.fillText(d+' cm',d===D?R:X(d),B+16);}
+  g.textAlign='left';g.fillStyle=cv('org');g.fillText('橘色虛線：單程振幅衰減',L+4,T+14);
+  g.fillStyle=cv('mute');g.textAlign='right';g.fillText('（波長放大顯示）',R,T-8);
+  requestAnimationFrame(waveFrame);}
+function drawTrade(){const c=$('tradeCv');const {g,w,h}=fitCanvas(c);const f0=+$('f1').value;const L=50,R=w-50,T=18,B=h-34;
+  const X=f=>L+(f-1)/14*(R-L);const Y1=r=>B-r/1.6*(B-T),Y2=d=>B-d/30*(B-T);
+  g.strokeStyle=cv('line');g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='center';
+  for(let f=1;f<=15;f+=2){g.beginPath();g.moveTo(X(f),T);g.lineTo(X(f),B);g.stroke();g.fillText(f,X(f),B+14);}
+  g.fillText('頻率 f（MHz）',(L+R)/2,h-4);
+  g.fillStyle=cv('acc');g.textAlign='right';for(let r=0;r<=1.6;r+=0.4)g.fillText(r.toFixed(1),L-4,Y1(r)+4);
+  g.fillStyle=cv('org');g.textAlign='left';for(let d=0;d<=30;d+=10)g.fillText(d,R+4,Y2(d)+4);
+  g.save();g.translate(12,(T+B)/2);g.rotate(-Math.PI/2);g.fillStyle=cv('acc');g.textAlign='center';g.fillText('解析度 λ（mm，越小越好）',0,0);g.restore();
+  g.save();g.translate(w-8,(T+B)/2);g.rotate(Math.PI/2);g.fillStyle=cv('org');g.textAlign='center';g.fillText('可看深度（cm）',0,0);g.restore();
+  const plot=(fn,Y,col)=>{g.strokeStyle=col;g.lineWidth=2.4;g.beginPath();for(let i=0;i<=200;i++){const f=1+i/200*14;const y=Math.max(T,Y(fn(f)));i?g.lineTo(X(f),y):g.moveTo(X(f),y);}g.stroke();};
+  plot(f=>1.54/f,Y1,cv('acc'));plot(f=>60/f,Y2,cv('org'));
+  g.fillStyle=cv('acc');g.beginPath();g.arc(X(f0),Math.max(T,Y1(1.54/f0)),5,0,7);g.fill();
+  g.fillStyle=cv('org');g.beginPath();g.arc(X(f0),Math.max(T,Y2(60/f0)),5,0,7);g.fill();
+  g.strokeStyle=cv('ink');g.setLineDash([3,3]);g.beginPath();g.moveTo(X(f0),T);g.lineTo(X(f0),B);g.stroke();g.setLineDash([]);}
+$('f1').oninput=upd1;document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{$('f1').value=b.dataset.f;upd1();});
+
+/* ===== tissue impedances (MRayl) ===== */
+const ZT={air:['空氣',0.0004],fat:['脂肪',1.38],water:['水',1.48],blood:['血液',1.61],liver:['肝臟',1.65],kidney:['腎臟',1.62],muscle:['肌肉',1.70],bone:['骨頭',7.8]};
+const refl=(a,b)=>((b-a)/(b+a))**2;
+
+/* ===== 2: A-mode ===== */
+const AL=[['skin','皮膚',0,0.3,1.70],['fat','脂肪',0.3,1.5,1.38],['muscle','肌肉',1.5,3.5,1.70],['liver','肝臟',3.5,16,1.65]];
+let aPulse=null,aAuto=false,aTraceData=[],aLast=0;
+function aEchoes(){const tg=+$('tgt').value;const ifs=[];
+  for(let i=1;i<AL.length;i++)ifs.push({d:AL[i][2],R:refl(AL[i-1][4],AL[i][4]),name:AL[i-1][1]+'→'+AL[i][1]});
+  ifs.push({d:tg,R:refl(1.65,1.45),name:'肝→腫塊（前緣）'});ifs.push({d:tg+1.5,R:refl(1.45,1.65),name:'腫塊→肝（後緣）'});
+  const f=3.5;ifs.forEach(e=>{e.t=2*e.d/100/C*1e6;e.amp=Math.sqrt(e.R)*Math.pow(10,-ALPHA*f*2*e.d/20);});return ifs;}
+function aDraw(ts){const c=$('aCv');if(!c._g){const o=fitCanvas(c);c._g=o.g;c._w=o.w;c._h=o.h;}
+  const g=c._g,w=c._w,h=c._h;const dt=Math.min(50,ts-(aLast||ts));aLast=ts;g.clearRect(0,0,w,h);
+  const D=16,T=34,B=h-8,Y=d=>T+d/D*(B-T),bx=w*0.18,bw=w*0.6;
+  const cols={skin:'#e9b99a',fat:'#f1d58a',muscle:'#d98a7a',liver:'#b5654f'};
+  AL.forEach(([k,n,d0,d1])=>{g.fillStyle=cols[k];g.globalAlpha=.55;g.fillRect(bx,Y(d0),bw,Y(d1)-Y(d0));g.globalAlpha=1;g.fillStyle=cv('ink');g.font='12px sans-serif';g.textAlign='left';if(Y(d1)-Y(d0)>14)g.fillText(n,bx+bw+6,(Y(d0)+Y(d1))/2+4);});
+  g.fillText('皮膚',bx+bw+6,Y(0.15)+4);
+  const tg=+$('tgt').value;g.fillStyle='#e8d9c2';g.beginPath();g.ellipse(bx+bw/2,Y(tg+0.75),bw*0.28,Y(tg+1.5)-Y(tg+0.75),0,0,7);g.fill();
+  g.fillStyle=cv('ink');g.textAlign='center';g.fillText('腫塊',bx+bw/2,Y(tg+0.75)+4);
+  g.fillStyle=cv('acc');g.fillRect(bx+bw/2-26,T-26,52,20);g.fillStyle='#fff';g.fillText('探頭',bx+bw/2,T-12);
+  g.fillStyle=cv('mute');g.textAlign='right';for(let d=0;d<=16;d+=2)g.fillText(d+' cm',bx-6,Y(d)+4);
+  if(aPulse){aPulse.t+=dt*0.045; // μs of sim time
+    const ifs=aEchoes();const dDown=aPulse.t*1e-6*C*100; // cm travelled
+    if(dDown<D){g.strokeStyle=cv('acc');g.lineWidth=3;g.beginPath();g.moveTo(bx+8,Y(dDown));g.lineTo(bx+bw-8,Y(dDown));g.stroke();}
+    ifs.forEach(e=>{const back=dDown-e.d;if(back>0&&back<e.d){const y=Y(e.d-back);g.strokeStyle=cv('org');g.lineWidth=1+Math.min(4,e.amp*60);g.globalAlpha=Math.min(1,.3+e.amp*20);g.beginPath();g.moveTo(bx+bw*0.3,y);g.lineTo(bx+bw*0.7,y);g.stroke();g.globalAlpha=1;}});
+    aTraceData=ifs.filter(e=>e.t<=aPulse.t);drawTrace(aPulse.t);
+    if(aPulse.t>2*D/100/C*1e6+5){aPulse=aAuto?{t:0}:null;}}
+  requestAnimationFrame(aDraw);}
+function drawTrace(tnow){const c=$('aTrace');if(!c._g){const o=fitCanvas(c);c._g=o.g;c._w=o.w;c._h=o.h;}const g=c._g,w=c._w,h=c._h;g.clearRect(0,0,w,h);
+  const L=36,R=w-10,T=12,B=h-30,tmax=210;const X=t=>L+t/tmax*(R-L);
+  g.strokeStyle=cv('line');g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='center';
+  for(let t=0;t<=200;t+=50){g.beginPath();g.moveTo(X(t),T);g.lineTo(X(t),B);g.stroke();g.fillText(t,X(t),B+14);}
+  g.fillText('回音到達時間 t（μs）；縱軸為對數（dB）振幅',(L+R)/2,h-2);
+  const ifs=aEchoes();const mx=Math.max(...ifs.map(e=>e.amp));
+  g.strokeStyle=cv('acc');g.lineWidth=1.6;g.beginPath();g.moveTo(L,B);
+  const tl=tnow===undefined?tmax:Math.min(tmax,tnow);
+  for(let px=L;px<=X(tl);px++){const t=(px-L)/(R-L)*tmax;let v=0;
+    if(t<2.5)v=1;for(const e of ifs){const s=(t-e.t)/0.9;const lv=Math.max(0,(20*Math.log10(e.amp)+70)/70);v+=lv*Math.exp(-s*s)*Math.abs(Math.cos(s*4));}
+    g.lineTo(px,B-Math.min(1,v)*(B-T));}g.stroke();
+  g.fillStyle=cv('org');g.textAlign='center';const tg=ifs[ifs.length-2];if(tl>=tg.t){g.fillText('腫塊 '+tg.t.toFixed(0)+' μs',X(tg.t),T+8);}}
+function upd2(){const tg=+$('tgt').value;$('tgtO').textContent=tg.toFixed(1)+' cm';const t=2*tg/100/C*1e6;
+  $('aSub').innerHTML='腫塊前緣：t = <span class="frac"><span>2 × '+(tg/100).toFixed(3)+' m</span><span>1540 m/s</span></span> = <b>'+t.toFixed(1)+' μs</b><br>反過來：d = <span class="frac"><span>1540 × '+t.toFixed(1)+'×10⁻⁶</span><span>2</span></span> = '+tg.toFixed(1)+' cm';
+  $('prfO').textContent=Math.round(C/(2*0.15)).toLocaleString()+' Hz';if(!aPulse)drawTrace();}
+$('tgt').oninput=upd2;$('fire').onclick=()=>{aPulse={t:0};};$('autoFire').onclick=()=>{aAuto=!aAuto;$('autoFire').classList.toggle('on',aAuto);$('autoFire').textContent=aAuto?'⏸ 停止':'▶ 連續發射';if(aAuto&&!aPulse)aPulse={t:0};};
+
+/* ===== 3: impedance ===== */
+['z1','z2'].forEach((id,k)=>{const s=$(id);for(const key in ZT){const o=document.createElement('option');o.value=key;o.textContent=ZT[key][0]+'（'+ZT[key][1]+'）';s.appendChild(o);}s.value=k?'muscle':'fat';s.onchange=upd3;});
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const [a,c2]=b.dataset.p.split(',');$('z1').value=a;$('z2').value=c2;upd3();});
+function upd3(){const a=ZT[$('z1').value],b=ZT[$('z2').value];const R=refl(a[1],b[1]);
+  $('zSub').innerHTML='R = <span class="frac"><span>('+b[1]+' − '+a[1]+')²</span><span>('+b[1]+' + '+a[1]+')²</span></span> = <b>'+(R*100).toFixed(R<0.01?3:1)+' %</b>';
+  $('rO').textContent=(R*100).toFixed(R<0.01?3:1)+' %';$('tO2').textContent=((1-R)*100).toFixed((1-R)<0.01?3:1)+' %';
+  const c=$('zCv');const {g,w,h}=fitCanvas(c);const mx=w*0.5;
+  g.fillStyle=cv('soft');g.globalAlpha=.15;g.fillRect(0,0,mx,h);g.globalAlpha=.35;g.fillRect(mx,0,w-mx,h);g.globalAlpha=1;
+  g.fillStyle=cv('ink');g.font='13px sans-serif';g.textAlign='center';g.fillText(a[0]+'　Z₁='+a[1],mx/2,20);g.fillText(b[0]+'　Z₂='+b[1],mx+(w-mx)/2,20);
+  g.strokeStyle=cv('ink');g.setLineDash([4,4]);g.beginPath();g.moveTo(mx,28);g.lineTo(mx,h);g.stroke();g.setLineDash([]);
+  const arrow=(x0,y0,x1,y1,wd,col)=>{g.strokeStyle=col;g.fillStyle=col;g.lineWidth=Math.max(1,wd);g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.stroke();
+    const an=Math.atan2(y1-y0,x1-x0),s=6+wd;g.beginPath();g.moveTo(x1,y1);g.lineTo(x1-s*Math.cos(an-.4),y1-s*Math.sin(an-.4));g.lineTo(x1-s*Math.cos(an+.4),y1-s*Math.sin(an+.4));g.fill();};
+  const y=h*0.45,W=22;arrow(20,y,mx-6,y,W,cv('acc'));if(R>0.0005)arrow(mx-6,y+44,30,y+44,Math.max(1.5,W*R),cv('org'));
+  if(1-R>0.0005)arrow(mx+6,y,w-20,y,Math.max(1.5,W*(1-R)),cv('acc'));
+  g.fillStyle=cv('ink');g.font='12px sans-serif';g.fillText('入射 100%',mx/2,y-18);g.fillStyle=cv('org');g.fillText('反射 '+(R*100).toFixed(R<0.01?2:1)+'%',mx/2,y+70);
+  g.fillStyle=cv('acc');g.fillText('穿透 '+((1-R)*100).toFixed(1)+'%',mx+(w-mx)/2,y-18);}
+(function(){const pairs=[['脂肪 → 肌肉','fat','muscle'],['肝 → 腎','liver','kidney'],['肝 → 血液','liver','blood'],['水 → 肌肉','water','muscle'],['肌肉 → 骨頭','muscle','bone'],['空氣 → 肌肉','air','muscle']];
+  const lo=-5,hi=0;$('zBars').innerHTML='<div class="mute" style="font-size:.9rem">常見交界的反射率（對數尺度）</div>'+pairs.map(([n,a,b])=>{const R=refl(ZT[a][1],ZT[b][1]);return '<div class="bar"><span>'+n+'</span><div class="track"><div class="fill" style="width:'+((Math.log10(R)-lo)/(hi-lo)*100).toFixed(1)+'%"></div></div><em>'+(R*100<0.1?(R*100).toFixed(3):(R*100).toFixed(1))+' %</em></div>';}).join('');})();
+
+/* ===== 4: B-mode phantom ===== */
+const BW=200,BH=400,PX=0.3; // 0.3 mm per pixel → 6 cm × 12 cm
+function rng(seed){return ()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};}
+const R0=rng(7);const gauss=()=>{let u=R0()||1e-9,v=R0();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+const SC_I=new Float32Array(BW*BH),SC_Q=new Float32Array(BW*BH),REFL=new Float32Array(BW*BH),ATT=new Float32Array(BW*BH),NOISE=new Float32Array(BW*BH);
+(function(){for(let j=0;j<BH;j++)for(let i=0;i<BW;i++){const p=j*BW+i;const x=i*PX/10,z=j*PX/10; // cm
+  let a=1,att=1; // relative scatter amplitude, attenuation factor (×α)
+  if(z<0.25){a=1.6;}else if(z<1.2){a=0.55;}else if(z<1.5){a=2.2;} // skin / fat / fascia
+  // hyperechoic region
+  if(Math.hypot(x-4.4,z-3.0)<0.9)a*=3.2;
+  // cyst
+  if(Math.hypot(x-2.0,z-5.5)<1.0){a=0;att=0.02;}
+  // stone
+  const ds=Math.hypot(x-4.0,z-8.3);if(ds<0.45){a=ds>0.33&&z<8.3?40:6;att=40;}
+  SC_I[p]=gauss()*a;SC_Q[p]=gauss()*a;ATT[p]=att;NOISE[p]=Math.hypot(gauss(),gauss());}
+  // point targets (wires) at 2,4,6,8,10 cm in a column
+  for(const z of [2,4,6,8,10,11]){const i=Math.round(1.6/PX*10),j=Math.round(z/PX*10)-(z===11?0:0);const xi=z===11?Math.round(5.0/PX*10):i;SC_I[j*BW+xi]+=60;}})();
+function blurSep(src,sx,sz){const kx=[],kz=[];const rx=Math.ceil(sx*3),rz=Math.ceil(sz*3);
+  for(let k=-rx;k<=rx;k++)kx.push(Math.exp(-k*k/(2*sx*sx)));for(let k=-rz;k<=rz;k++)kz.push(Math.exp(-k*k/(2*sz*sz)));
+  const tmp=new Float32Array(BW*BH),out=new Float32Array(BW*BH);
+  for(let j=0;j<BH;j++)for(let i=0;i<BW;i++){let s=0;for(let k=-rx;k<=rx;k++){const ii=i+k;if(ii>=0&&ii<BW)s+=src[j*BW+ii]*kx[k+rx];}tmp[j*BW+i]=s;}
+  for(let j=0;j<BH;j++)for(let i=0;i<BW;i++){let s=0;for(let k=-rz;k<=rz;k++){const jj=j+k;if(jj>=0&&jj<BH)s+=tmp[jj*BW+i]*kz[k+rz];}out[j*BW+i]=s;}return out;}
+let ENV=null,ENVf=null,BIMG=null,scanCol=BW,scanning=false;
+function envelope(f){if(ENVf===f)return ENV;const lam=1.54/f; // mm
+  const sz=Math.max(0.45,0.5*lam/PX),sx=Math.max(0.6,1.5*lam/PX+0.3);const I=blurSep(SC_I,sx,sz),Q=blurSep(SC_Q,sx,sz);
+  ENV=new Float32Array(BW*BH);for(let p=0;p<BW*BH;p++)ENV[p]=Math.hypot(I[p],Q[p]);ENVf=f;return ENV;}
+function tgcAt(z){const v=[0,1,2,3].map(k=>+$('tg'+k).value);const pos=z/3-0.5;if(pos<=0)return v[0];if(pos>=3)return v[3];const k=Math.floor(pos);return v[k]+(v[k+1]-v[k])*(pos-k);}
+function renderB(){const f=+$('bf').value,G=+$('gain').value;$('bfO').textContent=f+' MHz';$('gainO').textContent=G+' dB';
+  for(let k=0;k<4;k++)$('tg'+k+'O').textContent=$('tg'+k).value+' dB';
+  const env=envelope(f);BIMG=new Float32Array(BW*BH);const dz=PX/10;
+  for(let i=0;i<BW;i++){let A=0;for(let j=0;j<BH;j++){const p=j*BW+i;A+=ALPHA*f*ATT[p]*dz; // one-way dB so far
+    const echo=env[p]*Math.pow(10,-2*A/20);const sig=echo+NOISE[p]*Math.pow(10,-75/20);
+    const db=20*Math.log10(sig+1e-9)+G+tgcAt(j*dz);BIMG[p]=Math.max(0,Math.min(1,(db+12)/50));}}
+  paintB();}
+function paintB(){const c=$('bCv'),g=c.getContext('2d');const img=g.createImageData(BW,BH);
+  for(let p=0;p<BW*BH;p++){const i=p%BW;const v=i<scanCol?Math.round(BIMG[p]*255):0;img.data[p*4]=img.data[p*4+1]=img.data[p*4+2]=v;img.data[p*4+3]=255;}
+  g.putImageData(img,0,0);g.font='11px sans-serif';
+  g.fillStyle='#ffb000';[[1,'①',2.0,4.3],[2,'②',4.0,7.6],[3,'③',3.1,2.3],[4,'④',1.85,1.75]].forEach(([k,t,x,z])=>{if(x/PX*10<scanCol)g.fillText(t,x/PX*10-6,z/PX*10);});
+  g.fillStyle='#9fd3ff';for(let d=2;d<=10;d+=2){g.fillText(d+'cm',2,d/PX*10+4);}
+  const ci=Math.min(BW-1,scanning?scanCol:Math.round(BW*0.5));g.strokeStyle=scanning?'#ffb000':'rgba(255,176,0,.5)';g.beginPath();g.moveTo(ci+.5,0);g.lineTo(ci+.5,BH);g.stroke();
+  drawLine(ci);}
+function drawLine(ci){const c=$('lineCv');const {g,w,h}=fitCanvas(c);if(!BIMG)return;const L=30,R=w-8,T=10,B=h-26;
+  g.strokeStyle=cv('line');g.fillStyle=cv('mute');g.font='11px sans-serif';g.textAlign='center';
+  for(let d=0;d<=12;d+=2){const x=L+d/12*(R-L);g.beginPath();g.moveTo(x,T);g.lineTo(x,B);g.stroke();g.fillText(d,x,B+13);}
+  g.fillText('深度（cm）：這條掃描線的亮度 = A-mode 回音',(L+R)/2,h-2);
+  g.strokeStyle=cv('acc');g.lineWidth=1.3;g.beginPath();for(let j=0;j<BH;j++){const x=L+j/(BH-1)*(R-L),y=B-BIMG[j*BW+ci]*(B-T);j?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();}
+['bf','gain','tg0','tg1','tg2','tg3'].forEach(id=>$(id).addEventListener('input',renderB));
+$('autoTgc').onclick=()=>{const f=+$('bf').value;[1.5,4.5,7.5,10.5].forEach((d,k)=>{$('tg'+k).value=Math.min(60,Math.round(2*ALPHA*f*d));});renderB();};
+$('zeroTgc').onclick=()=>{for(let k=0;k<4;k++)$('tg'+k).value=0;renderB();};
+$('scanB').onclick=()=>{if(scanning)return;scanning=true;scanCol=0;const step=()=>{scanCol+=2;paintB();if(scanCol<BW)setTimeout(step,22);else{scanning=false;scanCol=BW;paintB();}};step();};
+
+/* ===== 5: Doppler ===== */
+let dLast=0,dCells=[];for(let i=0;i<26;i++)dCells.push({u:Math.random(),v:Math.random()});
+function upd5(){const f0=+$('df0').value,v=+$('dv').value,th=+$('dth').value;$('df0O').textContent=f0+' MHz';$('dvO').textContent=v+' cm/s';$('dthO').textContent=th+'°';
+  const cs=Math.cos(th*Math.PI/180);const df=2*f0*1e6*(v/100)*cs/C;
+  $('dSub').innerHTML='Δf = <span class="frac"><span>2 × '+f0+'×10⁶ × '+(v/100).toFixed(2)+' × cos '+th+'°</span><span>1540</span></span> = <b>'+(df>=0?'+':'')+df.toFixed(0)+' Hz</b>';
+  $('dfO').textContent=(Math.abs(df)>=1000?(df/1000).toFixed(2)+' kHz':df.toFixed(0)+' Hz');$('dfO').style.color=df>0?'#d6334f':df<0?'#2f6fdf':'';
+  const th2=Math.min(89.9,th+5);const e=th>=85?Infinity:(cs/Math.cos(th2*Math.PI/180)-1);$('errO').textContent=isFinite(e)?'+'+(e*100).toFixed(0)+' %':'無法估計';}
+function dFrame(ts){const c=$('dCv');if(!c._g){const o=fitCanvas(c);c._g=o.g;c._w=o.w;c._h=o.h;}const g=c._g,w=c._w,h=c._h,dt=Math.min(50,ts-(dLast||ts));dLast=ts;
+  const v=+$('dv').value,th=+$('dth').value*Math.PI/180;g.clearRect(0,0,w,h);
+  const vy0=h*0.62,vh=46;g.fillStyle=cv('soft');g.globalAlpha=.25;g.fillRect(0,vy0-vh/2,w,vh);g.globalAlpha=1;
+  g.strokeStyle=cv('bad');g.lineWidth=2;g.beginPath();g.moveTo(0,vy0-vh/2);g.lineTo(w,vy0-vh/2);g.moveTo(0,vy0+vh/2);g.lineTo(w,vy0+vh/2);g.stroke();
+  g.fillStyle=cv('bad');dCells.forEach(p=>{p.u+=v*dt/1e5;p.u=((p.u%1)+1)%1;const x=p.u*w,y=vy0+(p.v-0.5)*(vh-12);g.beginPath();g.ellipse(x,y,5,3,0,0,7);g.fill();});
+  g.fillStyle=cv('ink');g.font='12px sans-serif';g.textAlign='left';g.fillText('血管：血流 '+(v>=0?'→':'←')+' '+Math.abs(v)+' cm/s',8,vy0+vh/2+18);
+  // probe: beam from top-left at angle th to flow direction (flow +x)
+  const cx=w*0.55,cy=vy0;const bx=cx+Math.cos(th)*h*0.5,by=cy-Math.sin(th)*h*0.5;
+  g.strokeStyle=cv('acc');g.setLineDash([6,4]);g.lineWidth=2;g.beginPath();g.moveTo(bx,by);g.lineTo(cx,cy);g.stroke();g.setLineDash([]);
+  g.save();g.translate(bx,by);g.rotate(Math.atan2(cy-by,cx-bx));g.fillStyle=cv('acc');g.fillRect(-14,-16,18,32);g.restore();
+  g.strokeStyle=cv('org');g.lineWidth=1.5;g.beginPath();g.arc(cx,cy,34,-th,0,false);g.stroke();
+  g.fillStyle=cv('org');g.fillText('θ',cx+40,cy-8);
+  // color box (BART)
+  const df=v*Math.cos(th);const col=df>0.5?'#e0403a':df<-0.5?'#3a6fe0':cv('mute');
+  g.fillStyle=col;g.fillRect(10,10,110,24);g.fillStyle='#fff';g.textAlign='center';g.fillText(df>0.5?'朝向探頭：紅':df<-0.5?'遠離探頭：藍':'≈ 0：無訊號',65,27);
+  requestAnimationFrame(dFrame);}
+['df0','dv','dth'].forEach(id=>$(id).addEventListener('input',upd5));
+$('beep').onclick=()=>{try{const f0=+$('df0').value,v=+$('dv').value,th=+$('dth').value;const df=Math.abs(2*f0*1e6*(v/100)*Math.cos(th*Math.PI/180)/C);
+  if(df<20){$('beep').textContent='🔇 Δf 太小，聽不到';setTimeout(()=>$('beep').textContent='🔊 聽 Δf 的聲音',1500);return;}
+  const ac=new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),gn=ac.createGain();o.frequency.value=Math.min(df,12000);o.type='sine';
+  gn.gain.setValueAtTime(0,ac.currentTime);gn.gain.linearRampToValueAtTime(0.15,ac.currentTime+0.05);gn.gain.linearRampToValueAtTime(0,ac.currentTime+1);o.connect(gn).connect(ac.destination);o.start();o.stop(ac.currentTime+1.05);}catch(e){}};
+
+/* ===== Avatar: Wild ===== */
+const WI_SVG=`<svg viewBox="0 0 200 230" aria-label="懷爾德老師動畫">
+ <g class="bodyg">
+  <path d="M10 232 Q14 178 72 164 L100 182 L128 164 Q186 178 190 232 Z" fill="#23262d"/>
+  <path d="M72 164 L100 226 L128 164 L116 162 L100 196 L84 162 Z" fill="#2c3038"/>
+  <path d="M80 160 L100 190 L120 160 L114 156 L100 176 L86 156 Z" fill="#f6f6f2"/>
+  <path d="M96 176 L104 176 L107 218 L100 226 L93 218 Z" fill="#15161a"/>
+  <path d="M95 170 L105 170 L104 179 L96 179 Z" fill="#15161a"/>
+  <rect x="86" y="132" width="28" height="32" rx="10" fill="#dca88f"/>
+  <ellipse cx="66" cy="104" rx="8" ry="13" fill="#e4ad94"/><ellipse cx="134" cy="104" rx="8" ry="13" fill="#e4ad94"/>
+  <path d="M63 100 Q66 96 68 104" stroke="#c48b72" stroke-width="1.5" fill="none"/><path d="M137 100 Q134 96 132 104" stroke="#c48b72" stroke-width="1.5" fill="none"/>
+  <path d="M67 96 Q66 140 100 146 Q134 140 133 96 Q133 60 100 58 Q67 60 67 96 Z" fill="#f0bfa6"/>
+  <ellipse class="blush" cx="80" cy="116" rx="7" ry="4.5" fill="#f08080"/>
+  <ellipse class="blush" cx="120" cy="116" rx="7" ry="4.5" fill="#f08080"/>
+  <path d="M84 70 Q100 66 116 70 M86 76 Q100 72 114 76" stroke="#d99f86" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  <path d="M66 92 Q60 66 70 52 Q74 40 88 40 Q96 30 112 34 Q128 34 132 48 Q142 58 136 78 Q134 90 133 96 Q130 80 126 70 Q124 56 114 52 Q104 54 98 52 Q86 52 78 60 Q72 72 70 92 Z" fill="#eceae4"/>
+  <path d="M74 56 Q86 44 104 44 M86 50 Q104 38 124 46 M118 52 Q128 58 130 72" stroke="#c9c6bd" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <g class="hairL"><path d="M68 80 Q58 74 60 62 Q66 70 72 70 Z" fill="#eceae4"/></g>
+  <g class="hairR"><path d="M132 80 Q142 74 140 62 Q134 70 128 70 Z" fill="#eceae4"/></g>
+  <path class="brow browL" d="M74 85 Q83 79 95 84" stroke="#e7e3da" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path class="brow browR" d="M105 84 Q117 79 126 85" stroke="#e7e3da" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <g class="eyes"><ellipse cx="85" cy="95" rx="5" ry="3.4" fill="#fff"/><ellipse cx="115" cy="95" rx="5" ry="3.4" fill="#fff"/>
+   <circle cx="85" cy="95.3" r="2.8" fill="#4f7fa8"/><circle cx="115" cy="95.3" r="2.8" fill="#4f7fa8"/>
+   <circle cx="85" cy="95.3" r="1.3" fill="#1d2330"/><circle cx="115" cy="95.3" r="1.3" fill="#1d2330"/>
+   <circle cx="86" cy="94.2" r=".8" fill="#fff"/><circle cx="116" cy="94.2" r=".8" fill="#fff"/></g>
+  <path d="M78 100 Q85 104 92 100 M108 100 Q115 104 122 100" stroke="#cf9a82" stroke-width="1.3" fill="none"/>
+  <path d="M100 96 Q97 110 94 116 Q99 121 106 117" stroke="#c78a70" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path d="M86 116 Q82 126 86 134 M114 116 Q118 126 114 134" stroke="#d29a80" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <path class="mo n" d="M90 128 Q100 126 110 128" stroke="#9a5a4a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path class="mo s" d="M88 126 Q100 139 112 126 Q100 130 88 126 Z" fill="#9b3a2c" stroke="#8a4a3a" stroke-width="1.5" stroke-linejoin="round"/>
+  <path class="mo f" d="M90 132 Q100 124 110 132" stroke="#9a5a4a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path class="sweat" d="M140 70 Q145 80 140 84 Q135 80 140 70 Z" fill="#7cc3f0"/>
+  <text class="spark" x="30" y="44" font-size="18" fill="#f0b400">✦</text>
+  <text class="spark" x="160" y="40" font-size="14" fill="#f0b400">✦</text>
+  <text class="spark" x="170" y="96" font-size="11" fill="#f0b400">✦</text>
+ </g></svg>`;
+function makeAvatar(el,bubble){el.innerHTML=WI_SVG;let tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold)tm=setTimeout(()=>{el.classList.remove('smile','frown');bubble.className='bubble';},3200);}};}
+var AV1=makeAvatar($('av1'),$('bub1')),AV2=makeAvatar($('av2'),$('bub2'));
+const QUOTES=[
+ '我 1914 年出生在英國肯特郡，在劍橋大學念醫學，1942 年拿到醫學博士。',
+ '二戰後我到美國明尼蘇達大學。我想：能不能不開刀就看到腸道受傷？靈感來自軍方用高頻聲波檢查坦克裝甲的裂縫。',
+ '早期的機器解析度不夠。到了 1951 年，我和工程師約翰・里德（John Reid）用上了約 15 MHz 的設備——頻率高，才看得清楚細節！',
+ '我們掃描乳房組織，能分辨充滿液體的囊腫和實心的腫塊——就像第 4 節裡全黑的囊腫和有回音的組織。',
+ '成果在 1951 年 3 月登上《刺胳針》（The Lancet），1952 年登上《科學》（Science）。',
+ '1991 年，我因為超音波影像的開創工作得到日本國際獎（Japan Prize）。大家叫我「醫用超音波之父」。'];
+let qi=0;$('av1').onclick=()=>AV1.mood('smile',QUOTES[qi++%QUOTES.length]);
+
+/* ===== Quiz ===== */
+const QZ=[
+ {q:'診斷用超音波的本質是什麼？',o:['頻率高於 20 kHz 的機械波（聲波）','高能電磁波','游離輻射','磁場變化'],a:0,e:'超音波是聲波，靠介質振動傳遞，不是游離輻射。',h:'回想第 0 節：它和蝙蝠、聲納是同一類！'},
+ {q:'回音在發射後 130 μs 回到探頭（c = 1540 m/s），反射界面約在多深？',o:['10 cm','20 cm','5 cm','2 cm'],a:0,e:'d = c·t/2 = 1540 × 130×10⁻⁶ / 2 ≈ 0.10 m。別忘了除以 2（一去一回）。',h:'聲音要走「去」和「回」兩趟。'},
+ {q:'想看清楚淺層的甲狀腺細節，應選擇？',o:['高頻探頭（例如 10–12 MHz）','低頻探頭（例如 2 MHz）','頻率不影響','用 X 光探頭'],a:0,e:'高頻 → 波長短 → 解析度佳；淺層器官不需要深穿透。',h:'第 1 節：解析度與頻率的關係是什麼？'},
+ {q:'為什麼做超音波要在皮膚上塗凝膠？',o:['排除空氣，因為空氣與組織的聲阻抗差太大，幾乎全反射','讓探頭比較滑而已','凝膠會放大聲音','為了消毒'],a:0,e:'空氣 Z ≈ 0.0004 MRayl，與組織差距極大，R ≈ 99.9%，聲波根本進不去。',h:'第 3 節：試試「空氣 → 皮膚」的反射率。'},
+ {q:'影像上囊腫（液體）通常長什麼樣子？',o:['內部全黑，後方反而變亮','內部最亮，後方有黑影','和周圍組織一樣','整片閃爍'],a:0,e:'液體裡沒有散射體 → 無回音；液體幾乎不衰減 → 後方增強。',h:'第 4 節的 ① 號目標仔細看看。'},
+ {q:'TGC（時間增益補償）主要在補償什麼？',o:['越深的回音因衰減而越弱','探頭的溫度','病人移動','聲速的差異'],a:0,e:'越晚回來的回音走得越遠、衰減越多，TGC 依時間（深度）逐漸加大增益。',h:'第 4 節把 TGC 歸零，深處會怎樣？'},
+ {q:'都卜勒測血流時，若探頭與血流夾角 θ = 90°，會怎麼樣？',o:['cos 90° = 0，幾乎量不到頻率偏移','偏移最大','速度變兩倍','影像變彩色'],a:0,e:'Δf ∝ cos θ；垂直時血流不朝向也不遠離探頭，所以沒有都卜勒偏移。',h:'把第 5 節的 θ 拉到 90° 看看。'},
+ {q:'懷爾德與里德在 1950 年代初用超音波做到了什麼？',o:['分辨乳房的囊腫與實心腫塊','拍出第一張胸部 X 光','發明 MRI','發現壓電效應'],a:0,e:'他們用約 15 MHz 的超音波掃描乳房組織，分辨囊性與實性腫塊。',h:'點點第 0 節的懷爾德老師，第三、四則故事有答案！'}];
+const PRAISE=['Excellent！完全正確！','漂亮！回音清清楚楚！','答對了，解析度滿分！','正確！我當年也是這樣想的。'];
+let score=0,done=0,streak=0;
+function buildQuiz(){score=0;done=0;streak=0;$('score').textContent='';$('again').style.display='none';const box=$('quiz');box.innerHTML='';
+  QZ.forEach((z,n)=>{const d=document.createElement('div');d.className='q';d.innerHTML='<div class="qt">'+(n+1)+'. '+z.q+'</div><div class="opts"></div><div class="ex"></div>';
+    const ord=z.o.map((_,i)=>i).sort(()=>Math.random()-.5);const op=d.querySelector('.opts');
+    ord.forEach(i=>{const b=document.createElement('button');b.textContent=z.o[i];b.onclick=()=>{if(d.dataset.done)return;d.dataset.done=1;done++;
+      const ok=i===z.a;op.querySelectorAll('button').forEach((bb,k)=>{if(ord[k]===z.a)bb.classList.add('right');});if(!ok)b.classList.add('wrong');
+      const ex=d.querySelector('.ex');ex.className='ex '+(ok?'ok':'no');ex.textContent=(ok?'✔ 正確！':'✘ ')+z.e;
+      if(ok){score++;streak++;AV2.mood('smile',streak>=3?'連對 '+streak+' 題！你可以去當超音波技師了！':PRAISE[Math.floor(Math.random()*PRAISE.length)]);}
+      else{streak=0;AV2.mood('frown',z.h);}
+      if(done===QZ.length){$('score').textContent='得分：'+score+' / '+QZ.length;$('again').style.display='inline-block';
+        setTimeout(()=>{const r=score/QZ.length;AV2.mood(r>=.85?'smile':r>=.6?'':'frown',
+          r>=.85?'太棒了！脈衝回波、聲阻抗、TGC 和都卜勒你都懂了！':r>=.6?'不錯！再回第 3、4 節玩玩反射率和 TGC，會更清楚。':'別灰心，我也是試了好幾年才看清楚。建議從第 2 節的 d = ct/2 重新看起！',true);},3300);}};
+      op.appendChild(b);});box.appendChild(d);});}
+$('again').onclick=()=>{buildQuiz();AV2.mood('','新的一輪！選項順序已經打亂囉。');};
+
+/* ===== init ===== */
+function redrawAll(){upd1();upd2();upd3();upd5();renderB();['waveCv','aCv','aTrace','dCv'].forEach(id=>{$(id)._g=null;});drawTrace();}
+buildQuiz();$('autoTgc').click();redrawAll();requestAnimationFrame(waveFrame);requestAnimationFrame(aDraw);requestAnimationFrame(dFrame);
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(redrawAll,120);});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawAll);
+</script>
+</body>
+</html>
