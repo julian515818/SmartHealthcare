@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>乳房超音波 BI-RADS 風險評估 互動教學</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#e3e1da;--ok:#1f9d6b;--bad:#d6334f;--acc:#2f6fd6;--warn:#e08a1e;--soft:#eef3fb;
+--c2:#1f9d6b;--c3:#7bb33a;--c4a:#e0b21e;--c4b:#e08a1e;--c4c:#e0562a;--c5:#c4213f;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;--acc:#6aa0ff;--warn:#f0a94a;--soft:#232a38;}}
+:root[data-theme="dark"]{--bg:#15181f;--card:#1d212b;--ink:#e8eaf0;--mute:#9aa3b5;--line:#2e3441;--ok:#4fd19d;--bad:#ff6f86;--acc:#6aa0ff;--warn:#f0a94a;--soft:#232a38;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+header h1{margin:0 0 4px;font-size:1.75rem}
+header .sub{color:var(--mute);margin:0}
+header .warnline{margin:8px 0 0;font-size:.88rem;color:var(--bad)}
+.thbtn{margin-top:8px;font-size:.85rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:18px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{margin:0 0 10px;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--acc);color:#fff;font-size:1rem;flex:none}
+.mute{color:var(--mute)}
+.note{background:var(--soft);border-left:4px solid var(--acc);padding:8px 12px;border-radius:8px;margin:10px 0;font-size:.95rem}
+.note.w{border-left-color:var(--warn)}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+select{font:inherit;padding:4px 6px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:100%}
+.grid2{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+.grid2>*{min-width:0}
+@media (max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}}
+canvas.us{width:100%;max-width:560px;display:block;border-radius:10px;background:#000;cursor:crosshair}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{color:var(--mute);font-weight:600}
+tr.hl td{background:var(--soft)}
+.cat{display:inline-block;min-width:44px;text-align:center;padding:2px 8px;border-radius:8px;color:#fff;font-weight:700}
+.k2{background:var(--c2)}.k3{background:var(--c3)}.k4A{background:var(--c4a)}.k4B{background:var(--c4b)}.k4C{background:var(--c4c)}.k5{background:var(--c5)}.k0,.k1,.k6{background:#6b7280}
+.ctrl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 12px}
+.ctrl label{font-size:.88rem;color:var(--mute);display:block}
+@media (max-width:420px){.ctrl{grid-template-columns:minmax(0,1fr)}}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.presets button{font-size:.85rem;padding:4px 10px}
+.result{border:2px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px}
+.result .big{font-size:1.4rem;font-weight:700;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.feat{list-style:none;padding:0;margin:8px 0 0;font-size:.92rem}
+.feat li{padding:3px 0;border-bottom:1px dashed var(--line)}
+.tag{display:inline-block;font-size:.75rem;padding:0 6px;border-radius:6px;margin-right:6px;color:#fff}
+.tag.b{background:var(--ok)}.tag.s{background:var(--bad)}.tag.n{background:#8a93a6}
+.scale{position:relative;height:34px;border-radius:8px;overflow:hidden;display:flex;margin:22px 0 4px}
+.scale div{height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.85rem}
+.marker{position:absolute;top:-8px;width:3px;height:50px;background:var(--ink);transition:left .15s}
+.ticks{position:relative;height:18px;font-size:.75rem;color:var(--mute)}
+.ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+input[type=range]{width:100%}
+.bigp{font-size:1.6rem;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chips button{padding:6px 14px;font-weight:700}
+.chips button.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+.chips button.ng{background:var(--bad);color:#fff;border-color:var(--bad)}
+.chips button.near{background:var(--warn);color:#fff;border-color:var(--warn)}
+.prog{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0}
+.prog>div{height:100%;background:var(--acc);width:0;transition:width .3s}
+.q{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
+.q .opts{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.q .opts button{text-align:left}
+.q .opts button.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+.q .opts button.ng{background:var(--bad);color:#fff;border-color:var(--bad)}
+.q .ex{margin-top:6px;font-size:.92rem}
+.q.locked .opts button{cursor:default}
+footer{text-align:center;color:var(--mute);font-size:.85rem;margin-top:30px}
+.lyr{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:8px}
+.lyr div{text-align:center;font-size:.8rem}
+.lyr canvas{width:100%;border-radius:6px;display:block;background:#000}
+/* ===== 卡通醫師 ===== */
+.avwrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.av{width:100%;max-width:220px;cursor:pointer;user-select:none}
+.av svg{width:100%;display:block;overflow:visible;background:none}
+.av .bodyg{animation:bob 3.2s ease-in-out infinite;transform-origin:100px 200px}
+.av .eyes{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+.av .hairL{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:top center}
+.av .hairR{animation:sway 3.2s ease-in-out infinite reverse;transform-box:fill-box;transform-origin:top center}
+.av .brow{transition:transform .3s;transform-box:fill-box}
+.av .browL{transform-origin:right center}.av .browR{transform-origin:left center}
+.av .mo{opacity:0;transition:opacity .25s}.av .mo.n{opacity:1}
+.av .blush,.av .sweat,.av .spark{opacity:0;transition:opacity .3s}
+.av.smile .mo.n,.av.frown .mo.n{opacity:0}
+.av.smile .mo.s{opacity:1}.av.frown .mo.f{opacity:1}
+.av.smile .blush{opacity:.55}.av.smile .spark{opacity:1}.av.frown .sweat{opacity:.9}
+.av.smile .brow{transform:translateY(-3px)}
+.av.frown .browL{transform:rotate(14deg) translateY(2px)}.av.frown .browR{transform:rotate(-14deg) translateY(2px)}
+.av.hop svg{animation:hop .7s ease}
+.av.shake svg{animation:shake .55s ease}
+.av .spark{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}55%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes twinkle{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.bubble{position:relative;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 12px;font-size:.95rem;margin-bottom:10px;min-height:2.6em;max-width:260px;text-align:center;transition:border-color .3s}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--line);border-bottom:0}
+.bubble.good{border-color:var(--ok)}.bubble.good::after{border-top-color:var(--ok)}
+.bubble.bad{border-color:var(--bad)}.bubble.bad::after{border-top-color:var(--bad)}
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:center}
+.intro>*,.qgrid>*{min-width:0}
+.intro .avwrap{flex-direction:row;gap:10px}.intro .bubble{flex:1;margin:0}.intro .bubble::after{display:none}.intro .av{width:125px;flex:none}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+.qgrid .avwrap{position:sticky;top:12px}
+@media (max-width:860px){.intro,.qgrid{grid-template-columns:minmax(0,1fr)}.intro .avwrap{flex-direction:column}.intro .bubble{margin-bottom:10px}.intro .bubble::after{display:block}.intro .av,.qgrid .av{width:auto;max-width:140px}.qgrid .avwrap{position:static;order:-1}}
+/* 作者徽章（文字版） */
+.pu-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pu-hd-main{min-width:0;flex:1}
+.pu-badge{display:flex;align-items:center;gap:10px;flex:none;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
+.pu-badge .pu-t{display:flex;flex-direction:column;line-height:1.35;font-size:.9rem;text-align:left}
+.pu-badge .pu-t b{font-size:1.05rem}
+.pu-badge .pu-t span{color:var(--mute)}
+@media (max-width:700px){.pu-hd{flex-direction:column-reverse}.pu-badge{align-self:flex-end}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="pu-hd">
+  <div class="pu-hd-main">
+  <h1>乳房超音波 BI-RADS 風險評估</h1>
+  <p class="sub">智慧醫療 ・ 互動教學：從超音波影像特徵，一步步推到 BI-RADS 分類與處置</p>
+  <p class="warnline">※ 本頁影像皆為程式即時合成的教學示意圖，非真實病例；分類推論為教學簡化版，不可作為診斷依據。</p>
+  <button class="thbtn" id="thBtn">🌓 切換深淺色</button>
+  </div>
+  <div class="pu-badge"><div class="pu-t"><b>靜宜大學</b><span>晶片設計學士學位學程</span><span>劉志俊 老師</span></div></div>
+</header>
+
+<!-- 0 -->
+<section class="card">
+<h2><span class="num">0</span>BI-RADS 是什麼？一句話直覺</h2>
+<div class="intro">
+<div>
+<p><b>BI-RADS（Breast Imaging Reporting and Data System，乳房影像報告與資料系統）</b>是美國放射學院（ACR）制定的一套「共同語言」：</p>
+<ol>
+<li><b>描述（Lexicon）</b>：用標準詞彙描述病灶的形狀、方位、邊緣、回音、後方特徵…</li>
+<li><b>評估（Assessment）</b>：綜合這些特徵，給一個 0–6 的分類，代表「惡性的可能性（Likelihood of malignancy）」。</li>
+<li><b>處置（Management）</b>：每個分類對應建議：常規篩檢、短期追蹤，或切片（Biopsy）。</li>
+</ol>
+<div class="note">一句話：<b>看到什麼特徵 → 惡性機率大概多少 → 該怎麼處理。</b>BI-RADS 把醫師的「感覺」變成可溝通、可統計、也可以讓 AI 學習的結構化資料。</div>
+</div>
+<div class="avwrap"><div class="bubble" id="bub1">Hello！我是懷爾德老師（John J. Wild），大家叫我「乳房超音波之父」。點我聽故事！</div><div class="av" id="av1" title="點我聽故事"></div></div>
+</div>
+</section>
+
+<!-- 1 -->
+<section class="card">
+<h2><span class="num">1</span>先看懂正常的乳房超音波</h2>
+<div class="grid2">
+<div>
+<canvas class="us" id="cv1" width="480" height="360"></canvas>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">
+<label><input type="checkbox" id="lab1" checked> 顯示組織標籤</label>
+<span class="mute">增益（Gain）</span><input type="range" id="gain1" min="0.6" max="1.6" step="0.05" value="1" style="width:140px">
+</div>
+</div>
+<div>
+<p>探頭放在皮膚上，影像<b>上方是淺層、下方是深層</b>。聲波遇到界面反射越強，畫面越亮。</p>
+<p id="pick1" class="note">👉 點影像上任一處，看看那是什麼組織。</p>
+<p><b>回音強度（Echogenicity）是「相對」的</b>：BI-RADS 規定以<b>皮下脂肪</b>作為比較基準。</p>
+<div class="lyr" id="lyr"></div>
+<p class="mute" style="font-size:.88rem">左起：無回音（黑，如囊腫內的液體）、低回音（比脂肪暗）、等回音（和脂肪差不多）、高回音（比脂肪亮）、不均質（混雜）。多數乳癌呈<b>低回音</b>，但低回音不等於惡性。</p>
+</div>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="card">
+<h2><span class="num">2</span>描述詞實驗室：調整特徵，看影像與分類怎麼變</h2>
+<div class="grid2">
+<div>
+<canvas class="us" id="cv2" width="480" height="360"></canvas>
+<div class="presets" id="presets"></div>
+</div>
+<div>
+<div class="ctrl" id="ctrl"></div>
+<div class="result" id="res2"></div>
+</div>
+</div>
+<div class="note w">⚠️ 教學簡化：真實的 BI-RADS <b>不是加分制</b>，醫師會綜合病史、乳房攝影、舊片比對與最可疑的單一特徵來判斷。這裡用「可疑特徵權重」只是為了讓你看出<b>哪些特徵會把分類往上推</b>。</div>
+</section>
+
+<!-- 3 -->
+<section class="card">
+<h2><span class="num">3</span>分類 ↔ 惡性機率 ↔ 處置</h2>
+<p>拖動滑桿，假設某病灶的惡性機率是 p（例如 AI 輔助判讀系統的輸出），看看它落在哪一類、該怎麼處理。刻度用平方根尺度，讓小機率區間看得清楚。</p>
+<div class="bigp">p = <span id="pv">5.0</span>% → <span id="pc"></span></div>
+<input type="range" id="ps" min="0" max="1000" value="224">
+<div style="position:relative">
+<div class="scale" id="scale"></div>
+<div class="marker" id="mk"></div>
+</div>
+<div class="ticks" id="ticks"></div>
+<p id="pm" class="note"></p>
+<div class="tbl"><table id="cattbl"><thead><tr><th>分類</th><th>意義</th><th>惡性機率</th><th>建議處置</th></tr></thead><tbody></tbody></table></div>
+<div class="note">為什麼切片門檻設在 <b>2%</b> 這麼低？因為漏掉乳癌的代價遠高於多做一次切片。這也是<b>智慧醫療</b>設計 AI 模型時的關鍵：決策閾值要依「偽陰性 vs 偽陽性的代價」來選，而不是只看準確率。</div>
+</section>
+
+<!-- 4 -->
+<section class="card">
+<h2><span class="num">4</span>判讀挑戰：你來當放射科醫師</h2>
+<div class="qgrid">
+<div>
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><b id="c4hd">第 1 / 8 題</b><span>得分 <b id="c4sc">0</b> ・ 連對 <b id="c4st">0</b></span></div>
+<div class="prog"><div id="c4pg"></div></div>
+<canvas class="us" id="cv4" width="480" height="360"></canvas>
+<p class="mute" style="margin:6px 0 0">依第 2 節的規則，先看形狀、方位、邊緣，再看回音、後方特徵、鈣化、血流。你會給幾類？</p>
+<div class="chips" id="c4btn"></div>
+<div id="c4fb"></div>
+<div style="margin-top:8px"><button class="pri" id="c4next" style="display:none">下一題 ▶</button></div>
+</div>
+<div class="avwrap"><div class="bubble" id="bub3">看清楚再出手！3 類和 4 類的差別最重要：一個追蹤、一個要切片。</div><div class="av" id="av3"></div></div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="card">
+<h2><span class="num">5</span>觀念小測驗</h2>
+<div class="qgrid">
+<div id="quiz"></div>
+<div class="avwrap"><div class="bubble" id="bub2">來考考你！答對我會笑，答錯我會皺眉喔。</div><div class="av" id="av2"></div></div>
+</div>
+</section>
+
+<footer>卡通「懷爾德老師」依 Dr. John Julian Wild 的照片繪製 ・ 乳房超音波 BI-RADS 互動教學 ・ 單一 HTML 檔，可離線開啟 ・ 描述詞依 ACR BI-RADS 第 5 版（2013）超音波詞彙</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+const W=480,H=360;
+function sstep(a,b,x){const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);}
+function bil(arr,w,x,y){const x0=Math.floor(x),y0=Math.floor(y),fx=x-x0,fy=y-y0,i=y0*w+x0;
+  return arr[i]*(1-fx)*(1-fy)+arr[i+1]*fx*(1-fy)+arr[i+w]*(1-fx)*fy+arr[i+w+1]*fx*fy;}
+function makeNoise(seed){const r=mulberry32(seed);const gw=W/2+2,gh=H/2+2;const g=new Float32Array(gw*gh);
+  for(let i=0;i<g.length;i++)g[i]=Math.sqrt(-2*Math.log(r()+1e-9))/1.25;
+  const f=new Float32Array(W*H);for(let i=0;i<f.length;i++)f[i]=r();
+  const lw=13,lh=10,L=new Float32Array(lw*lh);for(let i=0;i<L.length;i++)L[i]=r();
+  const mw=34,mh=26,M=new Float32Array(mw*mh);for(let i=0;i<M.length;i++)M[i]=r();
+  const angR=[];for(let i=0;i<7;i++)angR.push((i%2?0.86:1.14)+(r()-0.5)*0.08);
+  const spk=[];for(let i=0;i<16;i++)spk.push({t:-Math.PI+(i+r()*0.6)*2*Math.PI/16,len:0.45+r()*0.5});
+  const calc=[];for(let i=0;i<7;i++){const a=r()*2*Math.PI,d=Math.sqrt(r())*0.55;calc.push({x:Math.cos(a)*d,y:Math.sin(a)*d,s:1.4+r()*1.1});}
+  return {g,gw,f,L,lw,lh,M,mw,mh,angR,spk,calc};}
+const b1=x=>62+8*Math.sin(x/70+0.5), b2=x=>238+10*Math.sin(x/90+1.3);
+const b3=x=>b2(x)+20, b4=x=>b3(x)+52;
+function ribTop(x){const d=(x-360)/75;return Math.abs(d)<1?338-12*Math.sqrt(1-d*d):1e9;}
+function layerAt(x,y){if(y<11)return '皮膚（Skin）';if(y<b1(x))return '皮下脂肪（Subcutaneous fat）：回音強度的比較基準';
+  if(y<b2(x))return '乳腺組織（Fibroglandular tissue）：較亮，夾雜暗的脂肪小葉';if(y<b3(x))return '乳房後脂肪（Retromammary fat）';
+  if(y<b4(x))return '胸大肌（Pectoralis major）：有條紋的肌纖維';const rt=ribTop(x);if(y>=rt)return y<rt+4?'肋骨表面（強反射）':'肋骨後方聲影（Acoustic shadow）：聲波被骨頭擋住';return '深層胸壁';}
+function tissue(x,y,N){
+  if(y<3)return 0.95; if(y<11)return 0.5;
+  const lf=bil(N.L,N.lw,x/W*(N.lw-1.001),y/H*(N.lh-1.001));
+  if(y<b1(x)){const lig=Math.abs(Math.sin(x*0.03+2.2*Math.sin(y*0.06+x*0.01)));return lig<0.035?0.6:0.26;}
+  if(y<b2(x)){const m=sstep(0.22,0.34,lf);return 0.28*(1-m)+(0.5+0.3*lf)*m;}
+  if(y<b3(x))return 0.24;
+  if(y<b4(x))return 0.3+(Math.sin(y*0.75+x*0.03)>0.6?0.3:0);
+  const rt=ribTop(x); if(y>=rt)return y<rt+4?1.15:0.03; return 0.2;}
+/* lesion geometry */
+function geom(P){let a,b; if(P.shape==='round'){a=b=50;} else if(P.orient==='parallel'){a=72;b=42;} else {a=42;b=64;} return {cx:240,cy:158,a,b};}
+function Rfun(th,P,N){let R=1;
+  if(P.shape==='irregular')R*=1+0.17*Math.sin(3*th+0.7)+0.1*Math.sin(5*th+2.1)+0.06*Math.sin(7*th+0.3);
+  if(P.margin==='micro')R*=1+0.08*Math.abs(Math.sin(8*th))-0.03;
+  if(P.margin==='angular'){const n=N.angR.length,t=(th+Math.PI)/(2*Math.PI)*n,i=Math.floor(t)%n,fr=t-Math.floor(t);R*=N.angR[i]*(1-fr)+N.angR[(i+1)%n]*fr;}
+  return R;}
+function render(cv,P,opt){opt=opt||{};const N=opt.N,gain=opt.gain||1;const ctx=cv.getContext('2d');const img=ctx.createImageData(W,H);const d=img.data;
+  const G=P?geom(P):null;
+  for(let y=0;y<H;y++){for(let x=0;x<W;x++){
+    const k=y*W+x;const sp=bil(N.g,N.gw,x/2.2,y/2.2)*(0.88+0.24*N.f[k]);
+    let I=tissue(x,y,N);
+    if(G){const dx=(x-G.cx)/G.a,dy=(y-G.cy)/G.b;
+      if(Math.abs(dx)<2.6&&Math.abs(dy)<2.6||y>G.cy){
+      const rho=Math.hypot(dx,dy),th=Math.atan2(dy,dx);const R=Rfun(th,P,N);let edge=rho-R;
+      let ew=0.03;
+      if(P.margin==='indist'){ew=0.2;edge+=(N.f[k]-0.5)*0.12+(bil(N.M,N.mw,x/W*(N.mw-1.001),y/H*(N.mh-1.001))-0.5)*0.35;}
+      if(P.margin==='spic')ew=0.06;
+      const w=1-sstep(-ew,ew,edge);
+      // posterior features
+      if(P.post!=='none'&&y>G.cy){const col=1-sstep(0.65,1.0,Math.abs(x-G.cx)/G.a);const dep=sstep(0,0.6,(y-G.cy)/G.b-0.6);const am=col*dep*(1-w);
+        const enh=1+0.9*am,sh=1-0.8*am;
+        if(P.post==='enh')I*=enh;else if(P.post==='shadow')I*=sh;else{const m=sstep(-6,6,x-G.cx);I*=enh*(1-m)+sh*m;}}
+      // spiculations
+      if(P.margin==='spic'&&edge>-0.03&&edge<1){for(const s of N.spk){if(edge>s.len)continue;let dt=Math.abs(th-s.t);if(dt>Math.PI)dt=2*Math.PI-dt;
+        if(dt*rho<0.05*(1-edge/s.len)+0.01){I*=0.35;break;}}}
+      if(w>0.001){let L;
+        const mf=bil(N.M,N.mw,x/W*(N.mw-1.001),y/H*(N.mh-1.001));
+        switch(P.echo){case 'an':L=0.02;break;case 'hypo':L=0.13*sp;break;case 'iso':L=0.26*sp;break;case 'hyper':L=0.85*sp;break;
+          case 'het':L=(mf>0.5?0.5:0.11)*sp;break;
+          case 'complex':{const nd=Math.hypot(dx-0.42,dy+0.3);L=nd<0.48?0.22*sp:0.02;break;}}
+        I=I*sp*(1-w)+L*w; I/=1; // already speckled
+        I=Math.max(0,I); let v=I*gain*(1-0.22*y/H); v=Math.min(1,v); const g=255*Math.pow(v,0.85);
+        d[4*k]=d[4*k+1]=d[4*k+2]=g; d[4*k+3]=255; continue;}
+      }}
+    let v=I*sp*gain*(1-0.22*y/H); v=Math.min(1,Math.max(0,v)); const g=255*Math.pow(v,0.85);
+    d[4*k]=d[4*k+1]=d[4*k+2]=g; d[4*k+3]=255;}}
+  ctx.putImageData(img,0,0);
+  if(G){
+    if(P.calc==='in'){for(const c of N.calc){const px=G.cx+c.x*G.a,py=G.cy+c.y*G.b;ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.arc(px,py,c.s+1.6,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(px,py,c.s,0,7);ctx.fill();}}
+    if(P.vasc!=='none'){ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle='#e6c84a';ctx.lineWidth=1.5;ctx.strokeRect(G.cx-G.a*1.6,G.cy-G.b*1.6,G.a*3.2,G.b*3.2);ctx.restore();
+      ctx.lineCap='round';ctx.lineWidth=3;
+      if(P.vasc==='internal'){const segs=[[-0.5,-0.3,0,0.1,0.4,-0.1,'#e33'],[-0.3,0.4,0.1,0,0.3,0.45,'#36f'],[-0.1,-0.5,0.2,-0.2,0.05,0.25,'#e33'],[0.2,0.3,-0.2,0.15,-0.45,0.1,'#36f']];
+        for(const s of segs){ctx.strokeStyle=s[6];ctx.beginPath();ctx.moveTo(G.cx+s[0]*G.a,G.cy+s[1]*G.b);ctx.quadraticCurveTo(G.cx+s[2]*G.a,G.cy+s[3]*G.b,G.cx+s[4]*G.a,G.cy+s[5]*G.b);ctx.stroke();}}
+      else{const arcs=[[-2.6,-1.6,'#e33'],[-0.6,0.3,'#36f'],[1.2,2.1,'#e33']];
+        for(const s of arcs){ctx.strokeStyle=s[2];ctx.beginPath();for(let t=s[0];t<=s[1];t+=0.05){const R=Rfun(t,P,N)*1.08;const px=G.cx+Math.cos(t)*R*G.a,py=G.cy+Math.sin(t)*R*G.b;t===s[0]?ctx.moveTo(px,py):ctx.lineTo(px,py);}ctx.stroke();}}}
+  }
+  // scale & text
+  ctx.fillStyle='rgba(255,255,255,.75)';ctx.font='11px sans-serif';
+  for(let i=0;i<4;i++){const yy=i*90;ctx.fillRect(470,yy,8,1.5);if(i)ctx.fillText(i+'cm',446,yy+4);}
+  ctx.fillText('B-mode ・ 合成教學影像',8,H-8);
+  if(opt.labels){ctx.font='bold 12px sans-serif';const L=[['皮膚',8,22],['皮下脂肪',8,44],['Cooper 韌帶',150,40],['乳腺組織',8,150],['乳房後脂肪',8,256],['胸大肌',8,290],['肋骨與後方聲影',290,330]];
+    for(const l of L){const tw=ctx.measureText(l[0]).width;ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(l[1]-3,l[2]-12,tw+6,16);ctx.fillStyle='#ffe28a';ctx.fillText(l[0],l[1],l[2]);}}
+}
+/* ===== lexicon & assessment ===== */
+const LEX={
+ shape:{t:'形狀 Shape',o:{oval:'橢圓形 Oval',round:'圓形 Round',irregular:'不規則 Irregular'}},
+ orient:{t:'方位 Orientation',o:{parallel:'平行（寬>高）Parallel',notpar:'不平行（高>寬）Not parallel'}},
+ margin:{t:'邊緣 Margin',o:{circ:'清楚 Circumscribed',indist:'模糊 Indistinct',angular:'角狀 Angular',micro:'微分葉 Microlobulated',spic:'毛刺狀 Spiculated'}},
+ echo:{t:'回音型態 Echo pattern',o:{an:'無回音 Anechoic',hypo:'低回音 Hypoechoic',iso:'等回音 Isoechoic',hyper:'高回音 Hyperechoic',het:'不均質 Heterogeneous',complex:'囊實混合 Complex cystic & solid'}},
+ post:{t:'後方特徵 Posterior',o:{none:'無 No posterior features',enh:'增強 Enhancement',shadow:'聲影 Shadowing',comb:'混合 Combined'}},
+ calc:{t:'鈣化 Calcifications',o:{none:'無',in:'病灶內鈣化 In a mass'}},
+ vasc:{t:'血流 Vascularity',o:{none:'無 Absent',rim:'邊緣血流 Vessels in rim',internal:'內部血流 Internal'}}};
+const WT={shape:{irregular:[2,'不規則外形代表生長不受控、侵犯周圍']},orient:{notpar:[2,'高大於寬：穿越組織平面垂直生長，是重要可疑徵象']},
+ margin:{indist:[2,'邊界看不清，可能有浸潤'],angular:[2,'尖角狀邊緣，可能侵入周圍組織'],micro:[2,'邊緣有許多小波浪，可疑'],spic:[3,'放射狀尖刺：最強的惡性徵象之一']},
+ echo:{het:[1,'內部回音混雜'],complex:[2,'囊腔內有實質成分，需排除乳突狀或壞死性腫瘤']},
+ post:{shadow:[1.5,'聲波被大量吸收（常見於促纖維化反應），但疤痕、鈣化也會造成'],comb:[1,'同時有增強與聲影']},
+ calc:{in:[1.5,'腫塊內的鈣化點較可疑']},vasc:{internal:[1.5,'腫塊內部有血管，表示有活躍的組織'],rim:[0.5,'只有邊緣血流，意義較弱']}};
+const BEN={shape:{oval:'橢圓形，偏良性',round:'圓形，偏良性'},orient:{parallel:'平行於皮膚，偏良性'},margin:{circ:'邊緣清楚，偏良性'},
+ echo:{an:'無回音：液體（囊腫）',hypo:'低回音本身不分良惡',iso:'等回音本身不分良惡',hyper:'高回音很少是惡性'},post:{none:'無後方特徵',enh:'後方增強：常見於液體'},calc:{none:'無鈣化'},vasc:{none:'無血流'}};
+const CAT={'0':['未完成評估','—','追加影像（如乳房攝影）或與舊片比較'],'1':['陰性 Negative','0%','常規篩檢'],'2':['良性 Benign','0%','常規篩檢'],
+ '3':['可能良性 Probably benign','>0% 且 ≤2%','短期追蹤（約 6 個月）'],'4A':['低度可疑','>2% 至 ≤10%','切片（Biopsy）'],'4B':['中度可疑','>10% 至 ≤50%','切片'],
+ '4C':['中高度可疑','>50% 至 <95%','切片'],'5':['高度懷疑惡性','≥95%','切片並安排治療'],'6':['已切片證實惡性','—','依治療計畫處置']};
+function assess(P){const items=[];let s=0;
+  for(const key of ['shape','orient','margin','echo','post','calc','vasc']){if(key==='orient'&&P.shape==='round'){items.push({k:key,tag:'n',txt:'圓形：寬高相等，無方位可言',w:0});continue;}
+    const v=P[key];const wt=WT[key]&&WT[key][v];
+    if(wt){s+=wt[0];items.push({k:key,tag:'s',txt:wt[1],w:wt[0]});}else items.push({k:key,tag:BEN[key]&&BEN[key][v]&&v!=='hypo'&&v!=='iso'?'b':'n',txt:(BEN[key]&&BEN[key][v])||'',w:0});}
+  const circ=P.margin==='circ',notIrr=P.shape!=='irregular',par=P.orient==='parallel'||P.shape==='round',postOK=P.post==='none'||P.post==='enh';
+  let cat,why;
+  if(P.echo==='an'&&circ&&notIrr&&postOK&&P.vasc==='none'&&P.calc==='none'){cat='2';why='典型「單純囊腫（Simple cyst）」：無回音、邊緣清楚、後方增強 → 良性。';}
+  else if(P.echo==='hyper'&&circ&&notIrr&&postOK&&P.calc==='none'&&P.vasc!=='internal'){cat='2';why='邊緣清楚的高回音腫塊（多為含脂肪病灶）→ 良性。';}
+  else if(notIrr&&par&&circ&&(P.echo==='hypo'||P.echo==='iso')&&postOK&&P.calc==='none'&&P.vasc!=='internal'){cat='3';why='橢圓、平行、邊緣清楚的實質腫塊（典型如纖維腺瘤）→ 可能良性，短期追蹤。';}
+  else if(s<=0){cat='3';why='沒有可疑特徵，但也不完全符合典型良性外觀 → 可能良性。';}
+  else if(s<=2){cat='4A';why='出現少量可疑特徵 → 低度可疑，建議切片。';}
+  else if(s<=4){cat='4B';why='多個可疑特徵 → 中度可疑。';}
+  else if(s<=6){cat='4C';why='可疑特徵很多 → 中高度可疑。';}
+  else {cat='5';why='典型惡性組合（如不規則、不平行、毛刺狀、後方聲影）→ 高度懷疑惡性。';}
+  return {cat,why,items,s};}
+function catHTML(c){return `<span class="cat k${c}">${c}</span>`;}
+function resHTML(A,P,brief){let h=`<div class="big">BI-RADS ${catHTML(A.cat)} <span style="font-size:1rem">${CAT[A.cat][0]}</span></div>
+ <div class="mute">惡性機率 ${CAT[A.cat][1]} ・ 建議：<b style="color:var(--ink)">${CAT[A.cat][2]}</b></div><div style="margin-top:6px">${A.why}</div>`;
+ h+='<ul class="feat">'+A.items.map(it=>`<li><span class="tag ${it.tag}">${it.tag==='s'?'可疑 +'+it.w:it.tag==='b'?'良性傾向':'中性'}</span><b>${LEX[it.k].t.split(' ')[0]}：</b>${LEX[it.k].o[P[it.k]]}${it.txt?'　<span class="mute">'+it.txt+'</span>':''}</li>`).join('')+'</ul>';
+ h+=`<div class="mute" style="font-size:.85rem;margin-top:4px">可疑權重總和 = ${A.s}（≤0→3、≤2→4A、≤4→4B、≤6→4C、>6→5；符合典型良性外觀者直接判 2 或 3）</div>`;return h;}
+
+/* ===== Section 1 ===== */
+const N1=makeNoise(7);
+function draw1(){render($('cv1'),null,{N:N1,gain:+$('gain1').value,labels:$('lab1').checked});}
+$('gain1').oninput=draw1;$('lab1').onchange=draw1;
+$('cv1').addEventListener('click',e=>{const r=e.target.getBoundingClientRect();const x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;$('pick1').innerHTML='📍 這裡是：<b>'+layerAt(x,y)+'</b>';});
+(function(){const box=$('lyr');const P={an:0.02,hypo:0.13,iso:0.26,hyper:0.85,het:-1};const names={an:'無回音',hypo:'低回音',iso:'等回音',hyper:'高回音',het:'不均質'};const N=makeNoise(3);
+  for(const k in P){const dv=document.createElement('div');const c=document.createElement('canvas');c.width=80;c.height=80;dv.appendChild(c);dv.appendChild(document.createTextNode(names[k]));box.appendChild(dv);
+    const ctx=c.getContext('2d'),im=ctx.createImageData(80,80);
+    for(let y=0;y<80;y++)for(let x=0;x<80;x++){const sp=bil(N.g,N.gw,x/2+5,y/2+5)*(0.8+0.4*N.f[y*W+x]);let L;
+      if(y<26)L=0.26*sp; else {L=P[k]<0?((bil(N.M,N.mw,x/16,y/16)>0.5?0.5:0.11)*sp):(k==='an'?0.02:P[k]*sp);}
+      const g=255*Math.pow(Math.min(1,L),0.85),i=4*(y*80+x);im.data[i]=im.data[i+1]=im.data[i+2]=g;im.data[i+3]=255;}
+    ctx.putImageData(im,0,0);ctx.fillStyle='#ffe28a';ctx.font='10px sans-serif';ctx.fillText('脂肪',3,11);ctx.fillStyle='rgba(255,226,138,.7)';ctx.fillRect(0,26,80,1);}})();
+
+/* ===== Section 2 ===== */
+const N2=makeNoise(11);
+const P2={shape:'oval',orient:'parallel',margin:'circ',echo:'an',post:'enh',calc:'none',vasc:'none'};
+const PRESETS=[['單純囊腫',{shape:'oval',orient:'parallel',margin:'circ',echo:'an',post:'enh',calc:'none',vasc:'none'}],
+ ['纖維腺瘤樣',{shape:'oval',orient:'parallel',margin:'circ',echo:'hypo',post:'none',calc:'none',vasc:'none'}],
+ ['囊實混合',{shape:'oval',orient:'parallel',margin:'circ',echo:'complex',post:'enh',calc:'none',vasc:'rim'}],
+ ['邊緣模糊的低回音腫塊',{shape:'irregular',orient:'parallel',margin:'indist',echo:'hypo',post:'none',calc:'none',vasc:'none'}],
+ ['典型惡性',{shape:'irregular',orient:'notpar',margin:'spic',echo:'hypo',post:'shadow',calc:'in',vasc:'internal'}]];
+(function(){const c=$('ctrl');for(const k in LEX){const d=document.createElement('div');d.innerHTML=`<label>${LEX[k].t}</label><select id="s_${k}">`+Object.entries(LEX[k].o).map(([v,t])=>`<option value="${v}">${t}</option>`).join('')+'</select>';c.appendChild(d);}
+ for(const k in LEX)$('s_'+k).onchange=e=>{P2[k]=e.target.value;upd2();};
+ const pr=$('presets');PRESETS.forEach(p=>{const b=document.createElement('button');b.textContent=p[0];b.onclick=()=>{Object.assign(P2,p[1]);upd2();};pr.appendChild(b);});})();
+function upd2(){for(const k in LEX)$('s_'+k).value=P2[k];$('s_orient').disabled=P2.shape==='round';
+  render($('cv2'),P2,{N:N2});const A=assess(P2);const r=$('res2');r.innerHTML=resHTML(A,P2);r.style.borderColor=getComputedStyle(document.documentElement).getPropertyValue(A.cat==='2'?'--c2':A.cat==='3'?'--c3':A.cat==='5'?'--c5':'--c'+A.cat.toLowerCase());}
+
+/* ===== Section 3 ===== */
+const BANDS=[['3',0,2,'--c3'],['4A',2,10,'--c4a'],['4B',10,50,'--c4b'],['4C',50,95,'--c4c'],['5',95,100,'--c5']];
+(function(){const sc=$('scale');for(const b of BANDS){const d=document.createElement('div');const w=(Math.sqrt(b[2]/100)-Math.sqrt(b[1]/100))*100;d.style.width=w+'%';d.style.background='var('+b[3]+')';d.textContent=w>4?b[0]:'';sc.appendChild(d);}
+ const tk=$('ticks');for(const p of [0,2,10,50,95]){const s=document.createElement('span');s.style.left=Math.sqrt(p/100)*100+'%';s.textContent=p+'%';if(p===95){s.style.transform='translateX(-100%)';}tk.appendChild(s);}
+ const tb=document.querySelector('#cattbl tbody');for(const c of ['0','1','2','3','4A','4B','4C','5','6']){const tr=document.createElement('tr');tr.id='cr_'+c;tr.innerHTML=`<td>${catHTML(c)}</td><td>${CAT[c][0]}</td><td>${CAT[c][1]}</td><td>${CAT[c][2]}</td>`;tb.appendChild(tr);}})();
+function pcat(p){if(p===0)return '1/2';if(p<=2)return '3';if(p<=10)return '4A';if(p<=50)return '4B';if(p<95)return '4C';return '5';}
+function upd3(){const t=+$('ps').value;const p=Math.round(100*Math.pow(t/1000,2)*10)/10;$('pv').textContent=p.toFixed(1);const c=pcat(p);
+  $('pc').innerHTML=c==='1/2'?'<span class="cat k2">1 或 2</span>':'BI-RADS '+catHTML(c);$('mk').style.left='calc('+(Math.sqrt(p/100)*100)+'% - 1px)';
+  document.querySelectorAll('#cattbl tr').forEach(r=>r.classList.remove('hl'));
+  if(c==='1/2'){$('cr_1').classList.add('hl');$('cr_2').classList.add('hl');$('pm').innerHTML='惡性機率基本上為 0：陰性或明確良性，回到<b>常規篩檢</b>。';}
+  else{$('cr_'+c).classList.add('hl');$('pm').innerHTML=c==='3'?'p ≤ 2%：<b>不切片</b>，約 6 個月後短期追蹤，確認穩定。':`p > 2%：越過切片門檻 → <b>建議切片</b>。${c==='5'?'幾乎可確定惡性，切片同時規劃治療。':''}`;}}
+$('ps').oninput=upd3;
+
+/* ===== Avatar ===== */
+const DOC_SVG=`<svg viewBox="0 0 200 230" aria-label="懷爾德老師動畫">
+ <g class="bodyg">
+  <path d="M14 232 Q18 162 100 150 Q182 162 186 232 Z" fill="#f6f7f8" stroke="#c9d1db" stroke-width="2"/>
+  <rect x="84" y="132" width="32" height="26" rx="10" fill="#efc2aa"/>
+  <path d="M80 153 L100 200 L120 153 Q100 161 80 153Z" fill="#ffffff" stroke="#d5dbe2" stroke-width="1.2"/>
+  <path d="M94 158 L106 158 L104 169 L96 169Z" fill="#1d2333"/>
+  <path d="M96 169 L104 169 L109 222 L100 232 L91 222Z" fill="#1d2333"/>
+  <path d="M80 152 L96 204 L90 232 L62 232 L66 192 Z" fill="#eceff3" stroke="#c9d1db" stroke-width="1.5"/>
+  <path d="M120 152 L104 204 L110 232 L138 232 L134 192 Z" fill="#eceff3" stroke="#c9d1db" stroke-width="1.5"/>
+  <g transform="rotate(-18 60 206)"><rect x="53" y="186" width="14" height="28" rx="3" fill="#c9a24a" stroke="#8c6d25" stroke-width="1.2"/><ellipse cx="60" cy="186" rx="7" ry="2.6" fill="#e6c873" stroke="#8c6d25" stroke-width="1"/><path d="M53 196 L67 196 M53 204 L67 204" stroke="#a9852f" stroke-width="1"/></g>
+  <path d="M40 216 Q46 204 64 206 Q76 210 72 220 Q62 228 44 224Z" fill="#efc2aa" stroke="#d9a58e" stroke-width="1"/>
+  <path d="M50 210 Q58 212 66 210 M48 216 Q58 218 68 215" stroke="#d9a58e" stroke-width="1" fill="none"/>
+  <ellipse cx="63" cy="106" rx="7.5" ry="12" fill="#efc2aa"/><ellipse cx="137" cy="106" rx="7.5" ry="12" fill="#efc2aa"/>
+  <ellipse cx="100" cy="104" rx="37" ry="41" fill="#f6d2bd"/>
+  <path d="M84 77 Q100 73 116 77 M86 72 Q100 68 114 72" stroke="#e2b29b" stroke-width="1.2" fill="none"/>
+  <ellipse class="blush" cx="79" cy="118" rx="7" ry="4.5" fill="#f08080"/>
+  <ellipse class="blush" cx="121" cy="118" rx="7" ry="4.5" fill="#f08080"/>
+  <path d="M84 113 Q78 124 85 133 M116 113 Q122 124 115 133" stroke="#d9a58e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <path d="M66 96 Q60 62 84 50 Q106 38 128 50 Q144 62 136 96 Q134 76 124 68 Q112 62 100 66 Q86 64 78 72 Q70 80 66 96Z" fill="#eeece6" stroke="#c4c0b6" stroke-width="1.5"/>
+  <g class="hairL"><path d="M78 62 Q96 40 124 48 Q138 54 136 70 Q126 54 106 56 Q92 56 78 62Z" fill="#f8f7f3" stroke="#c4c0b6" stroke-width="1.2"/></g>
+  <g class="hairR"><path d="M130 74 Q140 80 139 96 Q134 88 128 84Z" fill="#eeece6" stroke="#c4c0b6" stroke-width="1"/></g>
+  <path d="M90 58 Q104 50 120 56 M96 64 Q108 58 122 62" stroke="#cfcbc1" stroke-width="1" fill="none"/>
+  <path class="brow browL" d="M75 84 Q84 79 94 83" stroke="#b8b2a8" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <path class="brow browR" d="M106 83 Q116 79 125 84" stroke="#b8b2a8" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <g class="eyes"><ellipse cx="85" cy="97" rx="5" ry="4.2" fill="#fff"/><ellipse cx="115" cy="97" rx="5" ry="4.2" fill="#fff"/>
+   <circle cx="85" cy="97" r="2.8" fill="#3a3f4a"/><circle cx="115" cy="97" r="2.8" fill="#3a3f4a"/>
+   <circle cx="86" cy="96" r="0.9" fill="#fff"/><circle cx="116" cy="96" r="0.9" fill="#fff"/></g>
+  <g fill="none" stroke="#b08a3c" stroke-width="1.8"><ellipse cx="85" cy="98" rx="11.5" ry="9.5"/><ellipse cx="115" cy="98" rx="11.5" ry="9.5"/><path d="M96.5 96 Q100 93 103.5 96"/><path d="M73.5 96 L66 93"/><path d="M126.5 96 L134 93"/></g>
+  <path d="M100 104 Q96 116 99 121 Q104 123 108 119" stroke="#d29c84" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path class="mo n" d="M86 127 Q100 138 114 127" stroke="#8a4a3a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <g class="mo s"><path d="M85 125 Q100 145 115 125 Q100 130 85 125 Z" fill="#9b3a2c" stroke="#8a4a3a" stroke-width="1.5" stroke-linejoin="round"/><path d="M88 127 Q100 131 112 127 L111 130 Q100 133 89 130Z" fill="#fff"/></g>
+  <path class="mo f" d="M89 134 Q100 126 111 134" stroke="#8a4a3a" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+  <path class="sweat" d="M138 72 Q143 82 138 86 Q133 82 138 72 Z" fill="#7cc3f0"/>
+  <text class="spark" x="30" y="44" font-size="18" fill="#f0b400">✦</text>
+  <text class="spark" x="160" y="40" font-size="14" fill="#f0b400">✦</text>
+  <text class="spark" x="170" y="96" font-size="11" fill="#f0b400">✦</text>
+ </g></svg>`;
+function makeAvatar(el,bubble){el.innerHTML=DOC_SVG;let tm=null;
+  function restart(c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);}
+  return {mood(m,text,hold){clearTimeout(tm);el.classList.remove('smile','frown','hop','shake');
+    if(m==='smile'){el.classList.add('smile');restart('hop');}
+    if(m==='frown'){el.classList.add('frown');restart('shake');}
+    if(text!==undefined){bubble.innerHTML=text;bubble.className='bubble'+(m==='smile'?' good':m==='frown'?' bad':'');}
+    if(!hold)tm=setTimeout(()=>{el.classList.remove('smile','frown');bubble.className='bubble';},3200);}};}
+var AV1=makeAvatar($('av1'),$('bub1')),AV2=makeAvatar($('av2'),$('bub2')),AV3=makeAvatar($('av3'),$('bub3'));
+const QUOTES=['二戰期間，我研究過<b>雷達</b>，也用超音波測量<b>腸道組織的厚度</b>，這讓我想到：聲波能不能分辨組織？',
+ '1951 年，我和 Donald Neal 用約 <b>15 MHz</b> 的高頻脈衝回波超音波，在活體乳房研究兩個腫瘤（一良一惡），發現正常組織、良性與惡性腫瘤的<b>回波特徵不同</b>！',
+ '同一年，我在《刺胳針》（<i>The Lancet</i>）發表論文，證明高頻超音波可以區分正常組織與腫瘤的<b>聲學紋理</b>差異。',
+ '1952 年，我和工程師 <b>John Reid</b> 合作研發 <b>B-mode</b> 儀器，在臨床上辨識乳房的良性與惡性腫瘤。',
+ '1952 年我們發表 <b>21 個乳房腫瘤</b>（9 個良性、12 個惡性）的研究，裡面有被認為是最早公開發表的兩幅乳房 2D echogram，也就是早期的 B-mode 影像。',
+ '我的目標不只是「看到一個腫塊」，而是<b>用回波特徵判斷病變性質</b>。今天 BI-RADS 的描述詞，正是延續這個方向！',
+ '後來美國放射學院（ACR）制定了 <b>BI-RADS</b>：1993 年首版用於乳房攝影，2003 年第 4 版加入超音波與 MRI 詞彙。',
+ '2013 年的 BI-RADS <b>第 5 版</b>統一了乳房攝影、超音波、MRI 的評估分類，這頁的描述詞就是依照這一版。'];
+let qi=0;$('av1').onclick=()=>AV1.mood('smile',QUOTES[qi++%QUOTES.length]);
+
+/* ===== Section 4 challenge ===== */
+const ORD=['2','3','4A','4B','4C','5'];const OPTK={shape:['oval','round','irregular'],orient:['parallel','notpar'],margin:['circ','indist','angular','micro','spic'],echo:['an','hypo','iso','hyper','het','complex'],post:['none','enh','shadow','comb'],calc:['none','none','in'],vasc:['none','none','rim','internal']};
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function genCase(target){
+  if(target==='2'){return Math.random()<0.7?{shape:rnd(['oval','round']),orient:'parallel',margin:'circ',echo:'an',post:rnd(['enh','enh','none']),calc:'none',vasc:'none'}
+    :{shape:'oval',orient:'parallel',margin:'circ',echo:'hyper',post:'none',calc:'none',vasc:rnd(['none','rim'])};}
+  if(target==='3')return {shape:rnd(['oval','oval','round']),orient:'parallel',margin:'circ',echo:rnd(['hypo','iso']),post:rnd(['none','enh']),calc:'none',vasc:rnd(['none','rim'])};
+  for(let i=0;i<2000;i++){const P={};for(const k in OPTK)P[k]=rnd(OPTK[k]);if(assess(P).cat===target)return P;}
+  return PRESETS[4][1];}
+const C4={i:0,n:8,sc:0,st:0,P:null,N:null,list:[],done:false};
+function newRound4(){const l=ORD.slice().sort(()=>Math.random()-0.5);l.push(rnd(ORD),rnd(ORD));C4.list=l;C4.i=0;C4.sc=0;C4.st=0;next4();}
+function next4(){if(C4.i>=C4.n){end4();return;}C4.P=genCase(C4.list[C4.i]);C4.N=makeNoise(100+Math.floor(Math.random()*1e5));C4.done=false;
+  render($('cv4'),C4.P,{N:C4.N});$('c4hd').textContent=`第 ${C4.i+1} / ${C4.n} 題`;$('c4pg').style.width=(C4.i/C4.n*100)+'%';
+  $('c4btn').innerHTML='';ORD.forEach(c=>{const b=document.createElement('button');b.textContent=c;b.onclick=()=>ans4(c,b);$('c4btn').appendChild(b);});
+  $('c4fb').innerHTML='';$('c4next').style.display='none';}
+function ans4(c,btn){if(C4.done)return;C4.done=true;const A=assess(C4.P);const d=Math.abs(ORD.indexOf(c)-ORD.indexOf(A.cat));
+  const sameMgmt=(ORD.indexOf(c)>=2)===(ORD.indexOf(A.cat)>=2);
+  [...$('c4btn').children].forEach(b=>{if(b.textContent===A.cat)b.classList.add('ok');});
+  let msg;
+  if(d===0){C4.sc+=1;C4.st++;btn.classList.add('ok');msg=C4.st>=3?`連對 ${C4.st} 題！你的眼睛跟探頭一樣敏銳！`:rnd(['判讀正確！','漂亮！特徵抓得很準。','正確！就是這一類。']);AV3.mood('smile',msg);}
+  else if(d===1){C4.sc+=0.5;C4.st=0;btn.classList.add('near');msg=sameMgmt?'差一級，但處置相同，得 0.5 分。':'差一級，而且剛好跨過切片門檻（3 vs 4A）！這一刀很關鍵。';AV3.mood(sameMgmt?'smile':'frown',msg);}
+  else{C4.st=0;btn.classList.add('ng');msg='再看看形狀、方位和邊緣，這三個最能分辨良惡性。';AV3.mood('frown',msg);}
+  $('c4sc').textContent=C4.sc;$('c4st').textContent=C4.st;
+  $('c4fb').innerHTML='<div class="result">'+resHTML(A,C4.P)+'</div>';C4.i++;$('c4next').style.display='';$('c4next').textContent=C4.i>=C4.n?'看總成績 ▶':'下一題 ▶';$('c4pg').style.width=(C4.i/C4.n*100)+'%';}
+function end4(){$('c4btn').innerHTML='';$('c4fb').innerHTML=`<div class="result"><div class="big">總分：${C4.sc} / ${C4.n}</div><button class="pri" id="c4again" style="margin-top:8px">再挑戰一輪</button></div>`;
+  $('c4next').style.display='none';$('c4again').onclick=()=>{newRound4();AV3.mood('','新的一輪！先看形狀、方位、邊緣。');};
+  const r=C4.sc/C4.n;AV3.mood(r>=0.75?'smile':'frown',r>=0.75?'很棒！你已經掌握 BI-RADS 的判讀邏輯了。':r>=0.5?'不錯，再回第 2 節玩玩看各特徵的權重。':'建議回到第 2 節，逐一切換特徵觀察影像變化。',true);}
+$('c4next').onclick=next4;
+
+/* ===== Section 5 quiz ===== */
+const QZ=[
+ {q:'超音波描述「低回音、等回音、高回音」時，是跟哪一種組織比較？',o:['皮下脂肪','乳腺組織','胸大肌','皮膚'],a:0,e:'BI-RADS 以皮下脂肪的回音作為比較基準。',h:'想想第 1 節的小方塊，上面那條參考帶是什麼？'},
+ {q:'無回音、邊緣清楚、後方增強的橢圓形病灶，最典型的是？',o:['單純囊腫，BI-RADS 2','纖維腺瘤，BI-RADS 4A','惡性腫瘤，BI-RADS 5'],a:0,e:'這是單純囊腫（simple cyst）的經典三特徵，屬良性。',h:'液體不反射聲波、也不太吸收聲波，所以裡面黑、後方亮。'},
+ {q:'「不平行（高大於寬）」為什麼是可疑徵象？',o:['病灶穿越組織平面、垂直生長','代表裡面是液體','是探頭壓太大力造成的'],a:0,e:'良性腫塊多順著組織平面（與皮膚平行）生長；穿越組織平面者較可疑。',h:'正常乳腺組織是一層一層平行皮膚的。'},
+ {q:'BI-RADS 3 的惡性機率與建議處置是？',o:['≤2%，短期（約 6 個月）追蹤','2%–10%，切片','0%，什麼都不用做'],a:0,e:'3 類「可能良性」：惡性機率 >0% 且 ≤2%，以短期追蹤確認穩定。',h:'第 3 節的滑桿，切片門檻在哪裡？'},
+ {q:'以下哪一種邊緣描述，惡性可能最高？',o:['毛刺狀（Spiculated）','清楚（Circumscribed）','模糊（Indistinct）'],a:0,e:'毛刺狀邊緣是最強的惡性徵象之一；只要邊緣不清楚（非 circumscribed）就至少屬可疑。',h:'像海膽一樣往外伸的尖刺。'},
+ {q:'後方聲影（Posterior shadowing）代表一定是惡性嗎？',o:['不一定，疤痕、鈣化等也會造成','一定是惡性','代表裡面是液體'],a:0,e:'聲影表示聲波被大量衰減，可疑但不具專一性。',h:'第 1 節的肋骨後面也有聲影，那是惡性嗎？'},
+ {q:'BI-RADS 0 的意思是？',o:['評估未完成，需要追加影像或比對舊片','完全正常','惡性機率 0%'],a:0,e:'0 類不是「沒事」，而是「資料不足、還不能下結論」。',h:'0 不是 1，它的重點在「還沒完成」。'},
+ {q:'某 AI 輔助判讀系統對一個腫塊輸出惡性機率 8%，對應的 BI-RADS 與處置是？',o:['4A，建議切片','3，短期追蹤','4C，建議切片'],a:0,e:'8% 落在 >2% 至 ≤10%，屬 4A，已超過切片門檻。',h:'2% 和 10% 是兩條界線。'}];
+let QS=[],qAns=0,qScore=0,qStreak=0;
+function buildQuiz(){const box=$('quiz');box.innerHTML='';qAns=0;qScore=0;qStreak=0;
+  QZ.forEach((z,qi2)=>{const d=document.createElement('div');d.className='q';const ord=z.o.map((t,i)=>i).sort(()=>Math.random()-0.5);
+    d.innerHTML=`<b>Q${qi2+1}. ${z.q}</b><div class="opts"></div><div class="ex"></div>`;const op=d.querySelector('.opts');
+    ord.forEach(i=>{const b=document.createElement('button');b.textContent=z.o[i];b.onclick=()=>{if(d.classList.contains('locked'))return;d.classList.add('locked');qAns++;
+      op.querySelectorAll('button').forEach((bb,j)=>{if(ord[j]===z.a)bb.classList.add('ok');});
+      if(i===z.a){qScore++;qStreak++;d.querySelector('.ex').innerHTML='<span style="color:var(--ok)">✔ 正確！</span>'+z.e;AV2.mood('smile',qStreak>=3?`連對 ${qStreak} 題！你可以去當住院醫師了！`:rnd(['答對了！','完全正確！','觀念很清楚！']));}
+      else{qStreak=0;b.classList.add('ng');d.querySelector('.ex').innerHTML='<span style="color:var(--bad)">✘ </span>'+z.e;AV2.mood('frown',z.h);}
+      if(qAns===QZ.length)setTimeout(finishQuiz,3300);};op.appendChild(b);});box.appendChild(d);});
+  const f=document.createElement('div');f.id='qend';box.appendChild(f);}
+function finishQuiz(){const n=QZ.length;$('qend').innerHTML=`<div class="result"><div class="big">得分：${qScore} / ${n}</div><button class="pri" id="qagain" style="margin-top:8px">再做一次</button></div>`;
+  $('qagain').onclick=()=>{buildQuiz();AV2.mood('','新的一輪！題目選項順序重新洗牌了。');};
+  AV2.mood(qScore>=n-1?'smile':'frown',qScore>=n-1?'太棒了！BI-RADS 的觀念你都掌握了！':qScore>=n/2?'不錯！錯的題目回到第 2、3 節再看一次。':'建議從第 1 節重新玩一遍，特別是第 2 節的描述詞實驗室。',true);}
+
+$('thBtn').onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=dark?'light':'dark';upd2();};
+draw1();upd2();upd3();newRound4();buildQuiz();
+</script>
+</body>
+</html>
